@@ -1,0 +1,48 @@
+package squote.domain;
+import java.math.BigInteger;
+import java.util.Date;
+
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+import org.springframework.data.annotation.Id;
+import org.springframework.format.annotation.DateTimeFormat;
+
+public class ForumThread {
+	@Id
+    private BigInteger id;
+	
+    private final String url;
+    private final String title;
+    private final String source;
+
+	@DateTimeFormat(pattern = "yyyy-MM-dd")
+    public final Date createdDate;
+
+    public ForumThread(String url, String title, String source, Date createdDate) {
+		this.url = url;
+		this.title = title;
+		this.source = source;
+		this.createdDate = createdDate;
+	}
+	
+    @Override
+	public String toString() {
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+    }
+
+    public String getUrl() {
+		return url;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public String getSource() {
+		return source;
+	}
+	
+	public Date getCreatedDate() {
+		return createdDate;
+	}
+}
