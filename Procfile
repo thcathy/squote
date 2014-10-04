@@ -1,1 +1,1 @@
-web: java -Dserver.port=$PORT -jar target/squote-0.0.1-SNAPSHOT.jar
+web: java $JAVA_OPTS -jar target/*.war

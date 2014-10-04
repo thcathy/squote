@@ -11,7 +11,7 @@
 	<groupId>org.thcathy</groupId>
 	<artifactId>squote</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	
+	<packaging>war</packaging>
 	<url>http://squote.herokuapp.com/</url>
 	<name>Spring Quote</name>
 	<description>Web Util - Pet Project by thcathy</description>
