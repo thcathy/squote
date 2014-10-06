@@ -11,6 +11,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.PropertySources;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
@@ -23,6 +25,7 @@ import squote.service.StockPerformanceService;
 @Configuration
 @EnableAutoConfiguration
 @ComponentScan
+@EnableScheduling
 @PropertySources(value = {@PropertySource("classpath:application.properties")})
 public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	
@@ -68,7 +71,17 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
 		return application.sources(SpringQuoteWebApplication.class);
 	}
+	
+	// Schedule jobs
+	
+	@Scheduled(fixedDelay = 60000)
+    public void checkWebs() {
+        checkWebService().check();
+    }
 
+	/**
+	 * Main function for the whole application
+	 */
 	public static void main(String[] args) throws Exception {
 		SpringApplication.run(SpringQuoteWebApplication.class, args);
 	}
