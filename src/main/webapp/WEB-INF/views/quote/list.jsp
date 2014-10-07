@@ -47,7 +47,8 @@
 				<td>${entry.key.quantity}</td>
 				<td><fmt:formatNumber value="${entry.key.price}" type="number" maxFractionDigits="2" /></td>
 				<td>${entry.key.gross}</td>
-				<td><fmt:formatNumber value="${(entry.value.priceDoubleValue - entry.key.price.doubleValue())/entry.key.price.doubleValue()*100}" type="number" maxFractionDigits="2" />%</td>											
+				<td><fmt:formatNumber value="${(entry.value.priceDoubleValue - entry.key.price.doubleValue())/entry.key.price.doubleValue()*100}" type="number" maxFractionDigits="2" />%</td>
+											
 			</tr>
 		</c:forEach>
 		<tr>

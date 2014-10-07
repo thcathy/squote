@@ -49,7 +49,7 @@ public class QuoteControllerTest {
 		
 	@Autowired QuoteController quoteController;
 	
-	 private MockMvc mockMvc;
+	private MockMvc mockMvc;
     
     @Before
     public void setup() {    	

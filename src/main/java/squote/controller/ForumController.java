@@ -21,12 +21,16 @@ import thc.util.BeanUtils;
 
 @RequestMapping("/forum")
 @Controller
-public class ForumController {
+public class ForumController extends AbstractController {
 	private static Logger log = LoggerFactory.getLogger(ForumController.class);
 	
 	enum ContentType { MUSIC, MOVIE }
 	
 	@Resource private CentralWebQueryService executeService;
+	
+	public ForumController() {
+		super("forum");
+	}
 	
 	@RequestMapping(value = "/")
 	@ResponseBody
@@ -49,7 +53,7 @@ public class ForumController {
 		// set response model
 		modelMap.put("contents", contents);
     	
-    	return "forum/list";
+    	return page("/list");
     }
         
     private List<ForumThreadParser> getParserByType(ContentType type, int page) {

@@ -45,7 +45,7 @@ import com.google.common.base.Optional;
 
 @RequestMapping("/quote")
 @Controller
-public class QuoteController {
+public class QuoteController extends AbstractController {
 	private static Logger log = LoggerFactory.getLogger(QuoteController.class);
 	private static final String DEFAULT_CODE_LIST = "2828";
 	private static final String CODELIST_COOKIE_KEY = "codeList";
@@ -56,6 +56,10 @@ public class QuoteController {
 	@Autowired MarketReportService mktReportService;
 	@Autowired StockPerformanceService stockPerformanceService;
 	@Autowired CentralWebQueryService webQueryService;
+	
+	public QuoteController() {
+		super("quote");
+	}
 	
 	@RequestMapping(method = RequestMethod.GET, value = "/single/{code}")	
 	public @ResponseBody StockQuote single(@PathVariable String code) {
@@ -96,7 +100,7 @@ public class QuoteController {
 		
 		modelMap.put("resultMessage", resultMessage);
 		
-		return "quote/createholdingstock";
+		return page("/createholdingstock");
 	}
 	
 	@RequestMapping(value="/list", method = RequestMethod.GET)
@@ -136,11 +140,11 @@ public class QuoteController {
 		modelMap.put("holdingMap", ConcurrentUtils.collect(holdingStocksFuture));
 		modelMap.put("hsce", indexes.get(1));
 		
-		return "quote/list";
+		return page("/list");
 	}
 	
 	@RequestMapping(value = "/stocksperf")	
-	public String stocksPerfPage() {return "quote/stocksperf";}
+	public String stocksPerfPage() {return page("/stocksperf");}
 	
 	@RequestMapping(method = RequestMethod.GET, value = "/liststocksperf")	
 	public @ResponseBody Map<String, Object> listStocksPerformance() {		
