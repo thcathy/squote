@@ -41,13 +41,13 @@
 		<c:forEach items="${holdingMap}" var="entry">
 			<tr>
 				<td>${entry.key.code}</td>
+				<td><fmt:formatNumber value="${(hsce.priceDoubleValue - entry.key.hsce.doubleValue())/entry.key.hsce.doubleValue()*100}" type="number" maxFractionDigits="2" />%</td>
+				<td>${entry.key.side}</td>
+				<td><fmt:formatDate pattern="yyyy-MM-dd" value="${entry.key.date}" /></td>							
 				<td>${entry.key.quantity}</td>
 				<td><fmt:formatNumber value="${entry.key.price}" type="number" maxFractionDigits="2" /></td>
 				<td>${entry.key.gross}</td>
-				<td><fmt:formatNumber value="${(entry.value.priceDoubleValue - entry.key.price.doubleValue())/entry.key.price.doubleValue()*100}" type="number" maxFractionDigits="2" />%</td>
-				<td><fmt:formatNumber value="${(hsce.priceDoubleValue - entry.key.hsce.doubleValue())/entry.key.hsce.doubleValue()*100}" type="number" maxFractionDigits="2" />%</td>
-				<td>${entry.key.side}</td>
-				<td>${entry.key.date}</td>							
+				<td><fmt:formatNumber value="${(entry.value.priceDoubleValue - entry.key.price.doubleValue())/entry.key.price.doubleValue()*100}" type="number" maxFractionDigits="2" />%</td>											
 			</tr>
 		</c:forEach>
 		<tr>
