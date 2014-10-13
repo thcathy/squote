@@ -11,7 +11,7 @@
 </head>
 <body>
 	<form method="post">
-		<textarea id="message" name="message" rows="5" cols="30">${message}</textarea><br />
+		<textarea id="message" name="message" rows="8" cols="50">${message}</textarea><br />
 		hscei:<input type="text"  style="width: 40px;" name="hscei" /><br />
 		<input type="submit" />
 	</form>
