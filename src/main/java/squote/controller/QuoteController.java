@@ -92,7 +92,7 @@ public class QuoteController extends AbstractController {
 				}
 			}
 			if (!"0".equals(hscei)) {
-				HoldingStock holdingStock = quoteService.createHoldingStocksFromExecution(executionMessage.get(), new BigDecimal(hscei));
+				HoldingStock holdingStock = quoteService.createAndSaveHoldingStocks(executionMessage.get(), new BigDecimal(hscei));
 				resultMessage = "Created holding stock";
 				modelMap.put("holdingStock", holdingStock);
 			}

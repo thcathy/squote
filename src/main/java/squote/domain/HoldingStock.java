@@ -15,68 +15,49 @@ public class HoldingStock {
 	@Id
     private BigInteger id;
 	
-	private String code;
-	private int quantity;
-	private BigDecimal gross;
-	@DateTimeFormat(pattern="yyyy-MM-dd") private Date date;
-	private BigDecimal hsce;
-	private SquoteConstants.Side side;
+	private final String code;
+	private final int quantity;
+	private final BigDecimal gross;
+	private final @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
+	private final BigDecimal hsce;
+	private final SquoteConstants.Side side;
+	
+	public HoldingStock(String code, Side side, int quantity, BigDecimal gross, Date date, BigDecimal hsce) {
+		super();
+		this.code = code;
+		this.quantity = quantity;
+		this.gross = gross;
+		this.date = date;
+		this.hsce = hsce;
+		this.side = side;
+	}
 	
 	public BigDecimal getPrice() { return gross.divide(BigDecimal.valueOf(quantity)); }
 	
-	public BigInteger getId() { return this.id; }
-	public void setId(BigInteger id) { this.id = id; }
-
-	public String getCode() {
-        return this.code;
-    }
-
-	public void setCode(String code) {
-        this.code = code;
-    }
-
-	public int getQuantity() {
-        return this.quantity;
-    }
-
-	public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
-
-	public BigDecimal getGross() {
-        return this.gross;
-    }
-
-	public void setGross(BigDecimal gross) {
-        this.gross = gross;
-    }
-
-	public Date getDate() {
-        return this.date;
-    }
-
-	public void setDate(Date date) {
-        this.date = date;
-    }
-
-	public BigDecimal getHsce() {
-        return this.hsce;
-    }
-
-	public void setHsce(BigDecimal hsce) {
-        this.hsce = hsce;
-    }
-
-	public Side getSide() {
-        return this.side;
-    }
-
-	public void setSide(Side side) {
-        this.side = side;
-    }
+	public double performance(double latestPrice) {
+		return (latestPrice - getPrice().doubleValue())/getPrice().doubleValue()*100;		
+	}
+	
+	public double hscePerformance(double latestHsce) {
+		return (latestHsce - hsce.doubleValue())/hsce.doubleValue()*100;
+	}
+	
+	public double relativePerformance(double latestPrice, double latestHsce) {
+		return (performance(latestPrice) - hscePerformance(latestHsce)) * side.factor; 
+	}
 	
 	@Override
 	public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
+		
+	public BigInteger getId() { return this.id; }
+	public String getCode() { return this.code; }
+	public int getQuantity() { return this.quantity;}
+	public BigDecimal getGross() { return this.gross; }
+	public Date getDate() { return this.date; }
+	public BigDecimal getHsce() { return this.hsce; }
+	public Side getSide() { return this.side; }
+	
+	
 }

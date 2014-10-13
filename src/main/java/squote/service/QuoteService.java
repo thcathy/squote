@@ -57,21 +57,16 @@ public class QuoteService {
 				for (HoldingStock holding : holdingStockRepo.findAll()) {
 					StockQuote quote = new AastockStockQuoteParser(holding.getCode()).getStockQuote();
 					resultMap.put(holding, quote);
-				}		
+				}
 				
 				return resultMap;
 			}
 		});
 	}	
 	
-	public HoldingStock createHoldingStocksFromExecution(StockExecutionMessage message, BigDecimal hscei) {
-		HoldingStock s = new HoldingStock();
-		s.setCode(message.getCode());
-		s.setQuantity(message.getQuantity());
-		s.setGross(new BigDecimal(message.getPrice() * message.getQuantity()));
-		s.setDate(message.getDate());
-		s.setSide(message.getSide());
-		s.setHsce(hscei);
+	public HoldingStock createAndSaveHoldingStocks(StockExecutionMessage message, BigDecimal hscei) {
+		HoldingStock s = new HoldingStock(message.getCode(), message.getSide(), message.getQuantity(), 
+				new BigDecimal(message.getPrice() * message.getQuantity()), message.getDate(), hscei);
 		
 		holdingStockRepo.save(s);
 		return s;
