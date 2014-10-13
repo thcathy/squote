@@ -14,6 +14,7 @@
 	<table style="font-size: 10px;">
 		<c:forEach var="s" items="${holdingStocks}">
 			<tr>
+				<td><a href="/holdingstock/delete/${s.id}/">delete</a></td>
 				<td>${s}</td>
 			</tr>
 		</c:forEach>

@@ -17,6 +17,6 @@
 	</form>
 	<p>${resultMessage}</p>
 	<p>${holdingStock}</p>
-	<p><a href="/holdingstocks">Holding stocks</a></p>	
+	<p><a href="/holdingstock/">Holding stocks list</a></p>	
 </body>
 </html>

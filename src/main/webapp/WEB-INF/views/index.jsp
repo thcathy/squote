@@ -30,7 +30,7 @@
 	DB Manage:
 	<table cellpadding="2">
 		<tr>
-			<td><a href="${pageContext.request.contextPath}/holdingstocks">Holding stocks</a></td>
+			<td><a href="${pageContext.request.contextPath}/holdingstock/">Holding stocks list</a></td>
 			<td><a href="${pageContext.request.contextPath}/quote/createholdingstock">Create Holding stocks by execution msg</a></td>
 			<td><a href="${pageContext.request.contextPath}/marketdailyreports">Market daily reports</a></td>
 		</tr>		
