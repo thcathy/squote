@@ -61,7 +61,7 @@ public class QuoteController extends AbstractController {
 		super("quote");
 	}
 	
-	@RequestMapping(method = RequestMethod.GET, value = "/single/{code}")	
+	@RequestMapping(value = "/single/{code}")	
 	public @ResponseBody StockQuote single(@PathVariable String code) {
 		log.debug("single: reqCode [{}]", code);
 		

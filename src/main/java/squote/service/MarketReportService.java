@@ -19,6 +19,7 @@ import squote.domain.StockQuote;
 import squote.domain.repository.MarketDailyReportRepository;
 import squote.web.parser.HKMAMonetaryBaseParser;
 import squote.web.parser.HSINetParser;
+import thc.util.DateUtils;
 
 import com.google.common.base.Optional;
 
@@ -42,14 +43,16 @@ public class MarketReportService {
 	}
 				
 	public MarketDailyReport getPreviousMarketDailyReport(Calendar calendar) {
-		int loop = 0;
-		
-		while (loop < 10) {
+		calendar.add(Calendar.DATE, 1); 
+		for (int i=0; i < 10; i++)		
+		{
+			calendar.add(Calendar.DATE, -1); 
+			if (DateUtils.isWeekEnd(calendar)) continue;
+				
 			// if db contain, return			
 			MarketDailyReport dbReport = mktDailyRptRepo.findByDate(MarketDailyReport.formatDate(calendar.getTime()));
 			if (dbReport != null) return dbReport;
 						
-			// if not holiday, build
 			Optional<StockQuote> hsi = new HSINetParser(Index(HSI), Date(calendar.getTime())).parse();
 			if (hsi.isPresent()) {
 				MarketDailyReport report = new MarketDailyReport(calendar.getTime(), 
@@ -57,12 +60,8 @@ public class MarketReportService {
 						hsi.get(), new HSINetParser(Index(HSCEI), Date(calendar.getTime())).parse().get());
 				mktDailyRptRepo.save(report);
 				return report;
-			}
-			
-			// -1 date to continue
-			calendar.add(Calendar.DATE, -1);
-			loop++;
-		}
+			}			 
+		}		
 		return new MarketDailyReport(calendar.getTime());
 	}
 	

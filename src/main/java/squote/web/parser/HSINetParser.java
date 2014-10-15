@@ -3,6 +3,7 @@ package squote.web.parser;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import squote.domain.StockQuote;
+import thc.util.DateUtils;
 import thc.util.HttpClient;
 import thc.util.NumberUtils;
 
@@ -38,7 +40,11 @@ public class HSINetParser extends WebParser<StockQuote> {
 		this.date = date;
 	}
 	
-	public Optional<StockQuote> parse() {
+	public Optional<StockQuote> parse() {		
+		if (DateUtils.isOverMonth(date, new Date(), 2)) {
+			return Optional.absent();
+		}
+		
 		SimpleDateFormat format = new SimpleDateFormat("dMMMyy", Locale.US);
 		String url = MessageFormat.format(DailyReportURL, StringUtils.lowerCase(index.toString()), format.format(date));
 		try {
