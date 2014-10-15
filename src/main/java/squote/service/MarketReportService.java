@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import squote.domain.MarketDailyReport;
+import squote.domain.MonetaryBase;
 import squote.domain.StockQuote;
 import squote.domain.repository.MarketDailyReportRepository;
 import squote.web.parser.HKMAMonetaryBaseParser;
@@ -54,9 +55,12 @@ public class MarketReportService {
 			if (dbReport != null) return dbReport;
 						
 			Optional<StockQuote> hsi = new HSINetParser(Index(HSI), Date(calendar.getTime())).parse();
-			if (hsi.isPresent()) {
+			if (!hsi.isPresent()) continue;
+			
+			Optional<MonetaryBase> monetaryBase = HKMAMonetaryBaseParser.retrieveMonetaryBase(calendar.getTime());
+			if (monetaryBase.isPresent()) {
 				MarketDailyReport report = new MarketDailyReport(calendar.getTime(), 
-						HKMAMonetaryBaseParser.retrieveMonetaryBase(calendar.getTime()).get(), 
+						monetaryBase.get(), 
 						hsi.get(), new HSINetParser(Index(HSCEI), Date(calendar.getTime())).parse().get());
 				mktDailyRptRepo.save(report);
 				return report;
