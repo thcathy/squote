@@ -11,6 +11,7 @@ import org.springframework.boot.context.web.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.PropertySources;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -29,8 +30,16 @@ import squote.service.StockPerformanceService;
 @EnableAutoConfiguration
 @ComponentScan
 @EnableScheduling
-@PropertySources(value = {@PropertySource("classpath:application.properties")})
 public class SpringQuoteWebApplication extends SpringBootServletInitializer {
+	
+	@Configuration    
+    @PropertySource("classpath:application.properties")
+    static class Default {}
+
+    @Configuration
+    @Profile("dev")
+    @PropertySource({"classpath:application.properties", "classpath:application-dev.properties"})
+    static class Dev {}
 	
 	// application properties
 	@Value("${checkweb.url.list}") private String checkWebUrlList;	
