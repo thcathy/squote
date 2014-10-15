@@ -50,7 +50,7 @@
 			</tr>
 		</c:forEach>
 		<tr>
-			<td><a href="${pageContext.request.contextPath}/holdingstocks">Manage holding stock</a></td>
+			<td><a href="${pageContext.request.contextPath}/holdingstock/">Manage holding stock</a></td>
 		</tr>
 	</table>
 	<br/>
