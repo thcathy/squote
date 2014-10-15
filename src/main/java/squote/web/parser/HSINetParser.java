@@ -54,7 +54,7 @@ public class HSINetParser extends WebParser<StockQuote> {
 			quote.setPe(NumberUtils.extractNumber(result[9]));
 			return Optional.of(quote);
 		} catch (Exception e) {
-			log.warn("Fail to retrieveDailyReportFromHSINet:" + url, e);
+			log.warn("Fail to retrieveDailyReportFromHSINet: reason: {} url: {}", e.getMessage(),url);
 			return Optional.absent();
 		}
 	}
