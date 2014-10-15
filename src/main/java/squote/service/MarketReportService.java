@@ -30,10 +30,10 @@ public class MarketReportService {
 	static String DailyMonetaryBaseURL= "http://www.hkma.gov.hk/eng/market-data-and-statistics/monetary-statistics/monetary-base/{0,date,yyyy}/{0,date,yyyyMMdd}-2.shtml";
 		
 	private final MarketDailyReportRepository mktDailyRptRepo;
-	private final CentralWebQueryService quoteService;
+	private final CentralWebQueryService queryService;
 	
 	public MarketReportService(MarketDailyReportRepository repo, CentralWebQueryService quoteService) {
-		this.quoteService = quoteService;
+		this.queryService = quoteService;
 		this.mktDailyRptRepo = repo;
 	}
 	
@@ -74,7 +74,7 @@ public class MarketReportService {
 	public List<Future<MarketDailyReport>> getMarketDailyReport(Calendar... from) {
 		List<Future<MarketDailyReport>> futures = new ArrayList<Future<MarketDailyReport>>();
 		for (final Calendar c : from) {
-			futures.add(quoteService.submit(new Callable<MarketDailyReport>() {
+			futures.add(queryService.submit(new Callable<MarketDailyReport>() {
 				public MarketDailyReport call() throws Exception {
 					return getPreviousMarketDailyReport(c);
 				}				
