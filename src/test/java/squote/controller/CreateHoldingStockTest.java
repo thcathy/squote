@@ -2,19 +2,18 @@ package squote.controller;
  
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
+import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Future;
 
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,14 +28,18 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.ui.ModelMap;
+import org.springframework.transaction.annotation.Transactional;
 
 import squote.SpringQuoteWebApplication;
 import squote.SquoteConstants;
+import squote.SquoteConstants.IndexCode;
 import squote.domain.HoldingStock;
 import squote.domain.StockQuote;
+import squote.domain.repository.HoldingStockRepository;
 import squote.service.CentralWebQueryService;
+import squote.web.parser.EtnetIndexQuoteParser;
 import squote.web.parser.HSINetParser;
+import thc.util.DateUtils;
 
 import com.google.common.base.Optional;
  
@@ -44,62 +47,29 @@ import com.google.common.base.Optional;
 @WebAppConfiguration
 @ContextConfiguration(classes = SpringQuoteWebApplication.class)
 @ActiveProfiles("dev")
-public class QuoteControllerTest {
+public class CreateHoldingStockTest {
 	@Mock CentralWebQueryService mockWebQueryService;
 		
 	@Autowired QuoteController quoteController;
+	@Autowired HoldingStockRepository holdingStockRepo;
 	
 	private MockMvc mockMvc;
+	private StockQuote hsceiQuote;
+	private StockQuote hsiQuote;
     
     @Before
     public void setup() {    	
     	MockitoAnnotations.initMocks(this);
     	quoteController.webQueryService = mockWebQueryService;
         this.mockMvc = MockMvcBuilders.standaloneSetup(quoteController).build();
-    }
-    
-    @Test
-	public void getSingleQuote() throws Exception {	
-		mockMvc.perform(get("/quote/single/2800").characterEncoding("utf-8"))
-			.andExpect(status().isOk())
-			.andExpect(content().contentType("application/xml"))
-			.andExpect(xpath("/stockQuote[price=NA]").doesNotExist());
-	}	
-		
-	@Test
-	public void listQuoteByReqParam() throws Exception {
-		// Given
-		final String inputCodeList = "2828,2800";		
-		StockQuote quote = new StockQuote("HSCEI");
-        quote.setPrice("10368.13");
-        Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.of(quote));
         
-		MvcResult mvcResult = mockMvc.perform(get("/quote/list?codeList=" + inputCodeList).characterEncoding("utf-8"))
-		.andExpect(status().isOk())
-		.andExpect(view().name("quote/list")).andReturn();
-		
-		ModelMap modelMap = mvcResult.getModelAndView().getModelMap();
-		List<StockQuote> indexes = (List<StockQuote>) modelMap.get("indexes");
-		List<StockQuote> quotes = (List<StockQuote>) modelMap.get("quotes");
-				
-		assertTrue(modelMap.get("codeList").equals(inputCodeList));
-		assertNotNull(modelMap.get("tbase"));
-		assertNotNull(modelMap.get("tminus1"));
-		assertNotNull(modelMap.get("tminus7"));
-		assertNotNull(modelMap.get("tminus30"));
-		assertNotNull(modelMap.get("tminus60"));
-		
-		assertTrue(!"NA".equals(quotes.get(0).getPrice()));
-		assertTrue(StringUtils.isNotBlank(quotes.get(0).getStockCode()));
-		assertTrue(!"NA".equals(quotes.get(1).getPrice()));
-		assertTrue(StringUtils.isNotBlank(quotes.get(1).getStockCode()));
-		
-		assertTrue(!"NA".equals(quotes.get(0).getPrice()));
-		assertTrue(StringUtils.isNotBlank(quotes.get(0).getStockCode()));
-		assertTrue(!"NA".equals(quotes.get(1).getPrice()));
-		assertTrue(StringUtils.isNotBlank(quotes.get(1).getStockCode()));
-	}
-	
+        hsiQuote = new StockQuote(IndexCode.HSI.name);
+        hsiQuote.setPrice("25000");
+        
+        hsceiQuote = new StockQuote(IndexCode.HSCEI.name);
+        hsceiQuote.setPrice("12500");
+    }
+    	
 	@Test
 	public void createHoldingStockWithWrongMessage() throws Exception {
 		// Given
@@ -150,7 +120,7 @@ public class QuoteControllerTest {
 	@Test
 	public void failCreateHoldingStockDueToCannotParseHscei() throws Exception {		
 		// Given
-		Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.<StockQuote>absent());        
+		Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.absent());        
 		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
 		scbSellMsg += "已於4.8900元成功執行\n";
 		scbSellMsg += "20180610000013235"; 
@@ -163,5 +133,42 @@ public class QuoteControllerTest {
 				.andExpect(view().name("quote/createholdingstock")).andReturn();		
 	}
 	
+	@Test
+	public void emptyInputShouldGoToPageWithoutProcessing() throws Exception {
+		MvcResult mvcResult = mockMvc.perform(
+				post("/quote/createholdingstock").characterEncoding("utf-8")
+			).andExpect(status().isOk())
+			.andExpect(model().attributeDoesNotExist("resultMessage"))
+			.andExpect(view().name("quote/createholdingstock")).andReturn();
+	}
 	
+	@Test	
+	public void createTodayExecutionUseIndexFromRealtimeQuote() throws Exception {
+		// Given
+        Mockito.when(mockWebQueryService.parse(Mockito.any(EtnetIndexQuoteParser.class))).thenReturn(Optional.of(Arrays.asList(hsiQuote, hsceiQuote)));
+        
+		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
+		scbSellMsg += "已於4.8900元成功執行\n";
+		scbSellMsg += DateUtils.toString(new Date(), "yyyyMMdd") + "000013235";
+		
+		long total = holdingStockRepo.count();
+				
+		// When
+		MvcResult mvcResult = mockMvc.perform(
+					post("/quote/createholdingstock").characterEncoding("utf-8")
+					.param("message", scbSellMsg)
+				).andExpect(status().isOk())
+				.andExpect(model().attribute("resultMessage", "Created holding stock"))
+				.andExpect(view().name("quote/createholdingstock")).andReturn();
+		
+		// Expect
+		HoldingStock holdingStock = (HoldingStock) mvcResult.getModelAndView().getModelMap().get("holdingStock");
+		assertNotNull(holdingStock);
+		assertEquals("1138", holdingStock.getCode());
+		assertEquals(10000, holdingStock.getQuantity());
+		assertEquals(new BigDecimal("48900"), holdingStock.getGross());
+		assertEquals(SquoteConstants.Side.SELL, holdingStock.getSide());
+		assertEquals("12500", holdingStock.getHsce().toString());
+		assertEquals(total+1, holdingStockRepo.count());
+	}
 }

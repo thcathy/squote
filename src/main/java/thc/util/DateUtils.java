@@ -1,5 +1,6 @@
 package thc.util;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -18,5 +19,9 @@ public final class DateUtils {
 	
 	public static boolean isOverMonth(Date d1, Date d2, int numOfMonth) {
 		return Math.abs(d1.getTime() - d2.getTime()) > 86400000 * 31 * numOfMonth;
+	}
+	
+	public static String toString(Date d, String pattern) {
+		return new SimpleDateFormat(pattern).format(d);
 	}
 }

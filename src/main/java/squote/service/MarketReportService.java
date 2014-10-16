@@ -2,8 +2,8 @@ package squote.service;
 
 import static squote.web.parser.HSINetParser.Date;
 import static squote.web.parser.HSINetParser.Index;
-import static squote.web.parser.HSINetParser.IndexCode.HSCEI;
-import static squote.web.parser.HSINetParser.IndexCode.HSI;
+import static squote.SquoteConstants.IndexCode.HSCEI;
+import static squote.SquoteConstants.IndexCode.HSI;
 
 import java.util.ArrayList;
 import java.util.Calendar;

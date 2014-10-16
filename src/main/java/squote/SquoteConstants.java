@@ -11,4 +11,14 @@ public class SquoteConstants {
 			this.factor = factor;
 		}
 	}
+
+	public enum IndexCode {
+		HSI("Hang Seng Index"), HSCEI("HS China Enterprises Index");
+		
+		final public String name;
+		
+		IndexCode(String name) {
+			this.name = name;
+		}
+	}
 }

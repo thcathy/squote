@@ -2,18 +2,16 @@ package squote.controller.repository;
 
 import java.math.BigInteger;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import squote.controller.AbstractController;
-import squote.controller.ForumController;
 import squote.domain.repository.HoldingStockRepository;
 
 @Controller
@@ -29,8 +27,7 @@ public class HoldingStockController extends AbstractController {
 	
 	@RequestMapping("/")
 	public String list(ModelMap modelMap) {
-		
-		modelMap.put("holdingStocks", holdingStockRepository.findAll());
+		modelMap.put("holdingStocks", holdingStockRepository.findAll(new Sort("date")));
 		
 		return page("/list");
 	}

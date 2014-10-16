@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import squote.SquoteConstants;
 import squote.domain.StockQuote;
 import thc.util.DateUtils;
 import thc.util.HttpClient;
@@ -22,20 +23,18 @@ import com.google.common.base.Optional;
 public class HSINetParser extends WebParser<StockQuote> {	
 	private static Logger log = LoggerFactory.getLogger(HSINetParser.class);
 	
-	public enum IndexCode {HSI, HSCEI}
-		
 	static String DailyReportURL = "http://www.hsi.com.hk/HSI-Net/static/revamp/contents/en/indexes/report/{0}/idx_{1}.csv";
 	
-	private final IndexCode index;
+	private final SquoteConstants.IndexCode index;
 	private final Date date;
 	
-	public static IndexCode Index(IndexCode i) { return i; }
+	public static SquoteConstants.IndexCode Index(SquoteConstants.IndexCode i) { return i; }
 	public static Date Date(Date d) { return d; }
 	public static Date Date(String yyyyMMdd) throws ParseException {
 		return new SimpleDateFormat("yyyyMMdd").parse(yyyyMMdd);
 	}
 	
-	public HSINetParser(IndexCode index, Date date) {
+	public HSINetParser(SquoteConstants.IndexCode index, Date date) {
 		this.index = index;
 		this.date = date;
 	}

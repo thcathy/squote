@@ -13,7 +13,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.context.annotation.PropertySources;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.filter.CharacterEncodingFilter;
@@ -23,7 +22,6 @@ import squote.domain.repository.MarketDailyReportRepository;
 import squote.service.CentralWebQueryService;
 import squote.service.CheckWebService;
 import squote.service.MarketReportService;
-import squote.service.QuoteService;
 import squote.service.StockPerformanceService;
 
 @Configuration
@@ -67,11 +65,6 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	@Bean
 	public StockPerformanceService stockPerformanceService() {
 		return new StockPerformanceService(centrolWebQueryService());
-	}
-	
-	@Bean
-	public QuoteService quoteService() {
-		return new QuoteService(centrolWebQueryService(), holdingStockRepo);
 	}
 	
 	@Bean
