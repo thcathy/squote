@@ -129,7 +129,7 @@ public class QuoteController extends AbstractController {
 			@CookieValue(value=CODELIST_COOKIE_KEY, required=false) String cookieCodeList,
 			HttpServletRequest request, HttpServletResponse response, ModelMap modelMap) {
 		
-		log.debug("list: reqCodeList [${codeList}], action [${persistAction}]");
+		log.debug("list: reqCodeList [{}], action [{}]", codeList, action);
 			
 		String codes = retrieveCodeList(codeList, action, cookieCodeList);	
 		saveQueryIfNeeded(codeList, action);		
