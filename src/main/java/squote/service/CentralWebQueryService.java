@@ -25,8 +25,8 @@ public class CentralWebQueryService extends ConcurrentExecuteService {
 		return parser.parse();
 	}
 			
-	public Future<?> submit(WebParser<?> parser) {
-		return threadPool.submit(parser);
+	public <T> Future<Optional<T>> submit(WebParser<T> parser) {
+		return (Future<Optional<T>>) threadPool.submit(parser);
 	}
 	
 }

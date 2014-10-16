@@ -12,7 +12,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
@@ -33,9 +37,11 @@ import org.springframework.ui.ModelMap;
 
 import squote.SpringQuoteWebApplication;
 import squote.SquoteConstants;
+import squote.SquoteConstants.IndexCode;
 import squote.domain.HoldingStock;
 import squote.domain.StockQuote;
 import squote.service.CentralWebQueryService;
+import squote.web.parser.EtnetIndexQuoteParser;
 import squote.web.parser.HSINetParser;
 
 import com.google.common.base.Optional;
@@ -46,16 +52,24 @@ import com.google.common.base.Optional;
 @ActiveProfiles("dev")
 public class QuoteControllerTest {
 	@Mock CentralWebQueryService mockWebQueryService;
-		
+			
 	@Autowired QuoteController quoteController;
 	
 	private MockMvc mockMvc;
-    
+	private StockQuote hsceiQuote;
+	private StockQuote hsiQuote;
+	    
     @Before
     public void setup() {    	
     	MockitoAnnotations.initMocks(this);
     	quoteController.webQueryService = mockWebQueryService;
         this.mockMvc = MockMvcBuilders.standaloneSetup(quoteController).build();
+        
+        hsiQuote = new StockQuote(IndexCode.HSI.name);
+        hsiQuote.setPrice("25000");
+        
+        hsceiQuote = new StockQuote(IndexCode.HSCEI.name);
+        hsceiQuote.setPrice("12500");
     }
     
     @Test
@@ -69,10 +83,11 @@ public class QuoteControllerTest {
 	@Test
 	public void listQuoteByReqParam() throws Exception {
 		// Given
-		final String inputCodeList = "2828,2800";		
-		StockQuote quote = new StockQuote("HSCEI");
-        quote.setPrice("10368.13");
-        Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.of(quote));
+		final String inputCodeList = "2828,2800";
+		Future<Optional<List<StockQuote>>> mockIndexQuoteFuture = Mockito.mock(Future.class);
+        Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.of(hsceiQuote));
+        Mockito.when(mockIndexQuoteFuture.get()).thenReturn(Optional.of(Arrays.asList(hsiQuote, hsceiQuote)));
+        Mockito.when(mockWebQueryService.submit(Mockito.any(EtnetIndexQuoteParser.class))).thenReturn(mockIndexQuoteFuture);
         
 		MvcResult mvcResult = mockMvc.perform(get("/quote/list?codeList=" + inputCodeList).characterEncoding("utf-8"))
 		.andExpect(status().isOk())
@@ -81,6 +96,7 @@ public class QuoteControllerTest {
 		ModelMap modelMap = mvcResult.getModelAndView().getModelMap();
 		List<StockQuote> indexes = (List<StockQuote>) modelMap.get("indexes");
 		List<StockQuote> quotes = (List<StockQuote>) modelMap.get("quotes");
+		StockQuote hscei = (StockQuote) modelMap.get("hsce");
 				
 		assertTrue(modelMap.get("codeList").equals(inputCodeList));
 		assertNotNull(modelMap.get("tbase"));
@@ -98,70 +114,8 @@ public class QuoteControllerTest {
 		assertTrue(StringUtils.isNotBlank(quotes.get(0).getStockCode()));
 		assertTrue(!"NA".equals(quotes.get(1).getPrice()));
 		assertTrue(StringUtils.isNotBlank(quotes.get(1).getStockCode()));
-	}
-	
-	@Test
-	public void createHoldingStockWithWrongMessage() throws Exception {
-		// Given
-		StockQuote quote = new StockQuote("HSCEI");
-        quote.setPrice("10368.13");
-        Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.of(quote));
-        
-		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
-		scbSellMsg += "已於4.8900元執行\n";
-		scbSellMsg += "20140610000013235"; 
 		
-		MvcResult mvcResult = mockMvc.perform(
-					post("/quote/createholdingstock").characterEncoding("utf-8")
-					.param("message", scbSellMsg)
-				).andExpect(status().isOk())
-				.andExpect(model().attribute("resultMessage", "Cannot create holding stock"))
-				.andExpect(view().name("quote/createholdingstock")).andReturn();
+		assertEquals(IndexCode.HSCEI.name, hscei.getStockCode());
+		assertEquals("12500", hscei.getPrice());
 	}
-	
-	@Test
-	public void createHoldingStockSuccessfully() throws Exception {
-		// Given
-		StockQuote quote = new StockQuote("HSCEI");
-        quote.setPrice("10368.13");
-        Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.of(quote));        
-		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
-		scbSellMsg += "已於4.8900元成功執行\n";
-		scbSellMsg += "20140710000013235"; 
-		
-		// When
-		MvcResult mvcResult = mockMvc.perform(
-					post("/quote/createholdingstock").characterEncoding("utf-8")
-					.param("message", scbSellMsg)
-				).andExpect(status().isOk())
-				.andExpect(model().attribute("resultMessage", "Created holding stock"))
-				.andExpect(view().name("quote/createholdingstock")).andReturn();
-		
-		// Expect
-		HoldingStock holdingStock = (HoldingStock) mvcResult.getModelAndView().getModelMap().get("holdingStock");
-		assertNotNull(holdingStock);
-		assertEquals("1138", holdingStock.getCode());
-		assertEquals(10000, holdingStock.getQuantity());
-		assertEquals(new BigDecimal("48900"), holdingStock.getGross());
-		assertEquals(SquoteConstants.Side.SELL, holdingStock.getSide());
-		assertEquals("10368.13", holdingStock.getHsce().toString());		
-	}
-	
-	@Test
-	public void failCreateHoldingStockDueToCannotParseHscei() throws Exception {		
-		// Given
-		Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.<StockQuote>absent());        
-		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
-		scbSellMsg += "已於4.8900元成功執行\n";
-		scbSellMsg += "20180610000013235"; 
-		
-		MvcResult mvcResult = mockMvc.perform(
-					post("/quote/createholdingstock").characterEncoding("utf-8")
-					.param("message", scbSellMsg)
-				).andExpect(status().isOk())
-				.andExpect(model().attribute("resultMessage", "Cannot get hscei"))
-				.andExpect(view().name("quote/createholdingstock")).andReturn();		
-	}
-	
-	
 }

@@ -1,10 +1,11 @@
 package squote.controller;
 
 import static squote.service.MarketReportService.pre;
-import static squote.web.parser.HSINetParser.IndexCode.HSCEI;
+import static squote.SquoteConstants.IndexCode.HSCEI;
 
 import java.math.BigDecimal;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -14,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import squote.SquoteConstants.IndexCode;
 import squote.domain.HoldingStock;
 import squote.domain.MarketDailyReport;
 import squote.domain.StockExecutionMessage;
@@ -37,6 +40,7 @@ import squote.service.MarketReportService;
 import squote.service.QuoteService;
 import squote.service.StockPerformanceService;
 import squote.web.parser.AastockStockQuoteParser;
+import squote.web.parser.EtnetIndexQuoteParser;
 import squote.web.parser.HSINetParser;
 import thc.util.ConcurrentUtils;
 import thc.util.HttpClient;
@@ -77,30 +81,39 @@ public class QuoteController extends AbstractController {
 			@RequestParam(value="hscei", required=false, defaultValue="0") String hscei,
 			ModelMap modelMap) {
 		log.debug("createholdingstock: message[{}]", message);
-
+		if (StringUtils.isBlank(message)) return page("/createholdingstock");
+		
 		String resultMessage = "";
-	
+		HoldingStock holdingStock = null;
+		
 		Optional<StockExecutionMessage> executionMessage = StockExecutionMessage.construct(message);
 		if (!executionMessage.isPresent()) resultMessage = "Cannot create holding stock";
+		else if ("0".equals(hscei = enrichHscei(hscei, executionMessage.get().getDate()))) resultMessage = "Cannot get hscei";
 		else {
-			if ("0".equals(hscei)) {
-				Optional<StockQuote> indexQuote = webQueryService.parse(new HSINetParser(HSCEI, executionMessage.get().getDate()));
-				if (indexQuote.isPresent()) {
-					hscei = indexQuote.get().getPrice();
-				} else {
-					resultMessage = "Cannot get hscei";
-				}
-			}
-			if (!"0".equals(hscei)) {
-				HoldingStock holdingStock = quoteService.createAndSaveHoldingStocks(executionMessage.get(), new BigDecimal(hscei));
-				resultMessage = "Created holding stock";
-				modelMap.put("holdingStock", holdingStock);
-			}
+			holdingStock = quoteService.createAndSaveHoldingStocks(executionMessage.get(), new BigDecimal(hscei));
+			resultMessage = "Created holding stock";
 		}
 		
-		modelMap.put("resultMessage", resultMessage);
-		
+		modelMap.put("holdingStock", holdingStock);
+		modelMap.put("resultMessage", resultMessage);		
 		return page("/createholdingstock");
+	}
+	
+	private String enrichHscei(String input, Date date) {
+		if (!"0".equals(input)) return input;
+		
+		try {
+			if (DateUtils.isSameDay(new Date(), date)) {
+				input = webQueryService.parse(new EtnetIndexQuoteParser()).get().stream()
+							.filter(a -> IndexCode.HSCEI.name.equals(a.getStockCode())).findFirst().get().getPrice();
+			} else {				
+				input = webQueryService.parse(new HSINetParser(HSCEI, date)).get().getPrice();
+			}
+		} catch (IllegalStateException e) {
+			log.debug("Cannot enrich hscei: {}", e.getMessage());
+		}
+		
+		return input;
 	}
 	
 	@RequestMapping(value="/list", method = RequestMethod.GET)
@@ -116,7 +129,7 @@ public class QuoteController extends AbstractController {
 		updateCookie(codeList, response);
 	
 		List<Future<StockQuote>> quotesFutures = quoteService.getStockQuoteList(codeList);
-		Future<List<StockQuote>> indexeFutures = quoteService.getGlobalIndexes();
+		Future<Optional<List<StockQuote>>> indexeFutures = webQueryService.submit(new EtnetIndexQuoteParser());
 		Future<Map<HoldingStock, StockQuote>> holdingStocksFuture = quoteService.getAllHoldingStocksWithMapping();
 		List<Future<MarketDailyReport>> mktReports = mktReportService.getMarketDailyReport(
 				pre(1, Calendar.DATE),
@@ -127,7 +140,7 @@ public class QuoteController extends AbstractController {
 			);
 	
 		// After all concurrent jobs submitted
-		List<StockQuote> indexes = ConcurrentUtils.collect(indexeFutures);
+		List<StockQuote> indexes = ConcurrentUtils.collect(indexeFutures).get();
 		
 		modelMap.put("codeList", codeList);
 		modelMap.put("quotes", ConcurrentUtils.collects(quotesFutures));
@@ -138,7 +151,7 @@ public class QuoteController extends AbstractController {
 		modelMap.put("tminus30", ConcurrentUtils.collect(mktReports.get(3)));
 		modelMap.put("tminus60", ConcurrentUtils.collect(mktReports.get(4)));
 		modelMap.put("holdingMap", ConcurrentUtils.collect(holdingStocksFuture));
-		modelMap.put("hsce", indexes.get(1));
+		modelMap.put("hsce", indexes.stream().filter(a -> IndexCode.HSCEI.name.equals(a.getStockCode())).findFirst().get());
 		
 		return page("/list");
 	}

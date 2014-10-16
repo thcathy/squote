@@ -13,9 +13,10 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Test;
 
+import squote.SquoteConstants;
+import squote.SquoteConstants.IndexCode;
 import squote.domain.MonetaryBase;
 import squote.domain.StockQuote;
-import squote.web.parser.HSINetParser.IndexCode;
 
 import com.google.common.base.Optional;
 
@@ -35,16 +36,16 @@ public class MarketDailyReportParsersTest {
 	public void retrieveDataFromHolidayShouldGivenAbsent() throws Exception {
 		Date holiday = DateUtils.parseDate("20131215","yyyyMMdd");
 		assertFalse(HKMAMonetaryBaseParser.retrieveMonetaryBase(holiday).isPresent());
-		assertFalse(new HSINetParser(Index(IndexCode.HSCEI), Date(holiday)).parse().isPresent());
+		assertFalse(new HSINetParser(Index(SquoteConstants.IndexCode.HSCEI), Date(holiday)).parse().isPresent());
 	}
 	
 	@Test
 	public void retrieveIndexOnWeekDate() throws Exception {
-		testRetrieveIndex(IndexCode.HSCEI);
-		testRetrieveIndex(IndexCode.HSI);
+		testRetrieveIndex(SquoteConstants.IndexCode.HSCEI);
+		testRetrieveIndex(SquoteConstants.IndexCode.HSI);
 	}
 
-	private void testRetrieveIndex(IndexCode index) {
+	private void testRetrieveIndex(SquoteConstants.IndexCode index) {
 		int retry = 0;
 		Calendar date = Calendar.getInstance();
 		Optional<StockQuote> quote;
