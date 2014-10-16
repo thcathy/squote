@@ -29,6 +29,7 @@ public final class ConcurrentUtils {
 		try {
 			return future.get();
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException("Exception during collect result from future.", e);
 		}
 	}
