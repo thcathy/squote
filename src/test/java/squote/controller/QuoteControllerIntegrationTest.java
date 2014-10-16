@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -50,26 +51,14 @@ import com.google.common.base.Optional;
 @WebAppConfiguration
 @ContextConfiguration(classes = SpringQuoteWebApplication.class)
 @ActiveProfiles("dev")
-public class QuoteControllerTest {
-	@Mock CentralWebQueryService mockWebQueryService;
-			
+public class QuoteControllerIntegrationTest {
 	@Autowired QuoteController quoteController;
 	
 	private MockMvc mockMvc;
-	private StockQuote hsceiQuote;
-	private StockQuote hsiQuote;
 	    
     @Before
     public void setup() {    	
-    	MockitoAnnotations.initMocks(this);
-    	quoteController.webQueryService = mockWebQueryService;
-        this.mockMvc = MockMvcBuilders.standaloneSetup(quoteController).build();
-        
-        hsiQuote = new StockQuote(IndexCode.HSI.name);
-        hsiQuote.setPrice("25000");
-        
-        hsceiQuote = new StockQuote(IndexCode.HSCEI.name);
-        hsceiQuote.setPrice("12500");
+    	this.mockMvc = MockMvcBuilders.standaloneSetup(quoteController).build();        
     }
     
     @Test
@@ -84,18 +73,14 @@ public class QuoteControllerTest {
 	public void listQuoteByReqParam() throws Exception {
 		// Given
 		final String inputCodeList = "2828,2800";
-		Future<Optional<List<StockQuote>>> mockIndexQuoteFuture = Mockito.mock(Future.class);
-        Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.of(hsceiQuote));
-        Mockito.when(mockIndexQuoteFuture.get()).thenReturn(Optional.of(Arrays.asList(hsiQuote, hsceiQuote)));
-        Mockito.when(mockWebQueryService.submit(Mockito.any(EtnetIndexQuoteParser.class))).thenReturn(mockIndexQuoteFuture);
-        
+		        
 		MvcResult mvcResult = mockMvc.perform(get("/quote/list?codeList=" + inputCodeList).characterEncoding("utf-8"))
 		.andExpect(status().isOk())
 		.andExpect(view().name("quote/list")).andReturn();
 		
 		ModelMap modelMap = mvcResult.getModelAndView().getModelMap();
 		List<StockQuote> indexes = (List<StockQuote>) modelMap.get("indexes");
-		List<StockQuote> quotes = (List<StockQuote>) modelMap.get("quotes");
+		Iterator<StockQuote> quotes = (Iterator<StockQuote>) modelMap.get("quotes");
 		StockQuote hscei = (StockQuote) modelMap.get("hsce");
 				
 		assertTrue(modelMap.get("codeList").equals(inputCodeList));
@@ -105,17 +90,13 @@ public class QuoteControllerTest {
 		assertNotNull(modelMap.get("tminus30"));
 		assertNotNull(modelMap.get("tminus60"));
 		
-		assertTrue(!"NA".equals(quotes.get(0).getPrice()));
-		assertTrue(StringUtils.isNotBlank(quotes.get(0).getStockCode()));
-		assertTrue(!"NA".equals(quotes.get(1).getPrice()));
-		assertTrue(StringUtils.isNotBlank(quotes.get(1).getStockCode()));
-		
-		assertTrue(!"NA".equals(quotes.get(0).getPrice()));
-		assertTrue(StringUtils.isNotBlank(quotes.get(0).getStockCode()));
-		assertTrue(!"NA".equals(quotes.get(1).getPrice()));
-		assertTrue(StringUtils.isNotBlank(quotes.get(1).getStockCode()));
-		
-		assertEquals(IndexCode.HSCEI.name, hscei.getStockCode());
-		assertEquals("12500", hscei.getPrice());
+		StockQuote quote1 = quotes.next();
+		StockQuote quote2 = quotes.next();
+		assertTrue(!"NA".equals(quote1.getPrice()));
+		assertTrue(StringUtils.isNotBlank(quote1.getStockCode()));
+		assertTrue(!"NA".equals(quote2.getPrice()));
+		assertTrue(StringUtils.isNotBlank(quote2.getStockCode()));
+				
+		assertEquals(IndexCode.HSCEI.name, hscei.getStockCode());		
 	}
 }

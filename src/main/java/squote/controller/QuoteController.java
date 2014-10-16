@@ -1,14 +1,18 @@
 package squote.controller;
 
-import static squote.service.MarketReportService.pre;
 import static squote.SquoteConstants.IndexCode.HSCEI;
+import static squote.service.MarketReportService.pre;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -19,6 +23,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -34,10 +39,10 @@ import squote.domain.MarketDailyReport;
 import squote.domain.StockExecutionMessage;
 import squote.domain.StockQuery;
 import squote.domain.StockQuote;
+import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.StockQueryRepository;
 import squote.service.CentralWebQueryService;
 import squote.service.MarketReportService;
-import squote.service.QuoteService;
 import squote.service.StockPerformanceService;
 import squote.web.parser.AastockStockQuoteParser;
 import squote.web.parser.EtnetIndexQuoteParser;
@@ -46,6 +51,7 @@ import thc.util.ConcurrentUtils;
 import thc.util.HttpClient;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
 
 @RequestMapping("/quote")
 @Controller
@@ -54,12 +60,13 @@ public class QuoteController extends AbstractController {
 	private static final String DEFAULT_CODE_LIST = "2828";
 	private static final String CODELIST_COOKIE_KEY = "codeList";
 	private static final int STOCK_QUERY_KEY = 1;	
+	public static final String CODE_SEPARATOR = ",";
 	
-	@Autowired StockQueryRepository stockQueryRepo;
-	@Autowired QuoteService quoteService;
+	@Autowired StockQueryRepository stockQueryRepo;	
 	@Autowired MarketReportService mktReportService;
 	@Autowired StockPerformanceService stockPerformanceService;
 	@Autowired CentralWebQueryService webQueryService;
+	@Autowired HoldingStockRepository holdingStockRepo;
 	
 	public QuoteController() {
 		super("quote");
@@ -90,7 +97,7 @@ public class QuoteController extends AbstractController {
 		if (!executionMessage.isPresent()) resultMessage = "Cannot create holding stock";
 		else if ("0".equals(hscei = enrichHscei(hscei, executionMessage.get().getDate()))) resultMessage = "Cannot get hscei";
 		else {
-			holdingStock = quoteService.createAndSaveHoldingStocks(executionMessage.get(), new BigDecimal(hscei));
+			holdingStock = createAndSaveHoldingStocks(executionMessage.get(), new BigDecimal(hscei));
 			resultMessage = "Created holding stock";
 		}
 		
@@ -124,13 +131,19 @@ public class QuoteController extends AbstractController {
 		
 		log.debug("list: reqCodeList [${codeList}], action [${persistAction}]");
 			
-		codeList = retrieveCodeList(codeList, action, cookieCodeList);	
+		String codes = retrieveCodeList(codeList, action, cookieCodeList);	
 		saveQueryIfNeeded(codeList, action);		
 		updateCookie(codeList, response);
-	
-		List<Future<StockQuote>> quotesFutures = quoteService.getStockQuoteList(codeList);
+			
+		List<HoldingStock> holdingStocks = Lists.newArrayList(holdingStockRepo.findAll(new Sort("date")));
+		Set<String> codeSet = new HashSet(Arrays.asList(codeList.split(CODE_SEPARATOR)));
+		holdingStocks.forEach(x->codeSet.add(x.getCode()));
+		
+		// Submit web queries
+		List<Future<StockQuote>> stockQuoteFutures = codeSet.stream()
+														.map( x -> webQueryService.submit(new AastockStockQuoteParser(x)) )
+														.collect(Collectors.toList());		
 		Future<Optional<List<StockQuote>>> indexeFutures = webQueryService.submit(new EtnetIndexQuoteParser());
-		Future<Map<HoldingStock, StockQuote>> holdingStocksFuture = quoteService.getAllHoldingStocksWithMapping();
 		List<Future<MarketDailyReport>> mktReports = mktReportService.getMarketDailyReport(
 				pre(1, Calendar.DATE),
 				pre(2, Calendar.DATE),
@@ -141,16 +154,23 @@ public class QuoteController extends AbstractController {
 	
 		// After all concurrent jobs submitted
 		List<StockQuote> indexes = ConcurrentUtils.collect(indexeFutures).get();
-		
-		modelMap.put("codeList", codeList);
-		modelMap.put("quotes", ConcurrentUtils.collects(quotesFutures));
+		Map<String, StockQuote> quotes = stockQuoteFutures.stream().map(f -> {
+            try {
+                return f.get();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).collect(Collectors.toMap(StockQuote::getStockCode, x->x));
+			
+		modelMap.put("codeList", codes);
+		modelMap.put("quotes", quotes.values().stream().filter(x->codes.contains(x.getStockCode())).iterator());
 		modelMap.put("indexes", indexes);
 		modelMap.put("tbase", ConcurrentUtils.collect(mktReports.get(0)));
 		modelMap.put("tminus1", ConcurrentUtils.collect(mktReports.get(1)));
 		modelMap.put("tminus7", ConcurrentUtils.collect(mktReports.get(2)));
 		modelMap.put("tminus30", ConcurrentUtils.collect(mktReports.get(3)));
 		modelMap.put("tminus60", ConcurrentUtils.collect(mktReports.get(4)));
-		modelMap.put("holdingMap", ConcurrentUtils.collect(holdingStocksFuture));
+		modelMap.put("holdingMap", holdingStocks.stream().collect(Collectors.toMap(x->x, x->quotes.get(x.getCode()))));
 		modelMap.put("hsce", indexes.stream().filter(a -> IndexCode.HSCEI.name.equals(a.getStockCode())).findFirst().get());
 		
 		return page("/list");
@@ -162,6 +182,14 @@ public class QuoteController extends AbstractController {
 	@RequestMapping(method = RequestMethod.GET, value = "/liststocksperf")	
 	public @ResponseBody Map<String, Object> listStocksPerformance() {		
 		return stockPerformanceService.getStockPerformanceMap();
+	}
+	
+	private HoldingStock createAndSaveHoldingStocks(StockExecutionMessage message, BigDecimal hscei) {
+		HoldingStock s = new HoldingStock(message.getCode(), message.getSide(), message.getQuantity(), 
+				new BigDecimal(message.getPrice() * message.getQuantity()), message.getDate(), hscei);
+		
+		holdingStockRepo.save(s);
+		return s;
 	}
 	
 	// A schedule job to refresh context
