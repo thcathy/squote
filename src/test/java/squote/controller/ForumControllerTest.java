@@ -3,6 +3,7 @@ package squote.controller;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 import javax.annotation.Resource;
 
@@ -32,9 +33,12 @@ public class ForumControllerTest {
 		List<ForumThread> contents = (List<ForumThread>) modelMap.get("contents");
 		
 		assertTrue("Number of thread return should > 40", contents.size() > 40);
-		for (ForumThread t : contents) {
-			assert StringUtils.isNotBlank(t.getUrl());			
-			assert StringUtils.isNotBlank(t.getTitle());
-		}
+		boolean descSortedByDate = IntStream.range(0, contents.size()-1)
+									.allMatch(i -> contents.get(i).getCreatedDate().getTime() >= contents.get(i+1).getCreatedDate().getTime());
+		assertTrue("Contents are decending ordered by created date", descSortedByDate);
+		contents.forEach(x -> {
+			assert StringUtils.isNotBlank(x.getUrl());			
+			assert StringUtils.isNotBlank(x.getTitle());
+		});
 	}
 }
