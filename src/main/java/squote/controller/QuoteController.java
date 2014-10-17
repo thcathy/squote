@@ -140,10 +140,10 @@ public class QuoteController extends AbstractController {
 		holdingStocks.forEach(x->codeSet.add(x.getCode()));
 		
 		// Submit web queries
+		Future<Optional<List<StockQuote>>> indexeFutures = webQueryService.submit(new EtnetIndexQuoteParser());
 		List<Future<StockQuote>> stockQuoteFutures = codeSet.stream()
 														.map( x -> webQueryService.submit(new AastockStockQuoteParser(x)) )
 														.collect(Collectors.toList());		
-		Future<Optional<List<StockQuote>>> indexeFutures = webQueryService.submit(new EtnetIndexQuoteParser());
 		List<Future<MarketDailyReport>> mktReports = mktReportService.getMarketDailyReport(
 				pre(1, Calendar.DATE),
 				pre(2, Calendar.DATE),
