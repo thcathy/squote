@@ -30,11 +30,13 @@ public class EtnetIndexQuoteParser extends WebParser<List<StockQuote>> {
 	@Override
 	public Optional<List<StockQuote>> parse() {
 		List<StockQuote> indexes = new ArrayList<StockQuote>();
-		
-		Document doc = new HttpClient("UTF-8").getDocument("http://www.etnet.com.hk/www/eng/stocks/indexes_main.php");
-		indexes.add(retrieveIndexQuote(doc.select("a[href=indexes_detail.php?subtype=HSI]").first()));
-		indexes.add(retrieveIndexQuote(doc.select("a[href=indexes_detail.php?subtype=CEI]").first()));			
-						
+		try {
+			Document doc = new HttpClient("UTF-8").getDocument("http://www.etnet.com.hk/www/eng/stocks/indexes_main.php");
+			indexes.add(retrieveIndexQuote(doc.select("a[href=indexes_detail.php?subtype=HSI]").first()));
+			indexes.add(retrieveIndexQuote(doc.select("a[href=indexes_detail.php?subtype=CEI]").first()));			
+		} catch (Exception e) {
+			log.warn("Cannot get index quote from Etnet", e);
+		}						
 		return Optional.of(indexes);
 	}	
 
