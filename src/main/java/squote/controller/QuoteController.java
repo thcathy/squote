@@ -10,6 +10,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -50,7 +52,6 @@ import squote.web.parser.HSINetParser;
 import thc.util.ConcurrentUtils;
 import thc.util.HttpClient;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 
 @RequestMapping("/quote")
@@ -116,7 +117,7 @@ public class QuoteController extends AbstractController {
 			} else {				
 				input = webQueryService.parse(new HSINetParser(HSCEI, date)).get().getPrice();
 			}
-		} catch (IllegalStateException e) {
+		} catch (IllegalStateException | NoSuchElementException e) {
 			log.debug("Cannot enrich hscei: {}", e.getMessage());
 		}
 		

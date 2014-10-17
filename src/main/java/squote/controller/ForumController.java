@@ -1,7 +1,6 @@
 package squote.controller;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import squote.domain.ForumThread;
 import squote.service.CentralWebQueryService;
 import squote.web.parser.ForumThreadParser;
-import thc.util.BeanUtils;
 
 @RequestMapping("/forum")
 @Controller

@@ -6,13 +6,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
-import java.util.concurrent.Future;
+import java.util.Optional;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +26,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
 
 import squote.SpringQuoteWebApplication;
 import squote.SquoteConstants;
@@ -40,8 +37,6 @@ import squote.service.CentralWebQueryService;
 import squote.web.parser.EtnetIndexQuoteParser;
 import squote.web.parser.HSINetParser;
 import thc.util.DateUtils;
-
-import com.google.common.base.Optional;
  
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -120,7 +115,7 @@ public class CreateHoldingStockTest {
 	@Test
 	public void failCreateHoldingStockDueToCannotParseHscei() throws Exception {		
 		// Given
-		Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.absent());        
+		Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.empty());        
 		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
 		scbSellMsg += "已於4.8900元成功執行\n";
 		scbSellMsg += "20180610000013235"; 

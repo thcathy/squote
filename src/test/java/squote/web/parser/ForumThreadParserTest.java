@@ -40,11 +40,11 @@ public class ForumThreadParserTest {
 		assertTrue("Return list should not empty", result.size() > 0);
 				
 		log.info("First ForumThread: {}", result.get(0).toString());
-		for (ForumThread f : result) {			
+		result.forEach(f->{
 			assertEquals("Source should be same as the one put in constructor", uwantsSource, f.getSource());			
 			assertTrue("URL should start with correct prefix", f.getUrl().startsWith(urlPrefix));
 			assert StringUtils.isNotBlank(f.getTitle());
-		}
+		});		
 	}
 		
 }

@@ -1,15 +1,19 @@
 package squote.service;
 
-import static squote.web.parser.HSINetParser.Date;
-import static squote.web.parser.HSINetParser.Index;
 import static squote.SquoteConstants.IndexCode.HSCEI;
 import static squote.SquoteConstants.IndexCode.HSI;
+import static squote.web.parser.HSINetParser.Date;
+import static squote.web.parser.HSINetParser.Index;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +25,6 @@ import squote.domain.repository.MarketDailyReportRepository;
 import squote.web.parser.HKMAMonetaryBaseParser;
 import squote.web.parser.HSINetParser;
 import thc.util.DateUtils;
-
-import com.google.common.base.Optional;
 
 public class MarketReportService {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -44,43 +46,37 @@ public class MarketReportService {
 	}
 				
 	public MarketDailyReport getPreviousMarketDailyReport(Calendar calendar) {
-		calendar.add(Calendar.DATE, 1); 
-		for (int i=0; i < 10; i++)		
-		{
-			calendar.add(Calendar.DATE, -1); 
-			if (DateUtils.isWeekEnd(calendar)) continue;
-				
-			// if db contain, return			
-			MarketDailyReport dbReport = mktDailyRptRepo.findByDate(MarketDailyReport.formatDate(calendar.getTime()));
-			if (dbReport != null) return dbReport;
-						
-			Optional<StockQuote> hsi = new HSINetParser(Index(HSI), Date(calendar.getTime())).parse();
-			if (!hsi.isPresent()) continue;
-			
-			Optional<MonetaryBase> monetaryBase = HKMAMonetaryBaseParser.retrieveMonetaryBase(calendar.getTime());
-			if (monetaryBase.isPresent()) {
-				MarketDailyReport report = new MarketDailyReport(calendar.getTime(), 
-						monetaryBase.get(), 
-						hsi.get(), new HSINetParser(Index(HSCEI), Date(calendar.getTime())).parse().get());
-				mktDailyRptRepo.save(report);
-				return report;
-			}			 
-		}		
-		return new MarketDailyReport(calendar.getTime());
+		java.util.Optional<MarketDailyReport> reportOption = IntStream.range(0, 10).mapToObj(i-> {					
+					calendar.add(Calendar.DATE, -1);
+					if (DateUtils.isWeekEnd(calendar)) return null;
+					
+					// if db contain, return			
+					MarketDailyReport report = mktDailyRptRepo.findByDate(MarketDailyReport.formatDate(calendar.getTime()));
+					if (report != null) return report;
+								
+					Optional<StockQuote> hsi = new HSINetParser(Index(HSI), Date(calendar.getTime())).parse();
+					if (!hsi.isPresent()) return null;
+					
+					java.util.Optional<MonetaryBase> monetaryBase = HKMAMonetaryBaseParser.retrieveMonetaryBase(calendar.getTime());
+					if (monetaryBase.isPresent()) {
+						report = new MarketDailyReport(calendar.getTime(), 
+								monetaryBase.get(), 
+								hsi.get(), new HSINetParser(Index(HSCEI), Date(calendar.getTime())).parse().get());
+						mktDailyRptRepo.save(report);
+						return report;
+					}					
+					return report;
+				}).filter(x->x!=null).findFirst();
+		
+		return reportOption.orElse(new MarketDailyReport(calendar.getTime()));		
 	}
 	
 	public MarketDailyReport getTodayMarketDailyReport() { return getPreviousMarketDailyReport(Calendar.getInstance()); }
 	
 	public List<Future<MarketDailyReport>> getMarketDailyReport(Calendar... from) {
-		List<Future<MarketDailyReport>> futures = new ArrayList<Future<MarketDailyReport>>();
-		for (final Calendar c : from) {
-			futures.add(queryService.submit(new Callable<MarketDailyReport>() {
-				public MarketDailyReport call() throws Exception {
-					return getPreviousMarketDailyReport(c);
-				}				
-			}));
-		}
-		return futures;
+		return Arrays.stream(from).map(
+				c-> queryService.submit(()->getPreviousMarketDailyReport(c)))
+				.collect(Collectors.toList());		
 	}
 }
     

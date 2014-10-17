@@ -3,6 +3,7 @@ package squote.web.parser;
 import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.util.Calendar;
+import java.util.Optional;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -18,7 +19,7 @@ public class HistoryQuoteParser {
 	
 	private static String YAHOO_HISTORY_QUOTE_URL = "http://hk.finance.yahoo.com/q/hp?s={0}&a={2,number,##}&b={1,date,dd}&c={1,date,yyyy}&d={4,number,##}&e={3,date,dd}&f={3,date,yyyy}&g=d";
 
-	public BigDecimal getPreviousYearQuote(String stockNumber, int previousYear) {
+	public Optional<BigDecimal> getPreviousYearQuote(String stockNumber, int previousYear) {
 		Calendar fromDate = Calendar.getInstance();
 		Calendar toDate = Calendar.getInstance();
 		
@@ -34,18 +35,17 @@ public class HistoryQuoteParser {
 		return getQuoteAtDate(stockNumber, fromDate, toDate);
 	}
 	
-	public BigDecimal getQuoteAtDate(String stock, Calendar fromDate, Calendar toDate) {
-		BigDecimal value = null;
+	public Optional<BigDecimal> getQuoteAtDate(String stock, Calendar fromDate, Calendar toDate) {		
 		String url = getQuoteURL(stock,fromDate,toDate);
 		try
 		{			
 			Document doc = new HttpClient("utf-8").getDocument(url);
 			Elements tds = doc.select("td[class^=yfnc_tabledata1]");
-			value = new BigDecimal(NumberUtils.extractDouble(tds.get(tds.size()-2).html()));
+			return Optional.of( new BigDecimal(NumberUtils.extractDouble(tds.get(tds.size()-2).html())));
 		} catch (Exception e) {			
-			log.error("Fail to get quote at date from url:" + url, e);
+			log.warn("Fail to get quote at date from url: {}, Reason {}", url, e);
+			return Optional.empty();
 		}
-		return value;
 	}
 	
 	private String getQuoteURL(String stock, Calendar fromDate, Calendar toDate) {

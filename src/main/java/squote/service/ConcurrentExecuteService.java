@@ -31,7 +31,7 @@ public class ConcurrentExecuteService {
 		log.debug("Execute {} runnables",jobs.size());
 		CountDownLatch latch = new CountDownLatch(jobs.size());
 		try {
-			for (Runnable j : jobs) threadPool.submit(new BatchRunner(j, latch));
+			jobs.forEach( j->threadPool.submit(new BatchRunner(j, latch)) );
 			latch.await();
 		} catch (InterruptedException e) {
 			log.warn("Interrupted when batch execute jobs", e);

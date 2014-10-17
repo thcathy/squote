@@ -3,9 +3,9 @@ package squote.web.parser;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Optional;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -18,8 +18,6 @@ import thc.util.DateUtils;
 import thc.util.HttpClient;
 import thc.util.NumberUtils;
 
-import com.google.common.base.Optional;
- 
 public class HSINetParser extends WebParser<StockQuote> {	
 	private static Logger log = LoggerFactory.getLogger(HSINetParser.class);
 	
@@ -41,7 +39,7 @@ public class HSINetParser extends WebParser<StockQuote> {
 	
 	public Optional<StockQuote> parse() {		
 		if (DateUtils.isOverMonth(date, new Date(), 2)) {
-			return Optional.absent();
+			return Optional.empty();
 		}
 		
 		SimpleDateFormat format = new SimpleDateFormat("dMMMyy", Locale.US);
@@ -60,7 +58,7 @@ public class HSINetParser extends WebParser<StockQuote> {
 			return Optional.of(quote);
 		} catch (Exception e) {
 			log.warn("Fail to retrieveDailyReportFromHSINet: reason: {} url: {}", e.getMessage(),url);
-			return Optional.absent();
+			return Optional.empty();
 		}
 	}
 }

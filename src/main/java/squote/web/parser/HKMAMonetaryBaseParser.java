@@ -3,6 +3,7 @@ package squote.web.parser;
 import java.text.MessageFormat;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import org.jsoup.nodes.Document;
@@ -14,9 +15,7 @@ import squote.domain.MonetaryBase;
 import thc.util.HttpClient;
 import thc.util.NumberUtils;
 
-import com.google.common.base.Optional;
-
-public class HKMAMonetaryBaseParser implements Callable<Optional<MonetaryBase>> {
+public class HKMAMonetaryBaseParser implements Callable<java.util.Optional<MonetaryBase>> {
 	private static Logger log = LoggerFactory.getLogger(HKMAMonetaryBaseParser.class);
 
 	static String DailyMonetaryBaseURL= "http://www.hkma.gov.hk/eng/market-data-and-statistics/monetary-statistics/monetary-base/{0,date,yyyy}/{0,date,yyyyMMdd}-2.shtml";
@@ -34,7 +33,7 @@ public class HKMAMonetaryBaseParser implements Callable<Optional<MonetaryBase>> 
 		throw new RuntimeException("Cannot find number:" + title);
 	}
 	
-	public static Optional<MonetaryBase> retrieveMonetaryBase(Date date) {
+	public static java.util.Optional<MonetaryBase> retrieveMonetaryBase(Date date) {
 		String url = MessageFormat.format(DailyMonetaryBaseURL, date);
 		try {
 			Document doc = new HttpClient().getDocument(url);
@@ -47,7 +46,7 @@ public class HKMAMonetaryBaseParser implements Callable<Optional<MonetaryBase>> 
 			);			
 		} catch (Exception e) {
 			log.info("Fail to retrieveDailyMonetaryBaseFromURL:" + url,e);
-			return Optional.absent();
+			return Optional.empty();
 		}		
 	}
 
