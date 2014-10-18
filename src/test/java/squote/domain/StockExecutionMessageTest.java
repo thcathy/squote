@@ -4,12 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.text.SimpleDateFormat;
+import java.util.Optional;
 
 import org.junit.Test;
 
 import squote.SquoteConstants;
-
-import com.google.common.base.Optional;
 
 public class StockExecutionMessageTest {
 	

@@ -1,14 +1,13 @@
 package squote.service;
  
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import squote.web.parser.WebParser;
-
-import com.google.common.base.Optional;
 
 public class CentralWebQueryService extends ConcurrentExecuteService {
 	protected final Logger log = LoggerFactory.getLogger(getClass());

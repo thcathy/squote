@@ -10,7 +10,7 @@ import org.junit.Test;
 public class ConcurrentUtilsTest {
 	@Test	
 	public void testConstructorIsPrivate() {
-		final Constructor<?>[] constructors = ConcurrentUtils.class.getDeclaredConstructors();
+		final Constructor<?>[] constructors = ConcurrentUtils.class.getDeclaredConstructors();		
 	    for (Constructor<?> constructor : constructors) {
 	        assertTrue("All constructor should be private", Modifier.isPrivate(constructor.getModifiers()));
 	    }

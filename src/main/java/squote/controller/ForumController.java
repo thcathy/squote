@@ -1,8 +1,8 @@
 package squote.controller;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 
@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import squote.domain.ForumThread;
 import squote.service.CentralWebQueryService;
 import squote.web.parser.ForumThreadParser;
-import thc.util.BeanUtils;
 
 @RequestMapping("/forum")
 @Controller
@@ -44,15 +43,11 @@ public class ForumController extends AbstractController {
 
     	List<ForumThreadParser> parsers = getParserByType(ContentType.valueOf(type.toUpperCase()), page);
     	List<List<ForumThread>> resultList = executeService.executeCallables(parsers);
-    	
-    	List<ForumThread> contents = new ArrayList<ForumThread>();
-    	for (List<ForumThread> list : resultList) contents.addAll(list);
-    	Collections.sort(contents, BeanUtils.getCompare("getCreatedDate"));
-		Collections.reverse(contents);
-
-		// set response model
-		modelMap.put("contents", contents);
-    	
+    	List<ForumThread> contents = resultList.stream().flatMap(x->x.stream())
+        		.sorted((a,b)->b.getCreatedDate().compareTo(a.getCreatedDate()))
+        		.collect(Collectors.toList());
+		
+		modelMap.put("contents", contents);    	
     	return page("/list");
     }
         

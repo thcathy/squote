@@ -1,7 +1,9 @@
 package squote.domain;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Optional;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -9,8 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import squote.SquoteConstants.Side;
-
-import com.google.common.base.Optional;
 
 public class StockExecutionMessage {
 	private static Logger log = LoggerFactory.getLogger(StockExecutionMessage.class);
@@ -26,14 +26,10 @@ public class StockExecutionMessage {
     	if (message.startsWith("渣打") && message.contains("成功執行")) {
     		int startPos, endPos;
     		StockExecutionMessage seMsg = new StockExecutionMessage();
-    		
+    	
     		// parse side
-    		for (Side enumSide : Side.values()) {
-    			if (message.contains(enumSide.chinese)) {
-    				seMsg.side = enumSide;
-    				break;
-    			}
-    		}
+    		seMsg.side = Arrays.stream(Side.values()).filter(x->message.contains(x.chinese)).findFirst().get();
+    		
     		// parse qty
     		startPos = message.indexOf(seMsg.side.chinese) + 2;
     		endPos = message.indexOf("股");
@@ -56,14 +52,13 @@ public class StockExecutionMessage {
     		try {
 				seMsg.date = new SimpleDateFormat("yyyyMMdd").parse(seMsg.executionId.substring(0, 8));
 			} catch (ParseException e) {
-				log.warn("Cannot parse execution date", e);
-				return Optional.absent();
+				log.warn("Cannot parse execution date", e);				
 			}
     		
     		return Optional.of(seMsg);
     	}
     	
-    	return Optional.absent();
+    	return Optional.empty();
     }
     
 

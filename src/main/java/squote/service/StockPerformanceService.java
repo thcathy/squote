@@ -1,22 +1,20 @@
 package squote.service;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import squote.domain.StockQuote;
 import squote.web.parser.AastockStockQuoteParser;
 import squote.web.parser.HistoryQuoteParser;
 import squote.web.parser.IndexConstituentParser;
-import thc.util.BeanUtils;
 
 public class StockPerformanceService {
 	private static int expireAfterHour = 1;
@@ -48,29 +46,28 @@ public class StockPerformanceService {
 		return getDetailStockQuoteWith3PreviousYearPrice("2828");
 	}
 
-	public List<StockQuote> getIndexContituents() {		
-		Set<String> stockCodes = new HashSet<String>();
+	public List<StockQuote> getIndexContituents() {
 		IndexConstituentParser codesParser = new IndexConstituentParser();
-		stockCodes.addAll(codesParser.getHSIConstituents());
-		stockCodes.addAll(codesParser.getHCCIConstituents());
-		stockCodes.addAll(codesParser.getHCEIConstituents());
-		stockCodes.addAll(codesParser.getMSCIChinaConstituents());
+		List<GetDetailStockQuoteRunner> runners = Arrays.asList(
+				codesParser.getHSIConstituents()
+				,codesParser.getHCCIConstituents()
+				,codesParser.getHCEIConstituents()
+				,codesParser.getMSCIChinaConstituents())
+				.stream()
+				.flatMap(x->x.stream())
+				.map(x->new GetDetailStockQuoteRunner(x)).collect(Collectors.toList());
 				
-		List<GetDetailStockQuoteRunner> runners = new ArrayList<GetDetailStockQuoteRunner>();
-		for (String code : stockCodes) runners.add(new GetDetailStockQuoteRunner(code));
 		List<StockQuote> quotes = queryService.executeCallables(runners);
 		
-		Collections.sort(quotes, BeanUtils.getCompare("getLastYearPercentage"));		
+		Collections.sort(quotes, (x,y)->(int)(x.getLastYearPercentage()-y.getLastYearPercentage()));		
 		return quotes;
 	}
 
 	public StockQuote getDetailStockQuoteWith3PreviousYearPrice(String code) {		
-		StockQuote quote = new AastockStockQuoteParser(code).getStockQuote();
-		HistoryQuoteParser historyParser = new HistoryQuoteParser();
-		for (int i = 1; i <= 3; i++) {
-			BigDecimal price = historyParser.getPreviousYearQuote(code, i);
-			if (price != null) quote.setPreviousPrice(i, price.doubleValue());
-		}
+		StockQuote quote = new AastockStockQuoteParser(code).getStockQuote();		
+		IntStream.rangeClosed(1, 3).forEach(i->
+			new HistoryQuoteParser().getPreviousYearQuote(code, i).ifPresent(p->quote.setPreviousPrice(i, p.doubleValue()))
+		);		
 		return quote;
 	}
 		

@@ -8,17 +8,15 @@ import static squote.web.parser.HSINetParser.Index;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Optional;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Test;
 
 import squote.SquoteConstants;
-import squote.SquoteConstants.IndexCode;
 import squote.domain.MonetaryBase;
 import squote.domain.StockQuote;
-
-import com.google.common.base.Optional;
 
 public class MarketDailyReportParsersTest {	
 	

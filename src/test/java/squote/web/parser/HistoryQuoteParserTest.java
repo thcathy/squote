@@ -12,7 +12,7 @@ public class HistoryQuoteParserTest {
 
 	@Test
     public void testGetPreviousYearQuote() {
-		BigDecimal result = parser.getPreviousYearQuote("1", 1);		
+		BigDecimal result = parser.getPreviousYearQuote("1", 1).get();		
 		assertTrue(result.doubleValue() > 50);
 	}
 	
@@ -20,10 +20,10 @@ public class HistoryQuoteParserTest {
 	public void testGetPreviousIndexOnExactDate() {
 		Calendar c = Calendar.getInstance();
 		c.set(2013, 5, 10);	// 10 Jun 2013
-		BigDecimal result = parser.getQuoteAtDate("%5EHSI", c, c);		
+		BigDecimal result = parser.getQuoteAtDate("%5EHSI", c, c).get();		
 		assertTrue(result.doubleValue() == 21615.09);
 		
-		result = parser.getQuoteAtDate("%5EHSCE", c, c);
+		result = parser.getQuoteAtDate("%5EHSCE", c, c).get();
 		assertTrue(result.doubleValue() == 10126.97);
 	}
 }

@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Optional;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -37,8 +38,6 @@ import squote.service.CentralWebQueryService;
 import squote.web.parser.EtnetIndexQuoteParser;
 import squote.web.parser.HSINetParser;
 import thc.util.DateUtils;
-
-import com.google.common.base.Optional;
  
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -118,7 +117,7 @@ public class CreateHoldingStockTest {
 	@Test
 	public void failCreateHoldingStockDueToCannotParseHscei() throws Exception {		
 		// Given
-		Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.absent());        
+		Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.empty());        
 		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
 		scbSellMsg += "已於4.8900元成功執行\n";
 		scbSellMsg += "20180610000013235"; 
