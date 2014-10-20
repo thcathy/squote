@@ -164,7 +164,11 @@ public class QuoteController extends AbstractController {
         }).collect(Collectors.toMap(StockQuote::getStockCode, x->x));
 			
 		modelMap.put("codeList", codes);
-		modelMap.put("quotes", quotes.values().stream().filter(x->codes.contains(x.getStockCode())).iterator());
+		modelMap.put("quotes", 
+				Arrays.stream(codeList.split(CODE_SEPARATOR))
+					.map(c->quotes.get(c))
+					.iterator()				
+				);
 		modelMap.put("indexes", indexes);
 		modelMap.put("tbase", ConcurrentUtils.collect(mktReports.get(0)));
 		modelMap.put("tminus1", ConcurrentUtils.collect(mktReports.get(1)));

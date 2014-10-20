@@ -55,7 +55,7 @@ public class QuoteControllerIntegrationTest {
 	@Test
 	public void listQuoteByReqParam() throws Exception {
 		// Given
-		final String inputCodeList = "2828,2800";
+		final String inputCodeList = "753,2828,2800";
 		        
 		MvcResult mvcResult = mockMvc.perform(get("/quote/list?codeList=" + inputCodeList).characterEncoding("utf-8"))
 		.andExpect(status().isOk())
@@ -76,9 +76,9 @@ public class QuoteControllerIntegrationTest {
 		StockQuote quote1 = quotes.next();
 		StockQuote quote2 = quotes.next();
 		assertTrue(!"NA".equals(quote1.getPrice()));
-		assertTrue(StringUtils.isNotBlank(quote1.getStockCode()));
+		assertEquals("753",quote1.getStockCode());
 		assertTrue(!"NA".equals(quote2.getPrice()));
-		assertTrue(StringUtils.isNotBlank(quote2.getStockCode()));
+		assertEquals("2828",quote2.getStockCode());
 				
 		assertEquals(IndexCode.HSCEI.name, hscei.getStockCode());		
 	}
