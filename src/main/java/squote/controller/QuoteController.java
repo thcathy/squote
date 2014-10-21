@@ -125,19 +125,19 @@ public class QuoteController extends AbstractController {
 	}
 	
 	@RequestMapping(value="/list", method = RequestMethod.GET)
-	public String list(@RequestParam(value="codeList", required=false, defaultValue="") String codeList,
+	public String list(@RequestParam(value="codeList", required=false, defaultValue="") String reqCodeList,
 			@RequestParam(value="action", required=false, defaultValue="") String action,
 			@CookieValue(value=CODELIST_COOKIE_KEY, required=false) String cookieCodeList,
 			HttpServletRequest request, HttpServletResponse response, ModelMap modelMap) {
 		
-		log.debug("list: reqCodeList [{}], action [{}]", codeList, action);
+		log.debug("list: reqCodeList [{}], action [{}]", reqCodeList, action);
 			
-		String codes = retrieveCodeList(codeList, action, cookieCodeList);	
-		saveQueryIfNeeded(codeList, action);		
-		updateCookie(codeList, response);
+		String codes = retrieveCodeList(reqCodeList, action, cookieCodeList);	
+		saveQueryIfNeeded(codes, action);		
+		updateCookie(codes, response);
 			
 		List<HoldingStock> holdingStocks = Lists.newArrayList(holdingStockRepo.findAll(new Sort("date")));
-		Set<String> codeSet = new HashSet(Arrays.asList(codeList.split(CODE_SEPARATOR)));
+		Set<String> codeSet = new HashSet(Arrays.asList(codes.split(CODE_SEPARATOR)));
 		holdingStocks.forEach(x->codeSet.add(x.getCode()));
 		
 		// Submit web queries
@@ -165,7 +165,7 @@ public class QuoteController extends AbstractController {
 			
 		modelMap.put("codeList", codes);
 		modelMap.put("quotes", 
-				Arrays.stream(codeList.split(CODE_SEPARATOR))
+				Arrays.stream(reqCodeList.split(CODE_SEPARATOR))
 					.map(c->quotes.get(c))
 					.iterator()				
 				);
