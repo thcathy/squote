@@ -165,7 +165,7 @@ public class QuoteController extends AbstractController {
 			
 		modelMap.put("codeList", codes);
 		modelMap.put("quotes", 
-				Arrays.stream(reqCodeList.split(CODE_SEPARATOR))
+				Arrays.stream(codes.split(CODE_SEPARATOR))
 					.map(c->quotes.get(c))
 					.iterator()				
 				);
