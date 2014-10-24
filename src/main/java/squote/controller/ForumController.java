@@ -1,7 +1,10 @@
 package squote.controller;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
@@ -23,7 +26,27 @@ import squote.web.parser.ForumThreadParser;
 public class ForumController extends AbstractController {
 	private static Logger log = LoggerFactory.getLogger(ForumController.class);
 	
-	enum ContentType { MUSIC, MOVIE }
+	enum ContentType {
+		MUSIC(new String[]{
+				"http://www.uwants.com/forumdisplay.php?fid=472&page=%d",
+				"http://www.uwants.com/forumdisplay.php?fid=471&page=%d",
+				"http://www.discuss.com.hk/forumdisplay.php?fid=101&page=%d",
+				"http://www.tvboxnow.com/forum-50-%d.html",
+				"http://www.tvboxnow.com/forum-153-%d.html"
+		}), 
+		MOVIE(new String[]{
+				"http://www.uwants.com/forumdisplay.php?fid=231&page=%d",
+				"http://www.tvboxnow.com/forum-231-%d.html",
+				"http://www.tvboxnow.com/forum-232-%d.html",
+				"http://www.tvboxnow.com/forum-233-%d.html"
+		});
+		
+		final public List<String> urls;
+		
+		ContentType(String[] urls) { 
+			this.urls = Collections.unmodifiableList(Arrays.asList(urls));
+		}
+	}
 	
 	@Resource private CentralWebQueryService executeService;
 	
@@ -51,25 +74,9 @@ public class ForumController extends AbstractController {
     	return page("/list");
     }
         
-    private List<ForumThreadParser> getParserByType(ContentType type, int page) {
-    	List<ForumThreadParser> parsers = new ArrayList<ForumThreadParser>();
-    	
-    	switch (type) {
-    		case MOVIE: 
-	    		parsers.add(ForumThreadParser.buildParser("http://www.uwants.com/forumdisplay.php?fid=231&page=%d",page));		
-	    		parsers.add(ForumThreadParser.buildParser("http://www.tvboxnow.com/forum-231-%d.html",page));
-	    		parsers.add(ForumThreadParser.buildParser("http://www.tvboxnow.com/forum-232-%d.html",page));
-	    		parsers.add(ForumThreadParser.buildParser("http://www.tvboxnow.com/forum-233-%d.html",page));
-	    		break;
-    		case MUSIC:
-    			parsers.add(ForumThreadParser.buildParser("http://www.uwants.com/forumdisplay.php?fid=472&page=%d",page));
-    			parsers.add(ForumThreadParser.buildParser("http://www.uwants.com/forumdisplay.php?fid=471&page=%d",page));
-    			parsers.add(ForumThreadParser.buildParser("http://www.discuss.com.hk/forumdisplay.php?fid=101&page=%d",page));
-    			parsers.add(ForumThreadParser.buildParser("http://www.tvboxnow.com/forum-50-%d.html",page));
-    			parsers.add(ForumThreadParser.buildParser("http://www.tvboxnow.com/forum-153-%d.html",page));
-				break;		    	
-    	}
-    	
-    	return parsers;
+    private List<ForumThreadParser> getParserByType(ContentType type, int page) {    	
+    	return type.urls.stream()
+    			.map(url -> ForumThreadParser.buildParser(url,page))
+    			.collect(Collectors.toList());
     }
 }

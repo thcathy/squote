@@ -31,7 +31,7 @@ public abstract class ForumThreadParser implements Callable<List<ForumThread>> {
 	protected final Optional<String> loginUrl;	
 			
 	// Constructor
-	public ForumThreadParser(String url, String source, String encoding, Optional<String> loginUrl) {
+	protected ForumThreadParser(String url, String source, String encoding, Optional<String> loginUrl) {
 		this.url = url;
 		this.source = source;
 		this.loginUrl = loginUrl;
@@ -49,7 +49,7 @@ public abstract class ForumThreadParser implements Callable<List<ForumThread>> {
 		else if (url.contains("www.tvboxnow.com"))
 			return new TvboxnowThreadRetriever(String.format(url,page), "Tvboxnow");			
 		else
-			throw new IllegalArgumentException("No parser for url: " + url);
+			throw new IllegalArgumentException("No parser for url: " + url);				
 	}
 		
 	@Override
