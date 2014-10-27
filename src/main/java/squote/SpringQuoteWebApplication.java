@@ -13,6 +13,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.filter.CharacterEncodingFilter;
@@ -29,68 +31,72 @@ import squote.service.StockPerformanceService;
 @ComponentScan
 @EnableScheduling
 public class SpringQuoteWebApplication extends SpringBootServletInitializer {
-	
-	@Configuration    
-    @PropertySource("classpath:application.properties")
-    static class Default {}
 
-    @Configuration
-    @Profile("dev")
-    @PropertySource({"classpath:application.properties", "classpath:application-dev.properties"})
-    static class Dev {}
-	
+	@Configuration
+	@PropertySource("classpath:application.properties")
+	static class Default {}
+
+	@Configuration
+	@Profile("dev")
+	@PropertySource({"classpath:application.properties", "classpath:application-dev.properties"})
+	static class Dev {}
+
 	// application properties
-	@Value("${checkweb.url.list}") private String checkWebUrlList;	
-	@Value("${adminstrator.email}") private String adminEmail;	
-	@Value("${application.email}") private String appEmail;	
-	@Value("${smtp.username}") private String smtpUsername;
-	@Value("${smtp.password}") private String smtpPassword;
-	@Value("${centralWebQuery.pool.size}") protected int poolSize;
-	
+	@Value("${checkweb.url.list}")			private String checkWebUrlList;
+	@Value("${adminstrator.email}") 		private String adminEmail;
+	@Value("${application.email}")			private String appEmail;
+	@Value("${smtp.username}")				private String smtpUsername;
+	@Value("${smtp.password}")				private String smtpPassword;
+	@Value("${centralWebQuery.pool.size}")	private int poolSize;
+
 	// repository interface
-	@Autowired private HoldingStockRepository holdingStockRepo;
-	@Autowired private MarketDailyReportRepository marketDailyReportRepo;
-	
+	@Autowired
+	private HoldingStockRepository holdingStockRepo;
+	@Autowired
+	private MarketDailyReportRepository marketDailyReportRepo;
+
 	// Serivce Beans
 	@Bean
 	public CentralWebQueryService centrolWebQueryService() {
 		return new CentralWebQueryService(poolSize);
 	}
-	
+
 	@Bean
 	public MarketReportService marketReportService() {
-		return new MarketReportService(marketDailyReportRepo, centrolWebQueryService());
+		return new MarketReportService(marketDailyReportRepo,
+				centrolWebQueryService());
 	}
-	
+
 	@Bean
 	public StockPerformanceService stockPerformanceService() {
 		return new StockPerformanceService(centrolWebQueryService());
 	}
-	
+
 	@Bean
 	public CheckWebService checkWebService() {
-		return new CheckWebService(checkWebUrlList.split(","), adminEmail, appEmail, smtpUsername, smtpPassword);
+		return new CheckWebService(checkWebUrlList.split(","), adminEmail,
+				appEmail, smtpUsername, smtpPassword);
 	}
-
+		
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
 		return application.sources(SpringQuoteWebApplication.class);
-	}
-	
+	}	
+
 	// Schedule jobs
-	
+
 	@Scheduled(fixedDelay = 60000)
-    public void checkWebs() {
-        checkWebService().check();
-    }
-	
+	public void checkWebs() {
+		checkWebService().check();
+	}
+
 	@Bean
-    public Filter characterEncodingFilter() {
-        CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
-        characterEncodingFilter.setEncoding("UTF-8");
-        characterEncodingFilter.setForceEncoding(true);
-        return characterEncodingFilter;
-    }
+	public Filter characterEncodingFilter() {
+		CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
+		characterEncodingFilter.setEncoding("UTF-8");
+		characterEncodingFilter.setForceEncoding(true);
+		return characterEncodingFilter;
+	}
 
 	/**
 	 * Main function for the whole application

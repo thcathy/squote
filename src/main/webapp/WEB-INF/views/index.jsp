@@ -35,6 +35,6 @@
 			<td><a href="${pageContext.request.contextPath}/marketdailyreports">Market daily reports</a></td>
 		</tr>		
 	</table>
-	<h3>Last updated: ${properties['build.timestamp']}</h3>
+	<p>Last updated: ${build.timestamp}</p>
 </body>
 </html>
