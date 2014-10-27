@@ -90,7 +90,7 @@ public class CreateHoldingStockTest {
 	public void createHoldingStockSuccessfully() throws Exception {
 		// Given
 		StockQuote quote = new StockQuote("HSCEI");
-        quote.setPrice("10368.13");
+        quote.setPrice("10,368.13");
         Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.of(quote));        
 		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
 		scbSellMsg += "已於4.8900元成功執行\n";

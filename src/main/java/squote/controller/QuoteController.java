@@ -121,7 +121,7 @@ public class QuoteController extends AbstractController {
 			log.debug("Cannot enrich hscei: {}", e.getMessage());
 		}
 		
-		return input;
+		return input.replaceAll(",", "");
 	}
 	
 	@RequestMapping(value="/list", method = RequestMethod.GET)
