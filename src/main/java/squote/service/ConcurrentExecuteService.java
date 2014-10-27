@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ConcurrentExecuteService {
-	protected final Logger log = LoggerFactory.getLogger(getClass());
+	protected static Logger log = LoggerFactory.getLogger(ConcurrentExecuteService.class);
 	protected final ExecutorService threadPool;	
 	protected final int poolSize;
 	
@@ -62,7 +62,7 @@ public class ConcurrentExecuteService {
 		return threadPool.submit(job);
 	}
 		
-	class BatchRunner implements Runnable {
+	static class BatchRunner implements Runnable {
 		private final CountDownLatch latch;
 		private final Runnable job;
 		
