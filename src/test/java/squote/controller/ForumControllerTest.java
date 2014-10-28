@@ -25,13 +25,12 @@ import squote.domain.ForumThread;
 @ActiveProfiles("dev")
 public class ForumControllerTest {
 	@Resource ForumController controller;
-	
-	@SuppressWarnings("unchecked")
+		
 	@Test
 	public void getMusicForumThreads() {
 		ModelMap modelMap = new ModelMap();
 		controller.list("MUSIC", 1, modelMap);
-		List<ForumThread> contents = (List<ForumThread>) modelMap.get("contents");
+		@SuppressWarnings("unchecked") List<ForumThread> contents = (List<ForumThread>) modelMap.get("contents");
 		
 		assertTrue("Number of thread return should > 40", contents.size() > 40);
 		boolean descSortedByDate = IntStream.range(0, contents.size()-1)

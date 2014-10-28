@@ -50,8 +50,7 @@ public class QuoteControllerIntegrationTest {
 			.andExpect(content().contentType("application/xml"))
 			.andExpect(xpath("/stockQuote[price=NA]").doesNotExist());
 	}	
-		
-	@SuppressWarnings("unchecked")
+	
 	@Test
 	public void listQuoteByReqParam() throws Exception {
 		// Given
@@ -62,8 +61,8 @@ public class QuoteControllerIntegrationTest {
 		.andExpect(view().name("quote/list")).andReturn();
 		
 		ModelMap modelMap = mvcResult.getModelAndView().getModelMap();
-		List<StockQuote> indexes = (List<StockQuote>) modelMap.get("indexes");
-		Iterator<StockQuote> quotes = (Iterator<StockQuote>) modelMap.get("quotes");
+		@SuppressWarnings("unchecked") List<StockQuote> indexes = (List<StockQuote>) modelMap.get("indexes");
+		@SuppressWarnings("unchecked") Iterator<StockQuote> quotes = (Iterator<StockQuote>) modelMap.get("quotes");
 		StockQuote hscei = (StockQuote) modelMap.get("hsce");
 				
 		assertTrue(modelMap.get("codeList").equals(inputCodeList));

@@ -50,7 +50,7 @@ public class HoldingStockControllerTest {
 
 	}
 	
-	@SuppressWarnings("unchecked")
+	
 	@Test
 	public void objectsAreSortedByCreatedDate() throws Exception {
 		MvcResult mvcResult = mockMvc.perform(get("/holdingstock/").characterEncoding("utf-8"))
@@ -58,7 +58,7 @@ public class HoldingStockControllerTest {
 								.andExpect(view().name("holdingstock/list"))
 								.andReturn();
 		
-		List<HoldingStock> stocks = (List<HoldingStock>) mvcResult.getModelAndView().getModelMap().get("holdingStocks");
+		@SuppressWarnings("unchecked") List<HoldingStock> stocks = (List<HoldingStock>) mvcResult.getModelAndView().getModelMap().get("holdingStocks");
 		log.debug("Total stocks [{}]", stocks.size());
 		
 		boolean sortedByDate = IntStream.range(0, stocks.size()-1).allMatch(i -> stocks.get(i).getDate().getTime() <= stocks.get(i+1).getDate().getTime());
