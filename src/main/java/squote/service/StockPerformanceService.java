@@ -53,8 +53,9 @@ public class StockPerformanceService {
 				,codesParser.getHCCIConstituents()
 				,codesParser.getHCEIConstituents()
 				,codesParser.getMSCIChinaConstituents())
-				.stream()
+				.stream()				
 				.flatMap(x->x.stream())
+				.distinct()
 				.map(x->new GetDetailStockQuoteRunner(x)).collect(Collectors.toList());
 				
 		List<StockQuote> quotes = queryService.executeCallables(runners);
