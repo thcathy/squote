@@ -1,10 +1,8 @@
 package thc.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class NumberUtils {
-	private static Logger logger = LoggerFactory.getLogger(NumberUtils.class);
+	//private static Logger logger = LoggerFactory.getLogger(NumberUtils.class);
 	
 	// private constructor prevents instantiation
 	private NumberUtils() { throw new UnsupportedOperationException(); }

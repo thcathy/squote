@@ -78,7 +78,7 @@ public class CreateHoldingStockTest {
 		scbSellMsg += "已於4.8900元執行\n";
 		scbSellMsg += "20140610000013235"; 
 		
-		MvcResult mvcResult = mockMvc.perform(
+		mockMvc.perform(
 					post("/quote/createholdingstock").characterEncoding("utf-8")
 					.param("message", scbSellMsg)
 				).andExpect(status().isOk())
@@ -122,7 +122,7 @@ public class CreateHoldingStockTest {
 		scbSellMsg += "已於4.8900元成功執行\n";
 		scbSellMsg += "20180610000013235"; 
 		
-		MvcResult mvcResult = mockMvc.perform(
+		mockMvc.perform(
 					post("/quote/createholdingstock").characterEncoding("utf-8")
 					.param("message", scbSellMsg)
 				).andExpect(status().isOk())
@@ -132,7 +132,7 @@ public class CreateHoldingStockTest {
 	
 	@Test
 	public void emptyInputShouldGoToPageWithoutProcessing() throws Exception {
-		MvcResult mvcResult = mockMvc.perform(
+		mockMvc.perform(
 				post("/quote/createholdingstock").characterEncoding("utf-8")
 			).andExpect(status().isOk())
 			.andExpect(model().attributeDoesNotExist("resultMessage"))

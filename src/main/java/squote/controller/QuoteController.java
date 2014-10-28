@@ -137,7 +137,7 @@ public class QuoteController extends AbstractController {
 		updateCookie(codes, response);
 			
 		List<HoldingStock> holdingStocks = Lists.newArrayList(holdingStockRepo.findAll(new Sort("date")));
-		Set<String> codeSet = new HashSet(Arrays.asList(codes.split(CODE_SEPARATOR)));
+		Set<String> codeSet = new HashSet<String>(Arrays.asList(codes.split(CODE_SEPARATOR)));
 		holdingStocks.forEach(x->codeSet.add(x.getCode()));
 		
 		// Submit web queries

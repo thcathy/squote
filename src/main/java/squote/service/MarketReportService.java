@@ -5,12 +5,10 @@ import static squote.SquoteConstants.IndexCode.HSI;
 import static squote.web.parser.HSINetParser.Date;
 import static squote.web.parser.HSINetParser.Index;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;

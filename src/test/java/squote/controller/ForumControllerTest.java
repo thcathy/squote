@@ -26,6 +26,7 @@ import squote.domain.ForumThread;
 public class ForumControllerTest {
 	@Resource ForumController controller;
 	
+	@SuppressWarnings("unchecked")
 	@Test
 	public void getMusicForumThreads() {
 		ModelMap modelMap = new ModelMap();

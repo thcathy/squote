@@ -12,7 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,6 +51,7 @@ public class QuoteControllerIntegrationTest {
 			.andExpect(xpath("/stockQuote[price=NA]").doesNotExist());
 	}	
 		
+	@SuppressWarnings("unchecked")
 	@Test
 	public void listQuoteByReqParam() throws Exception {
 		// Given
@@ -80,6 +80,8 @@ public class QuoteControllerIntegrationTest {
 		assertTrue(!"NA".equals(quote2.getPrice()));
 		assertEquals("2828",quote2.getStockCode());
 				
-		assertEquals(IndexCode.HSCEI.name, hscei.getStockCode());		
+		assertEquals(IndexCode.HSCEI.name, hscei.getStockCode());
+		
+		assertEquals(2, indexes.size());
 	}
 }

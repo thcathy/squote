@@ -1,14 +1,12 @@
 package squote.controller.repository;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import java.util.List;
 import java.util.stream.IntStream;
-
-import javax.validation.constraints.AssertTrue;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +24,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import squote.SpringQuoteWebApplication;
-import squote.controller.QuoteController;
 import squote.domain.HoldingStock;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -53,6 +50,7 @@ public class HoldingStockControllerTest {
 
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Test
 	public void objectsAreSortedByCreatedDate() throws Exception {
 		MvcResult mvcResult = mockMvc.perform(get("/holdingstock/").characterEncoding("utf-8"))
