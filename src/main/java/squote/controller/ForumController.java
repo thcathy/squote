@@ -39,7 +39,7 @@ public class ForumController extends AbstractController {
 				"http://www.tvboxnow.com/forum-233-%d.html"
 		});
 		
-		final public List<String> urls;
+		final private List<String> urls;
 		
 		ContentType(String[] urls) { 
 			this.urls = Collections.unmodifiableList(Arrays.asList(urls));

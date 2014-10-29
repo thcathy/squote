@@ -13,9 +13,9 @@ public final class ConcurrentUtils {
 	// private constructor prevents instantiation
 	private ConcurrentUtils() { throw new UnsupportedOperationException(); }
 
-	public static <T> List<T> collects(List<Future<T>> futures) {
+	public static <T> List<T> collects(List<Future<? extends T>> futures) {
 		List<T> results = new ArrayList<T>();
-		for (Future<T> f : futures) {
+		for (Future<? extends T> f : futures) {
 			try {
 				results.add(f.get());
 			} catch (Exception e) {
@@ -25,7 +25,7 @@ public final class ConcurrentUtils {
 		return results;
 	}
 	
-	public static <T> T collect(Future<T> future) {
+	public static <T> T collect(Future<? extends T> future) {
 		try {
 			return future.get();
 		} catch (Exception e) {
