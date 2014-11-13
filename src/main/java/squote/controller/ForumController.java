@@ -3,6 +3,8 @@ package squote.controller;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
@@ -62,12 +64,15 @@ public class ForumController extends AbstractController {
     public String list(@PathVariable String type, @PathVariable int page, ModelMap modelMap) {
     	log.debug("list: type [{}], page [{}]", type, page);
 
-    	List<ForumThreadParser> parsers = getParserByType(ContentType.valueOf(type.toUpperCase()), page);
-    	List<List<ForumThread>> resultList = executeService.executeCallables(parsers);
-    	List<ForumThread> contents = resultList.stream().flatMap(x->x.stream())
-        		.sorted((a,b)->b.getCreatedDate().compareTo(a.getCreatedDate()))
-        		.collect(Collectors.toList());
-		
+    	List<ForumThreadParser> parsers = getParserByType(ContentType.valueOf(type.toUpperCase()), page);    	   	
+    	List<ForumThread> contents = Collections.emptyList();		
+		contents = parsers.parallelStream()
+			.map(p -> CompletableFuture.supplyAsync(() -> p.parse(), executeService.getExecutor()))
+			.map(f -> f.join())
+			.flatMap(x->x.stream())
+			.sorted((a,b)->b.getCreatedDate().compareTo(a.getCreatedDate()))
+			.collect(Collectors.toList());
+	
 		modelMap.put("contents", contents);    	
     	return page("/list");
     }

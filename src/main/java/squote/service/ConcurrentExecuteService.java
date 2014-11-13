@@ -3,7 +3,10 @@ package squote.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -13,14 +16,22 @@ import org.slf4j.LoggerFactory;
 
 public class ConcurrentExecuteService {
 	protected static Logger log = LoggerFactory.getLogger(ConcurrentExecuteService.class);
-	protected final ExecutorService threadPool;	
+	protected final ExecutorService executor;	
 	protected final int poolSize;
+	
+	public ExecutorService getExecutor() { return executor; }
 	
 	public ConcurrentExecuteService(int poolSize) {
 		super();
 		log.debug("Fixed thread pool size: {}", poolSize);
 		this.poolSize = poolSize;
-		threadPool = Executors.newFixedThreadPool(poolSize);
+		executor = Executors.newFixedThreadPool(poolSize);
+		
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+		    public void run() {
+		        executor.shutdownNow();		        
+		    }
+		});
 	}
 	
 	/**
@@ -31,7 +42,7 @@ public class ConcurrentExecuteService {
 		log.debug("Execute {} runnables",jobs.size());
 		CountDownLatch latch = new CountDownLatch(jobs.size());
 		try {
-			jobs.forEach( j->threadPool.submit(new BatchRunner(j, latch)) );
+			jobs.forEach( j->executor.submit(new BatchRunner(j, latch)) );
 			latch.await();
 		} catch (InterruptedException e) {
 			log.warn("Interrupted when batch execute jobs", e);
@@ -47,19 +58,24 @@ public class ConcurrentExecuteService {
 		List<Future<T>> futures = new ArrayList<Future<T>>();
 		List<T> results = new ArrayList<T>();
 		
-		for (Callable<T> j : jobs) futures.add(threadPool.submit(j));
-		for (Future<T> f : futures) {
+		CompletionService<T> service = new ExecutorCompletionService<T>(executor);
+		
+		for (Callable<T> j : jobs) service.submit(j);
+		
+		int jobSize = jobs.size();
+		for (int i=0; i < jobSize; i++) {
 			try {
-				results.add(f.get());
+				results.add(service.take().get());
 			} catch (Exception e) {
 				log.warn("Exception found during executing", e);
 			}
 		}
+		
 		return results;
 	}
 	
 	public <T extends Object> Future<T> submit(Callable<T> job) {
-		return threadPool.submit(job);
+		return executor.submit(job);
 	}
 		
 	static class BatchRunner implements Runnable {
