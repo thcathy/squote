@@ -2,30 +2,33 @@ package squote.service;
 
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import squote.SquoteConstants.IndexCode;
 import squote.domain.StockQuote;
 import squote.web.parser.AastockStockQuoteParser;
 import squote.web.parser.HistoryQuoteParser;
-import squote.web.parser.IndexConstituentParser;
 
 public class StockPerformanceService {
+	public static String HCEI_KEY = "hcei";
+	public static String QUOTES_KEY = "quotes";
+	
 	private static int expireAfterHour = 1;
 	private volatile Map<String, Object> stockPerformanceMap;
 	private Calendar expireOn = Calendar.getInstance();
 	
-	private final CentralWebQueryService queryService;
+	private final ExecutorService executor;
 	
-	public StockPerformanceService(CentralWebQueryService queryService) {
+	public StockPerformanceService(ExecutorService executor) {
 		super();
-		this.queryService = queryService;
+		this.executor = executor;
 	}
 
 	public synchronized Map<String, Object> getStockPerformanceMap() {
@@ -33,35 +36,28 @@ public class StockPerformanceService {
 		if (stockPerformanceMap != null && expireOn.getTime().compareTo(new Date()) > 0)
 			return stockPerformanceMap;
 		
-		// get the result and store in cache
-		stockPerformanceMap = new HashMap<String, Object>();
-		stockPerformanceMap.put("hcei", getHceiETF());
-		stockPerformanceMap.put("quotes", getIndexContituents());				
+		CompletableFuture<StockQuote> hceiETFFuture = CompletableFuture.supplyAsync(() -> getDetailStockQuoteWith3PreviousYearPrice("2828"), executor);
+				
+		// get the result and store in cache		
+		stockPerformanceMap = new HashMap<String, Object>();		
+		stockPerformanceMap.put(QUOTES_KEY, getIndexContituents());
+		stockPerformanceMap.put(HCEI_KEY, hceiETFFuture.join());
 		expireOn = Calendar.getInstance();
 		expireOn.add(Calendar.HOUR, expireAfterHour);
 		return stockPerformanceMap;
 	}
-	
-	public StockQuote getHceiETF() {		
-		return getDetailStockQuoteWith3PreviousYearPrice("2828");
-	}
-
-	public List<StockQuote> getIndexContituents() {
-		IndexConstituentParser codesParser = new IndexConstituentParser();
-		List<GetDetailStockQuoteRunner> runners = Arrays.asList(
-				codesParser.getHSIConstituents()
-				,codesParser.getHCCIConstituents()
-				,codesParser.getHCEIConstituents()
-				,codesParser.getMSCIChinaConstituents())
-				.stream()				
-				.flatMap(x->x.stream())
-				.distinct()
-				.map(x->new GetDetailStockQuoteRunner(x)).collect(Collectors.toList());
-				
-		List<StockQuote> quotes = queryService.executeCallables(runners);
 		
-		Collections.sort(quotes, (x,y)->(int)(x.getLastYearPercentage()-y.getLastYearPercentage()));		
-		return quotes;
+	public List<StockQuote> getIndexContituents() {
+		List<String> codes = Arrays.asList(IndexCode.values()).stream()
+			.flatMap(l->l.constituents.stream())
+			.distinct()
+			.collect(Collectors.toList());
+		
+		return codes.parallelStream()
+			.map(c -> CompletableFuture.supplyAsync(() -> getDetailStockQuoteWith3PreviousYearPrice(c), executor))
+			.map(f -> f.join())
+			.sorted((x,y)->(int)(x.getLastYearPercentage()-y.getLastYearPercentage()))
+			.collect(Collectors.toList());				
 	}
 
 	public StockQuote getDetailStockQuoteWith3PreviousYearPrice(String code) {		
@@ -72,13 +68,5 @@ public class StockPerformanceService {
 		return quote;
 	}
 		
-	// TODO: change to use central query service or any others
-	class GetDetailStockQuoteRunner implements Callable<StockQuote> {
-		String code;
-		GetDetailStockQuoteRunner(String code) {this.code = code;}
-		@Override public StockQuote call() {
-			return getDetailStockQuoteWith3PreviousYearPrice(code);
-		}
-	}	
 }
 
