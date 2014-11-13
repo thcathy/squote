@@ -3,7 +3,7 @@ package squote;
 import java.util.List;
 
 import squote.web.parser.EtnetIndexConstituentParser;
-import squote.web.parser.MSCIChinaConstituentParser;
+import squote.web.parser.ISharesConstituentParser;
 
 public class SquoteConstants {
 	public enum Side {
@@ -22,7 +22,8 @@ public class SquoteConstants {
 		HSI("Hang Seng Index", EtnetIndexConstituentParser.parse("http://www.etnet.com.hk/www/tc/stocks/indexes_detail.php?subtype=HSI")), 
 		HSCEI("HS China Enterprises Index", EtnetIndexConstituentParser.parse("http://www.etnet.com.hk/www/tc/stocks/indexes_detail.php?subtype=cei")),
 		HCCI("HS China Corp Index", EtnetIndexConstituentParser.parse("http://www.etnet.com.hk/www/tc/stocks/indexes_detail.php?subtype=cci")),
-		MSCIChina("MSCI China Index", MSCIChinaConstituentParser.parse());
+		MSCIChina("MSCI China Index", ISharesConstituentParser.parseMSCIChina()),
+		MSCIHK("MSCI HK Index", ISharesConstituentParser.parseMSCIHK());
 		
 		final public String name;
 		final public List<String> constituents;
