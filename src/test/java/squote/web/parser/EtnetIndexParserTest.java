@@ -10,7 +10,7 @@ import org.junit.Test;
 import squote.SquoteConstants.IndexCode;
 import squote.domain.StockQuote;
 
-public class EtnetIndexQuoteParserTest {	
+public class EtnetIndexParserTest {	
 	@Test
 	public void getGlobalIndexesReturnTwoQuotes() {
 		List<StockQuote> indexes = new EtnetIndexQuoteParser().parse().get();
