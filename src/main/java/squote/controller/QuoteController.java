@@ -58,8 +58,8 @@ import com.google.common.collect.Lists;
 @Controller
 public class QuoteController extends AbstractController {
 	private static Logger log = LoggerFactory.getLogger(QuoteController.class);
-	private static final String DEFAULT_CODE_LIST = "2828";
-	private static final String CODELIST_COOKIE_KEY = "codeList";
+	private static final String DEFAULT_CODES = "2828";
+	private static final String CODES_COOKIE_KEY = "codes";
 	private static final int STOCK_QUERY_KEY = 1;	
 	public static final String CODE_SEPARATOR = ",";
 	
@@ -125,14 +125,14 @@ public class QuoteController extends AbstractController {
 	}
 	
 	@RequestMapping(value="/list", method = RequestMethod.GET)
-	public String list(@RequestParam(value="codeList", required=false, defaultValue="") String reqCodeList,
+	public String list(@RequestParam(value="codes", required=false, defaultValue="") String reqCodes,
 			@RequestParam(value="action", required=false, defaultValue="") String action,
-			@CookieValue(value=CODELIST_COOKIE_KEY, required=false) String cookieCodeList,
+			@CookieValue(value=CODES_COOKIE_KEY, required=false) String cookieCodes,
 			HttpServletRequest request, HttpServletResponse response, ModelMap modelMap) {
 		
-		log.debug("list: reqCodeList [{}], action [{}]", reqCodeList, action);
+		log.debug("list: reqCodes [{}], action [{}]", reqCodes, action);
 			
-		String codes = retrieveCodeList(reqCodeList, action, cookieCodeList);	
+		String codes = retrieveCodes(reqCodes, action, cookieCodes);	
 		saveQueryIfNeeded(codes, action);		
 		updateCookie(codes, response);
 			
@@ -163,7 +163,7 @@ public class QuoteController extends AbstractController {
             }
         }).collect(Collectors.toMap(StockQuote::getStockCode, quote->quote));
 			
-		modelMap.put("codeList", codes);
+		modelMap.put("codes", codes);
 		modelMap.put("quotes", 
 				Arrays.stream(codes.split(CODE_SEPARATOR))
 					.map(code->quotes.get(code))
@@ -202,22 +202,22 @@ public class QuoteController extends AbstractController {
 		log.debug(new HttpClient().makeGetRequest("http://rooquote.herokuapp.com/").toString());
 	}
 
-	private void updateCookie(String codeList, HttpServletResponse response) {
-		Cookie c = new Cookie(CODELIST_COOKIE_KEY,codeList);
+	private void updateCookie(String codes, HttpServletResponse response) {
+		Cookie c = new Cookie(CODES_COOKIE_KEY,codes);
 		c.setMaxAge(60*60*24*365);
 		response.addCookie(c);
 	}
 
-	private void saveQueryIfNeeded(String codeList, String action) {
+	private void saveQueryIfNeeded(String codes, String action) {
 		try {				
 			if ("save".equals(action.toLowerCase())) {
 				StockQuery q = stockQueryRepo.findByKey(STOCK_QUERY_KEY);
 				if (q == null) {
-					q = new StockQuery(codeList);
+					q = new StockQuery(codes);
 					q.setKey(STOCK_QUERY_KEY);
 				}
 				else 
-					q.setStockList(codeList);														
+					q.setDelimitedStocks(codes);														
 				stockQueryRepo.save(q);
 			}
 		} catch (Exception e) {
@@ -225,14 +225,14 @@ public class QuoteController extends AbstractController {
 		}
 	}
 
-	private String retrieveCodeList(String codeList, String action, String cookieCodeList) {
+	private String retrieveCodes(String reqCodes, String action, String cookieCodes) {
 		if ("load".equals(action.toLowerCase())) { 
 			StockQuery q = stockQueryRepo.findByKey(STOCK_QUERY_KEY);
-			if (q != null) return q.getStockList();
+			if (q != null) return q.getDelimitedStocks();
 		}
 		
-		if (StringUtils.isNotBlank(codeList)) return codeList; // use cookie code list if input is blank
-		if (StringUtils.isNotBlank(cookieCodeList)) return cookieCodeList;						
-		return codeList = DEFAULT_CODE_LIST;	// use default list if still blank
+		if (StringUtils.isNotBlank(reqCodes)) return reqCodes; // use cookie codes if input is blank
+		if (StringUtils.isNotBlank(cookieCodes)) return cookieCodes;						
+		return DEFAULT_CODES;	// use default codes if still blank
 	}
 }

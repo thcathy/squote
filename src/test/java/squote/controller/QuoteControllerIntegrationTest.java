@@ -54,9 +54,9 @@ public class QuoteControllerIntegrationTest {
 	@Test
 	public void listQuoteByReqParam() throws Exception {
 		// Given
-		final String inputCodeList = "753,2828,2800";
+		final String inputCodes = "753,2828,2800";
 		        
-		MvcResult mvcResult = mockMvc.perform(get("/quote/list?codeList=" + inputCodeList).characterEncoding("utf-8"))
+		MvcResult mvcResult = mockMvc.perform(get("/quote/list?codes=" + inputCodes).characterEncoding("utf-8"))
 		.andExpect(status().isOk())
 		.andExpect(view().name("quote/list")).andReturn();
 		
@@ -65,7 +65,7 @@ public class QuoteControllerIntegrationTest {
 		@SuppressWarnings("unchecked") Iterator<StockQuote> quotes = (Iterator<StockQuote>) modelMap.get("quotes");
 		StockQuote hscei = (StockQuote) modelMap.get("hsce");
 				
-		assertTrue(modelMap.get("codeList").equals(inputCodeList));
+		assertTrue(modelMap.get("codes").equals(inputCodes));
 		assertNotNull(modelMap.get("tbase"));
 		assertNotNull(modelMap.get("tminus1"));
 		assertNotNull(modelMap.get("tminus7"));

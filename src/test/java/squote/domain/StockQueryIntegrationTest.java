@@ -29,7 +29,7 @@ public class StockQueryIntegrationTest {
     	
     	StockQuery q2 = stockQueryRepo.findByKey(10);
     	log.debug("StockQuery obj found: {}", q2);
-    	assert queryStr.equals(q2.getStockList());    	
+    	assert queryStr.equals(q2.getDelimitedStocks());    	
     	    	
     	stockQueryRepo.delete(q2);
     }

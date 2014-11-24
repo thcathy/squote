@@ -14,9 +14,9 @@ public class StockQuery {
 	private int key;
 	
 	@NotNull
-	private String stockList;
+	private String delimitedStocks;
 	
-	public StockQuery(String stockList) { this.stockList = stockList; }
+	public StockQuery(String delimitedStocks) { this.delimitedStocks = delimitedStocks; }
 
 	@Override
 	public String toString() {
@@ -31,11 +31,11 @@ public class StockQuery {
         this.key = key;
     }
 
-	public String getStockList() {
-        return this.stockList;
+	public String getDelimitedStocks() {
+        return this.delimitedStocks;
     }
 
-	public void setStockList(String stockList) {
-        this.stockList = stockList;
+	public void setDelimitedStocks(String delimitedStocks) {
+        this.delimitedStocks = delimitedStocks;
     }
 }

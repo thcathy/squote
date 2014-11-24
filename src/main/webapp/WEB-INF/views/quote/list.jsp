@@ -11,7 +11,7 @@
 </head>
 <body>
 	<form>
-		<input type="text"  style="width: 40px;" name="action" /><input type="submit" /><input type="text" style="width: 90%" name="codeList" value="${codeList}" />
+		<input type="text"  style="width: 40px;" name="action" /><input type="submit" /><input type="text" style="width: 90%" name="codes" value="${codes}" />
 	</form>
 			
 	<table style="font-size: 10px;">

@@ -1,5 +1,6 @@
 package squote.web.parser;
  
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -19,9 +20,10 @@ public class ISharesConstituentParser {
 	public static List<String> parseMSCIChina() {		
 		try {
 			List<String> lines = IOUtils.readLines(new HttpClient("utf-8").makeGetRequest(MSCIChinaConstituentsURL));
-			List<String> results = extractDataRow(lines).stream()
-				.map(l->l.split(","))
-				.filter(cs->cs[3].contains("HKG"))
+			List<String> results = lines.stream()
+				.map(l->l.split("\",\""))
+				.map(l->{System.out.println(Arrays.toString(l)); return l;})
+				.filter(cs->cs.length > 4 && cs[3].contains("HKG"))
 				.map(cs->cs[0].replaceAll("\"", ""))
 				.collect(Collectors.toList());
 			return results;
@@ -30,20 +32,15 @@ public class ISharesConstituentParser {
 			return Collections.emptyList();
 		}		
 	}
-  
-	private static List<String> extractDataRow(List<String> lines) {
-		lines = lines.subList(3, lines.size() - 2);
-		return lines;
-	}
-	
+  	
 	public static List<String> parseMSCIHK() {
 		String URL = "http://www.ishares.com/us/products/239657/ishares-msci-hong-kong-etf/1395165510754.ajax?fileType=csv&fileName=EWH_holdings&dataType=fund";
 		
 		try {
 			List<String> lines = IOUtils.readLines(new HttpClient("utf-8").makeGetRequest(URL));
-			List<String> results = extractDataRow(lines).stream()
-				.filter(l -> l.contains("Hong Kong Exchanges And Clearing Ltd"))
-				.map(l->l.split(","))				
+			List<String> results = lines.stream()				
+				.map(line->line.split("\",\""))				
+				.filter(line -> line.length > 11 && line[10].contains("HK"))
 				.map(cs->cs[0].replaceAll("\"", ""))
 				.collect(Collectors.toList());
 			return results;
