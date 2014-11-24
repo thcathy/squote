@@ -143,7 +143,7 @@ public class QuoteController extends AbstractController {
 		// Submit web queries
 		Future<Optional<List<StockQuote>>> indexeFutures = webQueryService.submit(new EtnetIndexQuoteParser());
 		List<Future<StockQuote>> stockQuoteFutures = codeSet.stream()
-														.map( x -> webQueryService.submit(new AastockStockQuoteParser(x)) )
+														.map( code -> webQueryService.submit(new AastockStockQuoteParser(code)) )
 														.collect(Collectors.toList());		
 		List<Future<MarketDailyReport>> mktReports = mktReportService.getMarketDailyReport(
 				pre(1, Calendar.DATE),
@@ -155,18 +155,18 @@ public class QuoteController extends AbstractController {
 	
 		// After all concurrent jobs submitted
 		List<StockQuote> indexes = ConcurrentUtils.collect(indexeFutures).get();
-		Map<String, StockQuote> quotes = stockQuoteFutures.stream().map(f -> {
+		Map<String, StockQuote> quotes = stockQuoteFutures.stream().map(future -> {
             try {
-                return f.get();
+                return future.get();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }).collect(Collectors.toMap(StockQuote::getStockCode, x->x));
+        }).collect(Collectors.toMap(StockQuote::getStockCode, quote->quote));
 			
 		modelMap.put("codeList", codes);
 		modelMap.put("quotes", 
 				Arrays.stream(codes.split(CODE_SEPARATOR))
-					.map(c->quotes.get(c))
+					.map(code->quotes.get(code))
 					.iterator()				
 				);
 		modelMap.put("indexes", indexes);
