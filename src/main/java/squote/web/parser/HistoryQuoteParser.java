@@ -38,10 +38,10 @@ public class HistoryQuoteParser {
 	public Optional<BigDecimal> getQuoteAtDate(String stock, Calendar fromDate, Calendar toDate) {		
 		String url = getQuoteURL(stock,fromDate,toDate);
 		try
-		{			
+		{	
 			Document doc = new HttpClient("utf-8").getDocument(url);
-			Elements tds = doc.select("td[class^=yfnc_tabledata1]");
-			return Optional.of( new BigDecimal(NumberUtils.extractDouble(tds.get(tds.size()-2).html())));
+			String price = doc.select("td[class^=yfnc_tabledata1]:eq(6)").first().text();
+			return Optional.of( new BigDecimal(NumberUtils.extractDouble(price)));
 		} catch (Exception e) {			
 			log.warn("Fail to get quote at date from url: {}, Reason {}", url, e);
 			return Optional.empty();
