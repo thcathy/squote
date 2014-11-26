@@ -65,13 +65,12 @@ public class ForumController extends AbstractController {
     	log.debug("list: type [{}], page [{}]", type, page);
 
     	List<ForumThreadParser> parsers = getParserByType(ContentType.valueOf(type.toUpperCase()), page);    	   	
-    	List<ForumThread> contents = Collections.emptyList();		
-		contents = parsers.parallelStream()
-			.map(p -> CompletableFuture.supplyAsync(() -> p.parse(), executeService.getExecutor()))
-			.map(f -> f.join())
-			.flatMap(x->x.stream())
-			.sorted((a,b)->b.getCreatedDate().compareTo(a.getCreatedDate()))
-			.collect(Collectors.toList());
+    	List<ForumThread> contents = parsers.parallelStream()
+											.map(p -> CompletableFuture.supplyAsync(() -> p.parse(), executeService.getExecutor()))
+											.map(f -> f.join())
+											.flatMap(x->x.stream())
+											.sorted((a,b)->b.getCreatedDate().compareTo(a.getCreatedDate()))
+											.collect(Collectors.toList());
 	
 		modelMap.put("contents", contents);    	
     	return page("/list");

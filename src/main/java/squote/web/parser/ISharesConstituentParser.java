@@ -40,7 +40,7 @@ public class ISharesConstituentParser {
 			List<String> lines = IOUtils.readLines(new HttpClient("utf-8").makeGetRequest(URL));
 			List<String> results = lines.stream()				
 				.map(line->line.split("\",\""))				
-				.filter(line -> line.length > 11 && line[10].contains("HK"))
+				.filter(line -> line.length > 11 && line[10].contains("Hong Kong Exchanges And Clearing Ltd"))
 				.map(cs->cs[0].replaceAll("\"", ""))
 				.collect(Collectors.toList());
 			return results;

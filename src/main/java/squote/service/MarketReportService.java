@@ -43,7 +43,7 @@ public class MarketReportService {
 		return c;
 	}
 				
-	public MarketDailyReport getPreviousMarketDailyReport(Calendar calendar) {
+	public MarketDailyReport getPreviousMarketDailyReport(Calendar calendar) {		
 		java.util.Optional<MarketDailyReport> reportOption = IntStream.range(0, 10).mapToObj(i-> {					
 					calendar.add(Calendar.DATE, -1);
 					if (DateUtils.isWeekEnd(calendar)) return null;
@@ -72,8 +72,9 @@ public class MarketReportService {
 	public MarketDailyReport getTodayMarketDailyReport() { return getPreviousMarketDailyReport(Calendar.getInstance()); }
 	
 	public List<Future<MarketDailyReport>> getMarketDailyReport(Calendar... from) {
-		return Arrays.stream(from).map(
-				c-> queryService.submit(()->getPreviousMarketDailyReport(c)))
+		return Arrays.stream(from).map(c-> 
+					queryService.submit( ()->getPreviousMarketDailyReport(c) )
+				)
 				.collect(Collectors.toList());		
 	}
 }

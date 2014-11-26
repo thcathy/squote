@@ -39,14 +39,18 @@ public class CheckWebService {
 			InputStream s = new HttpClient().makeGetRequest(url);
 			if (s instanceof NullInputStream) {
 				log.info("Fail to ping {}, sending email", url);
-				SendGrid sendGrid = new SendGrid(smtpUsername, smtpPassword);
-				sendGrid.addTo(adminEmail);
-				sendGrid.setFrom(appEmail);
-				sendGrid.setSubject("Fail to ping " + url);
-				sendGrid.setText("Check it!");
-				sendGrid.send();			
+				sendPingFailEmail(url);			
 			}
 		}
 		
+	}
+
+	private void sendPingFailEmail(String url) {
+		SendGrid sendGrid = new SendGrid(smtpUsername, smtpPassword);
+		sendGrid.addTo(adminEmail);
+		sendGrid.setFrom(appEmail);
+		sendGrid.setSubject("Fail to ping " + url);
+		sendGrid.setText("Check it!");
+		sendGrid.send();
 	}
 }
