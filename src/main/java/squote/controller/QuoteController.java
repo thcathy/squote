@@ -6,9 +6,7 @@ import static squote.service.MarketReportService.pre;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -52,7 +50,6 @@ import squote.web.parser.AastockStockQuoteParser;
 import squote.web.parser.EtnetIndexQuoteParser;
 import squote.web.parser.HSINetParser;
 import thc.util.ConcurrentUtils;
-import thc.util.HttpClient;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -227,10 +224,11 @@ public class QuoteController extends AbstractController {
 		return s;
 	}
 	
-	private void updateCookie(String codes, HttpServletResponse response) {
+	private HttpServletResponse updateCookie(String codes, HttpServletResponse response) {
 		Cookie c = new Cookie(CODES_COOKIE_KEY,codes);
 		c.setMaxAge(60*60*24*365);
 		response.addCookie(c);
+		return response;
 	}
 
 	private void saveQueryIfNeeded(String codes, String action) {
