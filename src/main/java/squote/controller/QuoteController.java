@@ -93,11 +93,14 @@ public class QuoteController extends AbstractController {
 		Optional<StockExecutionMessage> executionMessage = StockExecutionMessage.construct(message);
 		if (!executionMessage.isPresent()) 
 			resultMessage = "Cannot create holding stock";
-		else if ("0".equals(hscei = enrichHscei(hscei, executionMessage.get().getDate()))) 
-			resultMessage = "Cannot get hscei";
 		else {
-			holdingStock = createAndSaveHoldingStocks(executionMessage.get(), new BigDecimal(hscei));
-			resultMessage = "Created holding stock";
+			hscei = enrichHscei(hscei, executionMessage.get().getDate());									
+			if ("0".equals(hscei)) {
+				resultMessage = "Cannot get hscei";
+			} else {
+				holdingStock = createAndSaveHoldingStocks(executionMessage.get(), new BigDecimal(hscei));
+				resultMessage = "Created holding stock";
+			}
 		}
 		
 		modelMap.put("holdingStock", holdingStock);
@@ -106,18 +109,23 @@ public class QuoteController extends AbstractController {
 	}
 	
 	private String enrichHscei(String hscei, Date date) {
-		if (!"0".equals(hscei)) return hscei;
-		
-		try {
-			if (DateUtils.isSameDay(new Date(), date)) {
-				hscei = parseHSCEIFromEtnet();
-			} else {				
-				hscei = parseHSCEIFromHSINet(date);
-			}
-		} catch (IllegalStateException | NoSuchElementException e) {
-			log.debug("Cannot enrich hscei: {}", e.getMessage());
+		if ("0".equals(hscei)) {
+			try {
+				return parseHsceiFromWeb(date);
+			} catch (Exception e) {
+				return "0";
+			}			
 		}
+		return hscei;
+	}
 		
+	private String parseHsceiFromWeb(Date date) throws Exception {
+		String hscei;
+		if (DateUtils.isSameDay(new Date(), date)) {
+			hscei = parseHSCEIFromEtnet();
+		} else {				
+			hscei = parseHSCEIFromHSINet(date);
+		}
 		return hscei.replaceAll(",", "");
 	}
 
