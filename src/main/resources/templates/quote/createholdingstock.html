@@ -1,0 +1,10 @@
+<div>
+	<form method="post">
+		<textarea id="message" name="message" rows="8" cols="50" th:value="${message}"></textarea><br />
+		hscei:<input type="text"  style="width: 40px;" name="hscei" /><br />
+		<input type="submit" />
+	</form>
+	<p th:text="${resultMessage}"></p>
+	<p th:text="${holdingStock}"></p>
+	<p><a th:href="@{/holdingstock/}">Holding stocks list</a></p>	
+</div>

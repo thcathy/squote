@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +28,7 @@ import org.springframework.ui.ModelMap;
 
 import squote.SpringQuoteWebApplication;
 import squote.SquoteConstants.IndexCode;
+import squote.domain.MarketDailyReport;
 import squote.domain.StockQuote;
  
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -51,6 +53,7 @@ public class QuoteControllerIntegrationTest {
 			.andExpect(xpath("/stockQuote[price=NA]").doesNotExist());
 	}	
 	
+	@SuppressWarnings("unchecked")
 	@Test
 	public void listQuoteByReqParam() throws Exception {
 		// Given
@@ -61,19 +64,24 @@ public class QuoteControllerIntegrationTest {
 		.andExpect(view().name("quote/list")).andReturn();
 		
 		ModelMap modelMap = mvcResult.getModelAndView().getModelMap();
-		@SuppressWarnings("unchecked") List<StockQuote> indexes = (List<StockQuote>) modelMap.get("indexes");
-		@SuppressWarnings("unchecked") Iterator<StockQuote> quotes = (Iterator<StockQuote>) modelMap.get("quotes");
+		List<StockQuote> indexes = (List<StockQuote>) modelMap.get("indexes");
+		List<StockQuote> quotes = (List<StockQuote>) modelMap.get("quotes");
 		StockQuote hscei = (StockQuote) modelMap.get("hsce");
 				
 		assertTrue(modelMap.get("codes").equals(inputCodes));
 		assertNotNull(modelMap.get("tbase"));
-		assertNotNull(modelMap.get("tminus1"));
-		assertNotNull(modelMap.get("tminus7"));
-		assertNotNull(modelMap.get("tminus30"));
-		assertNotNull(modelMap.get("tminus60"));
-		
-		StockQuote quote1 = quotes.next();
-		StockQuote quote2 = quotes.next();
+		Map<String, MarketDailyReport> tHistory = (Map<String, MarketDailyReport>) modelMap.get("tHistory");
+		assertTrue(tHistory.containsKey("T-1"));
+		assertTrue(tHistory.containsKey("T-7"));
+		assertTrue(tHistory.containsKey("T-30"));
+		assertTrue(tHistory.containsKey("T-60"));
+		assertNotNull(tHistory.get("T-1"));
+		assertNotNull(tHistory.get("T-7"));
+		assertNotNull(tHistory.get("T-30"));
+		assertNotNull(tHistory.get("T-60"));
+				
+		StockQuote quote1 = quotes.get(0);
+		StockQuote quote2 = quotes.get(1);
 		assertTrue(!"NA".equals(quote1.getPrice()));
 		assertEquals("753",quote1.getStockCode());
 		assertTrue(!"NA".equals(quote2.getPrice()));

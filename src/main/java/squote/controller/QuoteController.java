@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -156,7 +157,7 @@ public class QuoteController extends AbstractController {
 		// Submit web queries
 		Future<Optional<List<StockQuote>>> indexeFutures = webQueryService.submit(new EtnetIndexQuoteParser());
 		List<CompletableFuture<StockQuote>> stockQuoteFutures = submitStockQuoteRequests(codeSet);		
-		List<Future<MarketDailyReport>> mktReports = submitMarketDailyReportRequests();
+		List<CompletableFuture<MarketDailyReport>> mktReports = submitMarketDailyReportRequests();
 	
 		// After all concurrent jobs submitted
 		List<StockQuote> indexes = ConcurrentUtils.collect(indexeFutures).get();
@@ -166,21 +167,27 @@ public class QuoteController extends AbstractController {
 		modelMap.put("quotes", 
 				Arrays.stream(codes.split(CODE_SEPARATOR))
 					.map(code->allQuotes.get(code))
-					.iterator()				
+					.collect(Collectors.toList())				
 				);
 		modelMap.put("indexes", indexes);
 		modelMap.put("tbase", ConcurrentUtils.collect(mktReports.get(0)));
-		modelMap.put("tminus1", ConcurrentUtils.collect(mktReports.get(1)));
-		modelMap.put("tminus7", ConcurrentUtils.collect(mktReports.get(2)));
-		modelMap.put("tminus30", ConcurrentUtils.collect(mktReports.get(3)));
-		modelMap.put("tminus60", ConcurrentUtils.collect(mktReports.get(4)));
+		modelMap.put("tHistory", collectMktReportHistories(mktReports));		
 		modelMap.put("holdingMap", holdingStocks.stream().collect(Collectors.toMap(x->x, x->allQuotes.get(x.getCode()))));
 		modelMap.put("hsce", indexes.stream().filter(a -> IndexCode.HSCEI.name.equals(a.getStockCode())).findFirst().get());
 		
 		return page("/list");
 	}
 
-	private List<Future<MarketDailyReport>> submitMarketDailyReportRequests() {
+	private Object collectMktReportHistories(List<CompletableFuture<MarketDailyReport>> mktReports) {
+		Map<String, MarketDailyReport> histories = new LinkedHashMap<>();
+		histories.put("T-1", mktReports.get(1).join());
+		histories.put("T-7", mktReports.get(2).join());
+		histories.put("T-30", mktReports.get(3).join());
+		histories.put("T-60", mktReports.get(4).join());		
+		return histories;
+	}
+
+	private List<CompletableFuture<MarketDailyReport>> submitMarketDailyReportRequests() {
 		return mktReportService.getMarketDailyReport(
 				pre(1, Calendar.DATE),
 				pre(2, Calendar.DATE),

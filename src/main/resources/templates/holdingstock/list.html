@@ -1,0 +1,9 @@
+<div>
+<h3>Holding Stocks</h3>
+<table style="font-size: 10px;">	
+	<tr th:each="s : ${holdingStocks}">
+		<td><a th:href="@{/holdingstock/delete/{id}/(id=${s.id})}">delete</a></td>
+		<td th:text="${s}">detail</td>
+	</tr>	
+</table>	
+</div>

@@ -1,0 +1,34 @@
+<html>
+<head>
+<title>squote</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body style="font-size: 16px;">
+	Forum:	
+	<table>
+		<tr>			
+			<td><a th:href="@{/forum/list/MUSIC/1}">Music</a></td>
+			<td><a th:href="@{/forum/list/MOVIE/1}">Movie</a></td>
+		</tr>
+	</table>
+
+	Quote:
+	<table cellpadding="2">
+		<tr>
+			<td><a th:href="@{/quote/list}">List</a></td>
+			<td><a th:href="@{/quote/single/2828}">Single</a></td>
+			<td><a th:href="@{/quote/stocksperf}">Indexes Constituents Performance</a></td>
+		</tr>		
+	</table>
+	
+	DB Manage:
+	<table cellpadding="2">
+		<tr>
+			<td><a th:href="@{/holdingstock/}">Holding stocks list</a></td>
+			<td><a th:href="@{/quote/createholdingstock}">Create Holding stocks by execution msg</a></td>
+			<td><a th:href="@{/marketdailyreports}">Market daily reports</a></td>
+		</tr>		
+	</table>
+	<p>Last updated: ${build.timestamp}</p>
+</body>
+</html>

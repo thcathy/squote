@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -71,7 +72,7 @@ public class MarketReportService {
 	
 	public MarketDailyReport getTodayMarketDailyReport() { return getPreviousMarketDailyReport(Calendar.getInstance()); }
 	
-	public List<Future<MarketDailyReport>> getMarketDailyReport(Calendar... from) {
+	public List<CompletableFuture<MarketDailyReport>> getMarketDailyReport(Calendar... from) {
 		return Arrays.stream(from).map(c-> 
 					queryService.submit( ()->getPreviousMarketDailyReport(c) )
 				)
