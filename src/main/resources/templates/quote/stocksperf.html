@@ -1,11 +1,17 @@
-<html>
+<html ng-app="quote1" ng-controller="QuoteController">
 <head>
 	<title>quote</title>
-	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" /> 
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" /> 
+	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+	<style>
+		td {
+			padding-right: 2px;
+		}
+	</style>	
 </head>
 <body>	
-	<table style="font-size: 10px;" id="quotes">	
+	<table style="font-size: 10px;">	
 		<tr>
 			<td>Code</td>
 			<td>Price</td>
@@ -18,57 +24,54 @@
 			<td>Yield</td>
 			<td>NAV</td>
 		</tr>
+		<tr ng-model="hcei">
+			<td>{{hcei.stockCode}}</td>
+			<td>{{hcei.price}}</td>
+			<td>{{hcei.change}}</td>
+			<td>{{hcei.lastYearPercentage.toFixed(2)}}</td>
+			<td>{{hcei.last2YearPercentage.toFixed(2)}}</td>
+			<td>{{hcei.last3YearPercentage.toFixed(2)}}</td>
+			<td>{{hcei.yearLow}} - {{hcei.yearHigh}}</td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr ng-repeat="quote in quotes">
+			<td>{{quote.stockCode}}</td>
+			<td>{{quote.price}}</td>
+			<td>{{quote.change}}</td>
+			<td>{{quote.lastYearPercentage.toFixed(2)}}</td>
+			<td>{{quote.last2YearPercentage.toFixed(2)}}</td>
+			<td>{{quote.last3YearPercentage.toFixed(2)}}</td>
+			<td>{{quote.pe}}</td>
+			<td>{{quote.yield}}</td>
+			<td>{{quote.nav}}</td>
+		</tr>
 	</table>
-	<div id="status">Loading</div>
+	<div ng-bind="status"></div>
 	<script type="text/javascript">	
-		var retry=0
-		var retryLimit=20
-	
-		function resubmit(jqXHR, status, errorThrown){
-			if (status == 'timeout') poll()
-		}
-
-		function displayResult(data) {
-			$("#status").html('')
-			
-			hceiRow = '<tr>'
-			hceiRow += '<td>' + data.hcei.stockCode + '</td>'
-			hceiRow += '<td>' + data.hcei.price + '</td>'
-			hceiRow += '<td>' + data.hcei.change + '</td>'
-			hceiRow += '<td>' + data.hcei.lastYearPercentage.toFixed(2) + '</td>'
-			hceiRow += '<td>' + data.hcei.last2YearPercentage.toFixed(2) + '</td>'
-			hceiRow += '<td>' + data.hcei.last3YearPercentage.toFixed(2) + '</td>'
-			hceiRow += '<td>' + data.hcei.yearLow + '-' + data.hcei.yearHigh + '</td>'
-			hceiRow += '</tr>'
-			$(hceiRow).appendTo("#quotes")	
-			
-			$.each(data.quotes, function(i,quote){
-				content = '<tr>'
-				content += '<td>' + quote.stockCode + '</td>'
-				content += '<td>' + quote.price + '</td>'
-				content += '<td>' + quote.change + '</td>'
-				content += '<td>' + (Number(quote.lastYearPercentage) - Number(data.hcei.lastYearPercentage)).toFixed(2) + '</td>'
-				content += '<td>' + (Number(quote.last2YearPercentage) - Number(data.hcei.last2YearPercentage)).toFixed(2) + '</td>'
-				content += '<td>' + (Number(quote.last3YearPercentage) - Number(data.hcei.last3YearPercentage)).toFixed(2) + '</td>'
-				content += '<td>' + quote.yearLow + '-' + quote.yearHigh + '</td>'
-				content += '<td>' + quote.pe + '</td>'
-				content += '<td>' + quote.yield + '</td>'
-				content += '<td>' + quote.nav + '</td>'
-				content += '</tr>'
-				$(content).appendTo("#quotes")				
-			});
-		}
-
-		// call for data
-		(function poll(){
-			retry++
-			if (retry > retryLimit) return
-			
-			$("#status").html($("#status").html() + '...')
-		    $.ajax({ url: "liststocksperf", success: displayResult, dataType: "json", 
-			    error: poll, 
-			    timeout: 20000 })
-		})()
+		var retry=0;
+		var retryLimit=20;
+		
+		angular.module('quote1',[]).controller('QuoteController', ['$scope','$http', function($scope,$http) {
+			$scope.status='Loading';
+			$scope.poll=function poll() {
+				retry++;
+				if (retry > retryLimit) return;
+							
+				$scope.status=$scope.status + '...';
+				$http({url: "liststocksperf"}).
+					success(function(data, status, headers, config) {
+						$scope.hcei=data.hcei;
+						$scope.quotes=data.quotes;
+						$scope.status='';
+					}).
+					error(function(data, status, headers, config) {
+						poll();
+					});
+			};
+			$scope.poll();
+		}]);		
 	</script>
 </body>
 </html>
