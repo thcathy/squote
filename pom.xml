@@ -107,7 +107,7 @@
 		<dependency>
 			<groupId>com.newrelic.agent.java</groupId>
 			<artifactId>newrelic-agent</artifactId>
-			<version>3.10.0</version>
+			<version>3.12.0</version>
 			<scope>provided</scope>
 		</dependency>
 
