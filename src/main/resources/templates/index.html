@@ -29,6 +29,6 @@
 			<td><a th:href="@{/marketdailyreports}">Market daily reports</a></td>
 		</tr>		
 	</table>
-	<p>Last updated: ${build.timestamp}</p>
+	<p th:utext="${@environment.getProperty('build.timestamp')}"></p>
 </body>
 </html>
