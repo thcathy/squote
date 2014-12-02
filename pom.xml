@@ -11,7 +11,6 @@
 	<groupId>org.thcathy</groupId>
 	<artifactId>squote</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
 	<url>http://squote.herokuapp.com/</url>
 	<name>Spring Quote</name>
 	<description>Web Util - Pet Project by thcathy</description>
@@ -40,19 +39,6 @@
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-war-plugin</artifactId>
-				<configuration>
-					<webResources>
-						<resource>
-							<directory>src/main/webapp/WEB-INF/views</directory>
-							<targetPath>WEB-INF/views</targetPath>
-							<filtering>true</filtering>
-						</resource>
-					</webResources>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<executions>
 					<execution>
@@ -67,6 +53,13 @@
 							<stripVersion>true</stripVersion>
 						</configuration>
 					</execution>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+					</execution>
 				</executions>
 			</plugin>
 		</plugins>
@@ -80,12 +73,7 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-tomcat</artifactId>
-			<scope>provided</scope>
-		</dependency>
+		</dependency>		
 		<dependency>
 			<groupId>org.apache.tomcat.embed</groupId>
 			<artifactId>tomcat-embed-jasper</artifactId>
@@ -95,7 +83,7 @@
 			<groupId>javax.servlet</groupId>
 			<artifactId>jstl</artifactId>
 		</dependency>
-
+		
 		<dependency>
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
@@ -124,7 +112,7 @@
 			<groupId>com.sendgrid</groupId>
 			<artifactId>sendgrid-java</artifactId>
 			<version>0.1.2</version>
-		</dependency>		
+		</dependency>
 		<dependency>
 			<groupId>com.newrelic.agent.java</groupId>
 			<artifactId>newrelic-agent</artifactId>
