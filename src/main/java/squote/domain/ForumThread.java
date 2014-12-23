@@ -14,6 +14,7 @@ public class ForumThread {
     private final String url;
     private final String title;
     private final String source;
+    private boolean isVisited = false;
 
 	@DateTimeFormat(pattern = "yyyy-MM-dd")
     public final Date createdDate;
@@ -30,19 +31,16 @@ public class ForumThread {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
-    public String getUrl() {
-		return url;
-	}
+    public String getUrl() { return url; }
 
-	public String getTitle() {
-		return title;
-	}
+	public String getTitle() { 	return title; }
 
-	public String getSource() {
-		return source;
-	}
+	public String getSource() {	return source;}
 	
-	public Date getCreatedDate() {
-		return createdDate;
-	}
+	public Date getCreatedDate() {	return createdDate;}
+
+	public boolean isVisited() {return isVisited;}
+	public void setVisited(boolean isVisited) {	this.isVisited = isVisited;}
+	
+	
 }

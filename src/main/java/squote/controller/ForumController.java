@@ -2,6 +2,7 @@ package squote.controller;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -9,15 +10,21 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import squote.domain.ForumThread;
+import squote.domain.VisitedForumThread;
+import squote.domain.repository.VisitedForumThreadRepository;
 import squote.service.CentralWebQueryService;
 import squote.web.parser.ForumThreadParser;
 
@@ -49,6 +56,7 @@ public class ForumController extends AbstractController {
 	}
 	
 	@Resource private CentralWebQueryService executeService;
+	@Resource private VisitedForumThreadRepository visitedThreadRepo;
 	
 	public ForumController() {
 		super("forum");
@@ -71,9 +79,23 @@ public class ForumController extends AbstractController {
 											.flatMap(x->x.stream())
 											.sorted((a,b)->b.getCreatedDate().compareTo(a.getCreatedDate()))
 											.collect(Collectors.toList());
-	
+    	contents.forEach(f->isVisited(f));
+    	
 		modelMap.put("contents", contents);    	
     	return page("/list");
+    }
+    
+    @RequestMapping(value = "/visited", method = RequestMethod.POST)
+    @ResponseBody
+    public void visited(@RequestBody String url) {    	
+    	log.debug("visited: url [{}]", url);
+    	if (StringUtils.isBlank(url)) throw new IllegalArgumentException("input url is blank");
+    	
+    	visitedThreadRepo.save(new VisitedForumThread(url, new Date()));
+    }
+    
+    private void isVisited(ForumThread f) {
+    	if (visitedThreadRepo.exists(f.getUrl())) f.setVisited(true);
     }
         
     private List<ForumThreadParser> getParserByType(ContentType type, int page) {    	

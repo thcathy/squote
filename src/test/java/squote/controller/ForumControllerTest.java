@@ -1,6 +1,6 @@
 package squote.controller;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -14,10 +14,13 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.ModelMap;
 
 import squote.SpringQuoteWebApplication;
 import squote.domain.ForumThread;
+import squote.domain.VisitedForumThread;
+import squote.domain.repository.VisitedForumThreadRepository;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -25,6 +28,7 @@ import squote.domain.ForumThread;
 @ActiveProfiles("dev")
 public class ForumControllerTest {
 	@Resource ForumController controller;
+	@Resource VisitedForumThreadRepository visitedRepo;
 		
 	@Test
 	public void getMusicForumThreads() {
@@ -40,5 +44,14 @@ public class ForumControllerTest {
 			assert StringUtils.isNotBlank(x.getUrl());			
 			assert StringUtils.isNotBlank(x.getTitle());
 		});
+	}
+	
+	@Test
+	public void saveVisitedForumThread() {
+		String url = "http://www.uwants.com/viewthread.php?tid=18017060&extra=page%3D1";
+		controller.visited(url);
+		VisitedForumThread t = visitedRepo.findOne(url);
+		assertEquals(t.getUrl(),url);		
+		visitedRepo.delete(t);
 	}
 }
