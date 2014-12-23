@@ -1,16 +1,39 @@
-<div>
-<table>
-	<tr>
-		<td><a th:href="@{/forum/list/MUSIC/1}">Music</a></td>
-		<td><a th:href="@{/forum/list/MOVIE/1}">Movie</a></td>
-	</tr>
-</table>
+<html ng-app="list" ng-controller="ListController" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<title>quote</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" />
+	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+	<script type="text/javascript">	
+		angular.module('list',[]).controller('ListController', ['$scope','$http', function($scope,$http) {
+			$scope.visited = function(url) {
+				$http.post('/forum/visited', url);
+			};
+		}]);		
+	</script>	
+	<style>
+		.visited {			
+			text-decoration: line-through;
+		}
+	</style>
+</head>
+<body>	
+	<div>
+		<table>
+			<tr>
+				<td><a th:href="@{/forum/list/MUSIC/1}">Music</a></td>
+				<td><a th:href="@{/forum/list/MOVIE/1}">Movie</a></td>
+			</tr>
+		</table>
 
-<table style="font-size: 10px;">
-	<tr th:each="c : ${contents}">
-		<td><a target="_blank" th:href="'http://'+${c.url}" th:text="${c.title}">title</a></td>
-		<td th:text="${#dates.format(c.createdDate, 'dd-MM-yyyy')}">date</td>
-		<td th:text="${c.source}">source</td>
-	</tr>
-</table>	
-</div>
+		<table style="font-size: 10px;">
+			<tr th:each="c : ${contents}" th:class="${c.visited}?'visited'">
+				<td><a target="_blank" th:attr="ng-click='visited(\''+${c.url}+'\')'" th:href="'http://'+${c.url}"
+					th:text="${c.title}">title</a></td>
+				<td th:text="${#dates.format(c.createdDate, 'dd-MM-yyyy')}">date</td>
+				<td th:text="${c.source}">source</td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>
