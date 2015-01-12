@@ -22,12 +22,12 @@ public class MarketDailyReportParsersTest {
 	
 	@Test
     public void retrieveNormalDateMonetaryBase() throws Exception {
-		MonetaryBase result = HKMAMonetaryBaseParser.retrieveMonetaryBase(DateUtils.parseDate("20131220","yyyyMMdd")).get();		
-		assertEquals(321065, result.getIndebtedness(),0);
-		assertEquals(10840, result.getNotes(),0);
-		assertEquals(164172, result.getClosingBalance(),0);
-		assertEquals(751707, result.getExchangeFund(),0);
-		assertEquals(1247784, result.getTotal(),0);
+		MonetaryBase result = HKMAMonetaryBaseParser.retrieveMonetaryBase(DateUtils.parseDate("20141230","yyyyMMdd")).get();		
+		assertEquals(341105, result.getIndebtedness(),0);
+		assertEquals(11346, result.getNotes(),0);
+		assertEquals(239243, result.getClosingBalance(),0);
+		assertEquals(753289, result.getExchangeFund(),0);
+		assertEquals(1344983, result.getTotal(),0);
 	}
 	
 	@Test

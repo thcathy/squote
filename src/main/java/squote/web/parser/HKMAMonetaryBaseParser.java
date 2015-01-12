@@ -18,7 +18,7 @@ import thc.util.NumberUtils;
 public class HKMAMonetaryBaseParser implements Callable<java.util.Optional<MonetaryBase>> {
 	private static Logger log = LoggerFactory.getLogger(HKMAMonetaryBaseParser.class);
 
-	static String DailyMonetaryBaseURL= "http://www.hkma.gov.hk/eng/market-data-and-statistics/monetary-statistics/monetary-base/{0,date,yyyy}/{0,date,yyyyMMdd}-2.shtml";
+	static String DailyMonetaryBaseURL= "http://www.hkma.gov.hk/eng/market-data-and-statistics/monetary-statistics/monetary-base/{0,date,yyyy}/{0,date,yyyyMMdd}-1.shtml";
 	
 	private final Date date;
 	
