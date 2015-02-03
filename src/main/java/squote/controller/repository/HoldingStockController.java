@@ -34,7 +34,7 @@ public class HoldingStockController extends AbstractController {
 	
 	@RequestMapping("/delete/{id}")
 	public String delete(@PathVariable String id, ModelMap modelMap) {
-		log.debug("delete: id [{}]", id);
+		log.warn("delete: id [{}]", id);
 		holdingStockRepository.delete(new BigInteger(id));
 		return list(modelMap);
 	}
