@@ -1,4 +1,5 @@
 package squote.domain;
+import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -18,7 +19,7 @@ public class StockExecutionMessage {
     private String executionId;
     private String code;
     private Side side;
-    private double price;
+    private BigDecimal price;
     private int quantity;
     private Date date;
     
@@ -43,7 +44,7 @@ public class StockExecutionMessage {
     		// parse price
     		startPos = message.indexOf("已於", endPos) + 2;
     		endPos = message.indexOf("元", startPos);
-    		seMsg.price = Double.valueOf(message.substring(startPos, endPos));
+    		seMsg.price = new BigDecimal(message.substring(startPos, endPos));
     		
     		// parse exec id
     		seMsg.executionId = message.split("\n")[2];
@@ -78,7 +79,7 @@ public class StockExecutionMessage {
         return this.side;
     }
 
-	public double getPrice() {
+	public BigDecimal getPrice() {
         return this.price;
     }
 

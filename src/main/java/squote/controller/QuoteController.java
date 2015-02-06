@@ -99,7 +99,8 @@ public class QuoteController extends AbstractController {
 			if ("0".equals(hscei)) {
 				resultMessage = "Cannot get hscei";
 			} else {
-				holdingStock = createAndSaveHoldingStocks(executionMessage.get(), new BigDecimal(hscei));
+				holdingStock = HoldingStock.from(executionMessage.get(), new BigDecimal(hscei));
+				holdingStockRepo.save(holdingStock);
 				resultMessage = "Created holding stock";
 			}
 		}
@@ -225,20 +226,7 @@ public class QuoteController extends AbstractController {
 	public @ResponseBody Map<String, Object> listStocksPerformance() {		
 		return stockPerformanceService.getStockPerformanceMap();
 	}
-	
-	private HoldingStock createAndSaveHoldingStocks(StockExecutionMessage message, BigDecimal hscei) {
-		HoldingStock s = new HoldingStock(
-							message.getCode(), 
-							message.getSide(), 
-							message.getQuantity(), 
-							new BigDecimal(message.getPrice() * message.getQuantity()), 
-							message.getDate(), 
-							hscei);
 		
-		holdingStockRepo.save(s);
-		return s;
-	}
-	
 	private HttpServletResponse updateCookie(String codes, HttpServletResponse response) {
 		Cookie c = new Cookie(CODES_COOKIE_KEY,codes);
 		c.setMaxAge(60*60*24*365);

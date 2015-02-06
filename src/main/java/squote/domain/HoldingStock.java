@@ -32,6 +32,16 @@ public class HoldingStock {
 		this.side = side;
 	}
 	
+	public static HoldingStock from(StockExecutionMessage message, BigDecimal hscei) {
+		return new HoldingStock(
+				message.getCode(), 
+				message.getSide(), 
+				message.getQuantity(), 
+				message.getPrice().multiply(new BigDecimal(message.getQuantity())), 
+				message.getDate(), 
+				hscei);
+	}
+	
 	public BigDecimal getPrice() { return gross.divide(BigDecimal.valueOf(quantity)); }
 	
 	public double performance(double latestPrice) {

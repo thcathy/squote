@@ -21,7 +21,7 @@ public class StockQueryIntegrationTest {
 	@Autowired StockQueryRepository stockQueryRepo;
 	
     @Test
-    public void testStockQueryRepoSave() {
+    public void saveBigDecimalInMongoCanKeepCorrectFormat() {
     	final String queryStr = "abcde";
     	StockQuery q = new StockQuery(queryStr);
     	q.setKey(10);

@@ -3,6 +3,7 @@ package squote.domain;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Optional;
 
@@ -22,7 +23,7 @@ public class StockExecutionMessageTest {
 		assertEquals(SquoteConstants.Side.SELL, msg.getSide());
 		assertEquals(10000, msg.getQuantity());
 		assertEquals("1138", msg.getCode());
-		assertEquals(4.89, msg.getPrice(), 0.00001);
+		assertEquals(new BigDecimal("4.89"), msg.getPrice());
 		assertEquals("20140610000013235", msg.getExecutionId());
 		assertEquals("2014-06-10", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
 	
@@ -33,7 +34,7 @@ public class StockExecutionMessageTest {
 		assertEquals(SquoteConstants.Side.BUY, msg.getSide());
 		assertEquals(10000, msg.getQuantity());
 		assertEquals("1138", msg.getCode());
-		assertEquals(4.05, msg.getPrice(), 0.00001);
+		assertEquals(new BigDecimal("4.05"), msg.getPrice());
 		assertEquals("20140509000023378", msg.getExecutionId());
 		assertEquals("2014-05-09", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
 		
@@ -44,7 +45,7 @@ public class StockExecutionMessageTest {
 		assertEquals(SquoteConstants.Side.SELL, msg.getSide());
 		assertEquals(5000, msg.getQuantity());
 		assertEquals("1880", msg.getCode());
-		assertEquals(8.42, msg.getPrice(), 0.00001);
+		assertEquals(new BigDecimal("8.42"), msg.getPrice());
 		assertEquals("20140625000023727", msg.getExecutionId());
 		assertEquals("2014-06-25", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
 	}
