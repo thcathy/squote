@@ -23,7 +23,7 @@ public class StockExecutionMessageTest {
 		assertEquals(SquoteConstants.Side.SELL, msg.getSide());
 		assertEquals(10000, msg.getQuantity());
 		assertEquals("1138", msg.getCode());
-		assertEquals(new BigDecimal("4.89"), msg.getPrice());
+		assertEquals(new BigDecimal("4.8900"), msg.getPrice());
 		assertEquals("20140610000013235", msg.getExecutionId());
 		assertEquals("2014-06-10", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
 	
@@ -34,7 +34,7 @@ public class StockExecutionMessageTest {
 		assertEquals(SquoteConstants.Side.BUY, msg.getSide());
 		assertEquals(10000, msg.getQuantity());
 		assertEquals("1138", msg.getCode());
-		assertEquals(new BigDecimal("4.05"), msg.getPrice());
+		assertEquals(new BigDecimal("4.0500"), msg.getPrice());
 		assertEquals("20140509000023378", msg.getExecutionId());
 		assertEquals("2014-05-09", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
 		
@@ -45,7 +45,7 @@ public class StockExecutionMessageTest {
 		assertEquals(SquoteConstants.Side.SELL, msg.getSide());
 		assertEquals(5000, msg.getQuantity());
 		assertEquals("1880", msg.getCode());
-		assertEquals(new BigDecimal("8.42"), msg.getPrice());
+		assertEquals(new BigDecimal("8.4200"), msg.getPrice());
 		assertEquals("20140625000023727", msg.getExecutionId());
 		assertEquals("2014-06-25", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
 	}

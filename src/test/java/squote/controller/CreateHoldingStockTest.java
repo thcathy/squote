@@ -109,7 +109,7 @@ public class CreateHoldingStockTest {
 		assertNotNull(holdingStock);
 		assertEquals("1138", holdingStock.getCode());
 		assertEquals(10000, holdingStock.getQuantity());
-		assertEquals(new BigDecimal("48900"), holdingStock.getGross());
+		assertEquals(new BigDecimal("48900.0000"), holdingStock.getGross());
 		assertEquals(SquoteConstants.Side.SELL, holdingStock.getSide());
 		assertEquals("10368.13", holdingStock.getHsce().toString());		
 	}
@@ -163,7 +163,7 @@ public class CreateHoldingStockTest {
 		assertNotNull(holdingStock);
 		assertEquals("1138", holdingStock.getCode());
 		assertEquals(10000, holdingStock.getQuantity());
-		assertEquals(new BigDecimal("48900"), holdingStock.getGross());
+		assertEquals(new BigDecimal("48900.0000"), holdingStock.getGross());
 		assertEquals(SquoteConstants.Side.SELL, holdingStock.getSide());
 		assertEquals("12500", holdingStock.getHsce().toString());
 		assertEquals(total+1, holdingStockRepo.count());
