@@ -18,7 +18,7 @@ public class ISharesConstituentParserTest {
 		assertTrue("MSCI China index should contain 992",result.contains("992"));
 	}
 	
-	//@Test
+	@Test
 	public void testGetMSCIHKConstituent() {
 		List<String> result = ISharesConstituentParser.parseMSCIHK();
 		assertTrue("MSCI China index should contain 13",result.contains("13"));
