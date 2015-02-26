@@ -14,6 +14,7 @@
 	<table style="font-size: 10px;">	
 		<tr>
 			<td>Code</td>
+			<td>Name</td>
 			<td>Price</td>
 			<td>Change</td>
 			<td>1 year %</td>
@@ -26,6 +27,7 @@
 		</tr>
 		<tr ng-model="hcei">
 			<td>{{hcei.stockCode}}</td>
+			<td>HSCEI</td>
 			<td>{{hcei.price}}</td>
 			<td>{{hcei.change}}</td>
 			<td>{{hcei.lastYearPercentage.toFixed(2)}}</td>
@@ -38,6 +40,7 @@
 		</tr>
 		<tr ng-repeat="quote in quotes">
 			<td>{{quote.stockCode}}</td>
+			<td>{{quote.stockName}}</td>
 			<td>{{quote.price}}</td>
 			<td>{{quote.change}}</td>
 			<td>{{quote.lastYearPercentage.toFixed(2)}}</td>

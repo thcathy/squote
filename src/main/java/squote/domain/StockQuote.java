@@ -15,6 +15,7 @@ import thc.util.NumberUtils;
 @XmlRootElement
 public class StockQuote {
 	private String stockCode = "";
+	private String stockName = "";
 	private String lastUpdate = "NA";
 	private String price = "NA";
 	private String high = "NA";
@@ -220,4 +221,12 @@ public class StockQuote {
 	public Map<Integer, Double> getPreviousPriceMap() {
         return this.previousPriceMap;
     }
+
+	public String getStockName() {
+		return stockName;
+	}
+
+	public void setStockName(String stockName) {
+		this.stockName = stockName;
+	}
 }

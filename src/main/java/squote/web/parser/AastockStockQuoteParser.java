@@ -28,7 +28,13 @@ public class AastockStockQuoteParser implements StockQuoteParser {
 			Document doc = new HttpClient("UTF-8").getDocument(AASTOCK_STOCK_QUOTE_URL + code);
 			// price
 			quote.setPrice(doc.select("ul.UL1 li.LI1:containsOwn(Last)").first().parent().nextElementSibling().child(0).child(0).html());
-
+			
+			// stock name
+			String name = doc.select("div#quotediv table table div font b").text();
+			quote.setStockName(name.substring(0, name.length()-9));
+			
+			//*[@id="quotediv"]/table[1]/tbody/tr[1]/td/table/tbody/tr/td[1]/div[1]/font[1]/b
+			
 			// change
 			Elements divs = doc.select("ul.UL1.W1 li.LI1:contains(Chg)");
 			boolean isDown = divs.get(0).parent().nextElementSibling().select("img").first().attr("src").contains("downarrow");
