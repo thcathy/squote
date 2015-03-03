@@ -3,7 +3,6 @@ package squote.web.parser;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -40,7 +39,7 @@ public class ISharesConstituentParser {
 			List<String> lines = IOUtils.readLines(new HttpClient("utf-8").makeGetRequest(URL));
 			List<String> results = lines.stream()				
 				.map(line->line.split("\",\""))				
-				.filter(line -> line.length > 11 && line[10].contains("Hong Kong Exchanges And Clearing Ltd"))
+				.filter(line -> line.length > 12 && line[11].contains("Hong Kong Exchanges And Clearing Ltd"))
 				.map(cs->cs[0].replaceAll("\"", ""))
 				.collect(Collectors.toList());
 			return results;
