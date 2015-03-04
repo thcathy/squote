@@ -15,8 +15,11 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.filter.CharacterEncodingFilter;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
+import squote.controller.ForumController;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
 import squote.service.CentralWebQueryService;
@@ -46,7 +49,7 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	@Value("${smtp.username}")				private String smtpUsername;
 	@Value("${smtp.password}")				private String smtpPassword;
 	@Value("${centralWebQuery.pool.size}")	private int poolSize;
-
+	
 	// repository interface
 	@Autowired
 	private HoldingStockRepository holdingStockRepo;
@@ -75,7 +78,7 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 		return new CheckWebService(checkWebUrlList.split(","), adminEmail,
 				appEmail, smtpUsername, smtpPassword);
 	}
-		
+			
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
 		return application.sources(SpringQuoteWebApplication.class);

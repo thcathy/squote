@@ -7,12 +7,17 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import javax.annotation.Resource;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,9 +35,11 @@ import squote.web.parser.ForumThreadParser;
 
 @RequestMapping("/forum")
 @Controller
-public class ForumController extends AbstractController {
+public class ForumController extends AbstractController {	
 	private static Logger log = LoggerFactory.getLogger(ForumController.class);
-	
+	private Date earliestCreatedDate;
+	private int pagePerBatch;
+		
 	enum ContentType {
 		MUSIC(new String[]{
 				"http://www.uwants.com/forumdisplay.php?fid=472&page=%d",
@@ -58,25 +65,29 @@ public class ForumController extends AbstractController {
 	@Resource private CentralWebQueryService executeService;
 	@Resource private VisitedForumThreadRepository visitedThreadRepo;
 	
-	public ForumController() {
+	@Autowired
+	public ForumController(@Value("${forum.threadEarliestDay}") int threadShouldNotOlderDay, @Value("${forum.pagePerBatch}") int pagePerBatch) {
 		super("forum");
+		earliestCreatedDate = DateUtils.addDays(new Date(), -threadShouldNotOlderDay);
+		this.pagePerBatch = pagePerBatch;
 	}
 	
 	@RequestMapping(value = "/")
 	@ResponseBody
 	public String index() {
-		return "Usage: /list/{type}/{page}";
+		return "Usage: /list/{type}/{batch}";
 	}
 		
-    @RequestMapping(value = "/list/{type}/{page}")
-    public String list(@PathVariable String type, @PathVariable int page, ModelMap modelMap) {
-    	log.debug("list: type [{}], page [{}]", type, page);
+    @RequestMapping(value = "/list/{type}/{batch}")
+    public String list(@PathVariable String type, @PathVariable int batch, ModelMap modelMap) {
+    	log.debug("list: type [{}], batch [{}]", type, batch);
 
-    	List<ForumThreadParser> parsers = getParserByType(ContentType.valueOf(type.toUpperCase()), page);    	   	
+    	List<ForumThreadParser> parsers = getParserByType(ContentType.valueOf(type.toUpperCase()), batch);    	   	
     	List<ForumThread> contents = parsers.parallelStream()
 											.map(p -> CompletableFuture.supplyAsync(() -> p.parse(), executeService.getExecutor()))
 											.map(f -> f.join())
 											.flatMap(x->x.stream())
+											.filter(f -> f.getCreatedDate().compareTo(earliestCreatedDate) >= 0)
 											.sorted((a,b)->b.getCreatedDate().compareTo(a.getCreatedDate()))
 											.collect(Collectors.toList());
     	contents.forEach(f->isVisited(f));
@@ -98,9 +109,21 @@ public class ForumController extends AbstractController {
     	if (visitedThreadRepo.exists(f.getUrl())) f.setVisited(true);
     }
         
-    private List<ForumThreadParser> getParserByType(ContentType type, int page) {    	
+    private List<ForumThreadParser> getParserByType(ContentType type, int batch) {
     	return type.urls.stream()
-    			.map(url -> ForumThreadParser.buildParser(url,page))
-    			.collect(Collectors.toList());
+    			.flatMap(url -> (Stream<ForumThreadParser>) 
+    					IntStream.rangeClosed(fromPage(batch), toPage(batch))
+    							.boxed()
+    							.map(i -> ForumThreadParser.buildParser(url,i))
+    			)
+    			.collect(Collectors.toList());    			
     }
+
+	private int toPage(int batch) {
+		return pagePerBatch * batch;
+	}
+
+	private int fromPage(int batch) {
+		return 1 + (pagePerBatch * (batch-1));
+	}
 }

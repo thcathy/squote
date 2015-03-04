@@ -3,14 +3,18 @@ package squote.controller;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.IntStream;
 
 import javax.annotation.Resource;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -29,6 +33,7 @@ import squote.domain.repository.VisitedForumThreadRepository;
 public class ForumControllerTest {
 	@Resource ForumController controller;
 	@Resource VisitedForumThreadRepository visitedRepo;
+	@Value("${forum.threadEarliestDay}") int threadShouldNotOlderDay;
 		
 	@Test
 	public void getMusicForumThreads() {
@@ -36,13 +41,18 @@ public class ForumControllerTest {
 		controller.list("MUSIC", 1, modelMap);
 		@SuppressWarnings("unchecked") List<ForumThread> contents = (List<ForumThread>) modelMap.get("contents");
 		
-		assertTrue("Number of thread return should > 40", contents.size() > 40);
+		assertTrue("Number of thread " + contents.size() + " < 200", contents.size() > 200);
 		boolean descSortedByDate = IntStream.range(0, contents.size()-1)
 									.allMatch(i -> contents.get(i).getCreatedDate().getTime() >= contents.get(i+1).getCreatedDate().getTime());
 		assertTrue("Contents are decending ordered by created date", descSortedByDate);
 		contents.forEach(x -> {
 			assert StringUtils.isNotBlank(x.getUrl());			
 			assert StringUtils.isNotBlank(x.getTitle());
+		});
+		
+		Date earliestCreatedDate = DateUtils.addDays(new Date(), -threadShouldNotOlderDay);
+		contents.forEach(x -> {
+			assertTrue("The thread created on " + x.getCreatedDate() + " is older than " + threadShouldNotOlderDay + " days", x.getCreatedDate().compareTo(earliestCreatedDate) >= 0); 
 		});
 	}
 	
