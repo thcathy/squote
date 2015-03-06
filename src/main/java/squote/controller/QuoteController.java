@@ -223,8 +223,8 @@ public class QuoteController extends AbstractController {
 	public String stocksPerfPage() {return page("/stocksperf");}
 	
 	@RequestMapping(method = RequestMethod.GET, value = "/liststocksperf")	
-	public @ResponseBody Map<String, Object> listStocksPerformance() {		
-		return stockPerformanceService.getStockPerformanceMap();
+	public @ResponseBody List<StockQuote> listStocksPerformance() {		
+		return stockPerformanceService.getStockPerformanceQuotes();
 	}
 		
 	private HttpServletResponse updateCookie(String codes, HttpServletResponse response) {

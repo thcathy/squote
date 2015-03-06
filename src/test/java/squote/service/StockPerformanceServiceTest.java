@@ -5,6 +5,8 @@ import static org.junit.Assert.*;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -24,19 +26,18 @@ public class StockPerformanceServiceTest {
 			
 	@Test
 	public void verifyGetStockPerformanceMap() {
-		StockPerformanceService service = new StockPerformanceService(Executors.newFixedThreadPool(50));
-		Map<String, Object> resultMap = service.getStockPerformanceMap();
-		
-		StockQuote hcei = (StockQuote) resultMap.get(StockPerformanceService.HCEI_KEY);
-		assertEquals("2828", hcei.getStockCode());
-		assertTrue(hcei.getPriceDoubleValue() > 0);
-				
-		@SuppressWarnings("unchecked")
-		List<StockQuote> quotes = (List<StockQuote>) resultMap.get(StockPerformanceService.QUOTES_KEY);
+		StockPerformanceService service = new StockPerformanceService(Executors.newFixedThreadPool(50));		
+		List<StockQuote> quotes = service.getStockPerformanceQuotes();
 		assertTrue(quotes.size() > 50);
 		
-		
+		List<StockQuote> quotes2828 = quotes.stream().filter(q -> "2828".equals(q.getStockCode())).collect(Collectors.toList());
+		assertEquals("One 2828 quote should be found", 1, quotes2828.size());
+				
+		for (int i=0; i < quotes.size()-1; i++) {			
+			assertTrue("Quotes are sort by last year percentage" , Double.compare(quotes.get(i).getLastYearPercentage(), quotes.get(i+1).getLastYearPercentage()) <=0);			
+		}
+				
 		// Get the map again should given same obj
-		assertEquals(resultMap, service.getStockPerformanceMap());
+		assertEquals(quotes, service.getStockPerformanceQuotes());
 	}
 }

@@ -8,6 +8,10 @@
 		td {
 			padding-right: 2px;
 		}
+				
+		.2828 {			
+			background-color: rgb(185, 213, 237); 
+		}	
 	</style>	
 </head>
 <body>	
@@ -25,20 +29,7 @@
 			<td>Yield</td>
 			<td>NAV</td>
 		</tr>
-		<tr ng-model="hcei">
-			<td>{{hcei.stockCode}}</td>
-			<td>HSCEI</td>
-			<td>{{hcei.price}}</td>
-			<td>{{hcei.change}}</td>
-			<td>{{hcei.lastYearPercentage.toFixed(2)}}</td>
-			<td>{{hcei.last2YearPercentage.toFixed(2)}}</td>
-			<td>{{hcei.last3YearPercentage.toFixed(2)}}</td>
-			<td>{{hcei.yearLow}} - {{hcei.yearHigh}}</td>
-			<td></td>
-			<td></td>
-			<td></td>
-		</tr>
-		<tr ng-repeat="quote in quotes">
+		<tr ng-repeat="quote in quotes" ng-style="quote.stockCode === '2828' &amp;&amp; {'background-color': 'rgb(185, 213, 237)'}">
 			<td>{{quote.stockCode}}</td>
 			<td>{{quote.stockName}}</td>
 			<td>{{quote.price}}</td>
@@ -66,8 +57,7 @@
 				$scope.status=$scope.status + '...';
 				$http({url: "liststocksperf"}).
 					success(function(data, status, headers, config) {
-						$scope.hcei=data.hcei;
-						$scope.quotes=data.quotes;
+						$scope.quotes=data;
 						$scope.status='';
 					}).
 					error(function(data, status, headers, config) {
