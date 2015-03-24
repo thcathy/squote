@@ -15,7 +15,7 @@ import squote.domain.StockQuote;
 public class StockPerformanceServiceTest {
 	
 	@Test
-	public void get2828QuoteWithPrevious3YearPrice() {
+	public void getDetailStockQuoteWith3PreviousYearPrice_GivenStockCode_ShouldReturnWith3PreviouYearPrice() {
 		StockQuote quote = new StockPerformanceService(Executors.newFixedThreadPool(50)).getDetailStockQuoteWith3PreviousYearPrice("2828");
 		assertEquals("2828", quote.getStockCode());
 		assertTrue(quote.getPriceDoubleValue() > 0);
@@ -25,7 +25,7 @@ public class StockPerformanceServiceTest {
 	}
 			
 	@Test
-	public void verifyGetStockPerformanceMap() {
+	public void getStockPerformanceQuotes_ShouldReturnOne2828QuoteAndAllQuoteSortedByLastYearPercentageChg() {
 		StockPerformanceService service = new StockPerformanceService(Executors.newFixedThreadPool(50));		
 		List<StockQuote> quotes = service.getStockPerformanceQuotes();
 		assertTrue(quotes.size() > 50);

@@ -43,7 +43,7 @@ public class HoldingStockControllerTest {
     }
 	
 	@Test
-	public void rootPagePathIsCorrect() throws Exception {		
+	public void holdingStock_ShouldShowListView() throws Exception {		
 		mockMvc.perform(get("/holdingstock/").characterEncoding("utf-8"))
 		.andExpect(status().isOk())
 		.andExpect(view().name("holdingstock/list"));
@@ -52,7 +52,7 @@ public class HoldingStockControllerTest {
 	
 	
 	@Test
-	public void objectsAreSortedByCreatedDate() throws Exception {
+	public void list_ShowReturnHoldingSTocksSortedByCreatedDate() throws Exception {
 		MvcResult mvcResult = mockMvc.perform(get("/holdingstock/").characterEncoding("utf-8"))
 								.andExpect(status().isOk())
 								.andExpect(view().name("holdingstock/list"))

@@ -36,7 +36,7 @@ public class ForumControllerTest {
 	@Value("${forum.threadEarliestDay}") int threadShouldNotOlderDay;
 		
 	@Test
-	public void getMusicForumThreads() {
+	public void list_MusicPage1_ShouldReturnDecendingForumThreadsNotOlderThanConfig() {
 		ModelMap modelMap = new ModelMap();
 		controller.list("MUSIC", 1, modelMap);
 		@SuppressWarnings("unchecked") List<ForumThread> contents = (List<ForumThread>) modelMap.get("contents");
@@ -57,7 +57,7 @@ public class ForumControllerTest {
 	}
 	
 	@Test
-	public void saveVisitedForumThread() {
+	public void visited_GivenUrl_ShouldCreateEntityVisitedForumThread() {
 		String url = "http://www.uwants.com/viewthread.php?tid=18017060&extra=page%3D1";
 		controller.visited(url);
 		VisitedForumThread t = visitedRepo.findOne(url);

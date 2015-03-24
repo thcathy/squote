@@ -46,7 +46,7 @@ public class QuoteControllerIntegrationTest {
     }
     
     @Test
-	public void getSingleQuote() throws Exception {	
+	public void getSingleQuote_Given2800_ShouldReturnXmlMessageWithPrice() throws Exception {	
 		mockMvc.perform(get("/quote/single/2800").characterEncoding("utf-8"))
 			.andExpect(status().isOk())
 			.andExpect(content().contentType("application/xml"))
@@ -55,7 +55,7 @@ public class QuoteControllerIntegrationTest {
 	
 	@SuppressWarnings("unchecked")
 	@Test
-	public void listQuoteByReqParam() throws Exception {
+	public void list_GivenStockCodes_ShouldReturnQuotesWithStocksAndIndexesAndMarketDailyReportHistories() throws Exception {
 		// Given
 		final String inputCodes = "753,2828,2800";
 		        

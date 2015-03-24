@@ -10,7 +10,7 @@ import squote.domain.StockQuote;
 
 public class EtnetStockQuoteParserTest {	
 	@Test
-	public void getChinaMobileStockQuote() {
+	public void getStockQuote_Given941_ShouldReturn941StockQuote() {
 		StockQuote q = new EtnetStockQuoteParser().parse("941").get();
 		assertEquals("941", q.getStockCode());
 		assertTrue(NumberUtils.isNumber(q.getPrice()));

@@ -68,7 +68,7 @@ public class CreateHoldingStockTest {
     }
     	
 	@Test
-	public void createHoldingStockWithWrongMessage() throws Exception {
+	public void postCreateHoldingStock_GivenWrongExeMsg_ShouldShowMsgCannotCreate() throws Exception {
 		// Given
 		StockQuote quote = new StockQuote("HSCEI");
         quote.setPrice("10368.13");
@@ -87,7 +87,7 @@ public class CreateHoldingStockTest {
 	}
 	
 	@Test
-	public void createHoldingStockSuccessfully() throws Exception {
+	public void postCreateHoldingStock_GivenRightExeMsg_ShouldCreateHoldingStock() throws Exception {
 		// Given
 		StockQuote quote = new StockQuote("HSCEI");
         quote.setPrice("10,368.13");
@@ -115,7 +115,7 @@ public class CreateHoldingStockTest {
 	}
 	
 	@Test
-	public void failCreateHoldingStockDueToCannotParseHscei() throws Exception {		
+	public void postCreateHoldingStock_GivenCannotParseHSCEI_ShouldShowMsgCannotGetHSCEI() throws Exception {		
 		// Given
 		Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.empty());        
 		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
@@ -131,7 +131,7 @@ public class CreateHoldingStockTest {
 	}
 	
 	@Test
-	public void emptyInputShouldGoToPageWithoutProcessing() throws Exception {
+	public void postCreateHoldingStock_GivenEmptyInput_ShouldGoToCreateHoldingStockPage() throws Exception {
 		mockMvc.perform(
 				post("/quote/createholdingstock").characterEncoding("utf-8")
 			).andExpect(status().isOk())
@@ -140,7 +140,7 @@ public class CreateHoldingStockTest {
 	}
 	
 	@Test	
-	public void createTodayExecutionUseIndexFromRealtimeQuote() throws Exception {
+	public void postCreateHoldingStock_GivenTodayExeMsg_ShouldCreateHoldingStockUseIndexFromRealtimeQuote() throws Exception {
 		// Given
         Mockito.when(mockWebQueryService.parse(Mockito.any(EtnetIndexQuoteParser.class))).thenReturn(Optional.of(Arrays.asList(hsiQuote, hsceiQuote)));
         

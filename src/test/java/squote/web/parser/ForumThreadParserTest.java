@@ -16,7 +16,7 @@ public class ForumThreadParserTest {
 	private static Logger log = LoggerFactory.getLogger(ForumThreadParserTest.class);
 	
 	@Test
-	public void parserShouldGetSthFromURL() {
+	public void parse_GivenRightURL_ShouldReturnSomeForumThread() {
 		// Test Uwants
 		String uwantsSource = "Uwants";
 		ForumThreadParser uwants = new UwantsThreadRetriever("http://www.uwants.com/forumdisplay.php?fid=472&page=1", uwantsSource);

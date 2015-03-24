@@ -14,7 +14,7 @@ public class CheckWebTest {
 	@Autowired CheckWebService checker;
 	
 	@Test
-	public void testCheckShouldRunWithoutException() {
+	public void check_GivenCorrectConfig_ShouldShouldRunWithoutException() {
 		checker.check();
 	}
 }

@@ -39,7 +39,7 @@ public class FundRepositoryTest {
 	}
 	
 	@Test
-	public void selectAndUpdateFund() throws Exception {				
+	public void selectAndUpdate_GivenFundObj_ShouldFindAndUpdateSuccessfully() throws Exception {				
 		Fund f = repo.findOne("Winning Fund");
 		log.debug("Found Winning Fund: {}", f);
 		assertEquals(1400, f.getHoldings().get("2828").getQuantity());

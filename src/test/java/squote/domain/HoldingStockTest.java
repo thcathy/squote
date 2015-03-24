@@ -11,7 +11,7 @@ import squote.SquoteConstants.Side;
 
 public class HoldingStockTest {
 	@Test
-	public void calculateCorrectPerformance() {
+	public void relativePerformance_GivenLatestStockAndIndexPrice_ShouldCalculateCorrectPerformance() {
 		HoldingStock holdingStock = new HoldingStock("1", Side.BUY, 1, BigDecimal.valueOf(10), new Date(), BigDecimal.valueOf(100));
 		assertEquals(40, holdingStock.relativePerformance(15, 110), 0.000001);
 		
@@ -20,7 +20,7 @@ public class HoldingStockTest {
 	}
 	
 	@Test
-	public void GrossFormatIsCorrect() {
+	public void getGross_GivenGrossWithoutDecimal_ShouldShowCorrectFmt() {
 		String scbBuyMsg = "渣打: (買入10,000股01138.中海發展股份) \n";
 		scbBuyMsg += "已於5.2300元成功執行\n";
 		scbBuyMsg += "20150205000020865";

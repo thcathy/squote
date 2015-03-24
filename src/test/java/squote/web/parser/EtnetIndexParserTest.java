@@ -12,7 +12,7 @@ import squote.domain.StockQuote;
 
 public class EtnetIndexParserTest {	
 	@Test
-	public void getGlobalIndexesReturnTwoQuotes() {
+	public void parse_ShouldReturnHSIAndHSCEI() {
 		List<StockQuote> indexes = new EtnetIndexQuoteParser().parse().get();
 		assertEquals(IndexCode.HSI.name,indexes.get(0).getStockCode());
 		assertTrue(indexes.get(0).getPriceDoubleValue() > 10000);

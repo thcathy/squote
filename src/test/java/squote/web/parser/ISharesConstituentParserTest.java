@@ -9,7 +9,7 @@ import org.junit.Test;
 public class ISharesConstituentParserTest {
 	 
 	@Test
-	public void testGetMSCIChinaConstituent() {
+	public void parseMSCIChina_ShouldReturnCorrectStockCodes() {
 		List<String> result = ISharesConstituentParser.parseMSCIChina();
 		assertTrue("MSCI China index should contain over 50 stocks", result.size() > 50);
 		assertTrue("MSCI China index should contain 941",result.contains("941"));
@@ -19,7 +19,7 @@ public class ISharesConstituentParserTest {
 	}
 	
 	@Test
-	public void testGetMSCIHKConstituent() {
+	public void parseMSCIHK_ShouldReturnCorrectStockCodes() {
 		List<String> result = ISharesConstituentParser.parseMSCIHK();
 		assertTrue("MSCI HK index should contain 11",result.contains("11"));
 		assertTrue("MSCI HK index should contain 2",result.contains("2"));

@@ -21,7 +21,7 @@ public class StockQueryIntegrationTest {
 	@Autowired StockQueryRepository stockQueryRepo;
 	
     @Test
-    public void saveBigDecimalInMongoCanKeepCorrectFormat() {
+    public void saveToMongo_GivenBigDecimal_ShouldKeepCorrectFormat() {
     	final String queryStr = "abcde";
     	StockQuery q = new StockQuery(queryStr);
     	q.setKey(10);
@@ -35,7 +35,7 @@ public class StockQueryIntegrationTest {
     }
     
     @Test
-    public void testStockQueryRepoFindByKey() {
+    public void findByKey_GivenNonexistKey_ShouldReturnNull() {
     	StockQuery q = stockQueryRepo.findByKey(999999);
     	log.debug("nonexist stock query: {}", q);
     	assertTrue("Query should return null if the object is not exist",q == null);

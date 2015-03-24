@@ -10,7 +10,7 @@ import squote.domain.StockQuote;
 
 public class AastockStockQuoteParserTest {	
 	@Test
-	public void getChinaMobileStockQuote() {
+	public void getStockQuote_Given941_ShouldReturn941StockQuote() {
 		StockQuote q = new AastockStockQuoteParser("941").getStockQuote();
 		assertEquals("941", q.getStockCode());
 		assertEquals("CHINA MOBILE", q.getStockName());

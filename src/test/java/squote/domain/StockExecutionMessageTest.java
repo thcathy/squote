@@ -14,7 +14,7 @@ import squote.SquoteConstants;
 public class StockExecutionMessageTest {
 	
 	@Test
-	public void constructFromScbMessage() {
+	public void contstruct_GivenRightExeMsg_ShouldParseSuccess() {
 		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
 		scbSellMsg += "已於4.8900元成功執行\n";
 		scbSellMsg += "20140610000013235";
@@ -51,7 +51,7 @@ public class StockExecutionMessageTest {
 	}
 	
 	@Test
-	public void constructFromNotCompletedScbMessageShouldReturnAbsent() {
+	public void construct_GivenNotCompletedMsg_ShouldReturnAbsent() {
 		String notCompleteMsg = "渣打: (買入10,000股01138.中海發展股份)\n";
 		notCompleteMsg += "2,000股成交於4.0500\n";
 		notCompleteMsg += "20140509000023378";
@@ -59,7 +59,7 @@ public class StockExecutionMessageTest {
 	}
 	
 	@Test
-	public void constructFromUnknownMsgShouldReturnAbsent() {
+	public void construct_GivenUnknownMsg_ShouldReturnAbsent() {
 		Optional<StockExecutionMessage> msg = StockExecutionMessage.construct("asdlkflwe");
 		assertTrue(!msg.isPresent());
 	}

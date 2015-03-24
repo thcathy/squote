@@ -19,7 +19,7 @@ public class MarketReportServiceTest {
 	}
 	
 	@Test
-	public void getTodayMarketDailyReportAlwaysReturn() {
+	public void getTodayMarketDailyReport_ShouldAlwaysReturnObj() {
 		MarketDailyReport rpt = service.getTodayMarketDailyReport();
 		assertTrue(rpt.getDate() > 0);
 		assertTrue(rpt.getMoneyBase().getClosingBalance() > 0);

@@ -9,7 +9,7 @@ import org.junit.Test;
 
 public class NumberUtilsTest {
 	@Test	
-	public void testConstructorIsPrivate() {
+	public void getDeclaredConstructors_ShouldBePrivate() {
 		final Constructor<?>[] constructors = NumberUtils.class.getDeclaredConstructors();
 	    for (Constructor<?> constructor : constructors) {
 	        assertTrue("All constructor should be private", Modifier.isPrivate(constructor.getModifiers()));

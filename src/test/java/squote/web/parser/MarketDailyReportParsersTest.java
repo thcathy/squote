@@ -21,7 +21,7 @@ import squote.domain.StockQuote;
 public class MarketDailyReportParsersTest {	
 	
 	@Test
-    public void retrieveNormalDateMonetaryBase() throws Exception {
+    public void retrieveMonetaryBase_GivenNormalDate_ShouldReturnMonetaryBase() throws Exception {
 		MonetaryBase result = HKMAMonetaryBaseParser.retrieveMonetaryBase(DateUtils.parseDate("20141230","yyyyMMdd")).get();		
 		assertEquals(341105, result.getIndebtedness(),0);
 		assertEquals(11346, result.getNotes(),0);
@@ -31,14 +31,14 @@ public class MarketDailyReportParsersTest {
 	}
 	
 	@Test
-	public void retrieveDataFromHolidayShouldGivenAbsent() throws Exception {
+	public void retrieveMonetaryBase_OnHolding_ShouldReturnAbsent() throws Exception {
 		Date holiday = DateUtils.parseDate("20131215","yyyyMMdd");
 		assertFalse(HKMAMonetaryBaseParser.retrieveMonetaryBase(holiday).isPresent());
 		assertFalse(new HSINetParser(Index(SquoteConstants.IndexCode.HSCEI), Date(holiday)).parse().isPresent());
 	}
 	
 	@Test
-	public void retrieveIndexOnWeekDate() throws Exception {
+	public void parseFromHSINet_GivenAnyDate_ShouldRtnQuoteOnWeekday() throws Exception {
 		testRetrieveIndex(SquoteConstants.IndexCode.HSCEI);
 		testRetrieveIndex(SquoteConstants.IndexCode.HSI);
 	}
