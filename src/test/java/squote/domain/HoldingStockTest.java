@@ -12,11 +12,17 @@ import squote.SquoteConstants.Side;
 public class HoldingStockTest {
 	@Test
 	public void relativePerformance_GivenLatestStockAndIndexPrice_ShouldCalculateCorrectPerformance() {
-		HoldingStock holdingStock = new HoldingStock("1", Side.BUY, 1, BigDecimal.valueOf(10), new Date(), BigDecimal.valueOf(100));
-		assertEquals(40, holdingStock.relativePerformance(15, 110), 0.000001);
+		final String stockCode = "1";
+		final BigDecimal stockOriginalPrice = BigDecimal.valueOf(10);
+		final BigDecimal hsceiOriginalPrice = BigDecimal.valueOf(100);
+		final double stockLatestPrice = 15;
+		final double hsceiLatestPrice = 110;
 		
-		holdingStock = new HoldingStock("1", Side.SELL, 1, BigDecimal.valueOf(10), new Date(), BigDecimal.valueOf(100));
-		assertEquals(-40, holdingStock.relativePerformance(15, 110), 0.000001);
+		HoldingStock holdingStock = new HoldingStock(stockCode, Side.BUY, 1, stockOriginalPrice, new Date(), hsceiOriginalPrice);
+		assertEquals(40, holdingStock.relativePerformance(stockLatestPrice, hsceiLatestPrice), 0.000001);
+		
+		holdingStock = new HoldingStock(stockCode, Side.SELL, 1, stockOriginalPrice, new Date(), hsceiOriginalPrice);
+		assertEquals(-40, holdingStock.relativePerformance(stockLatestPrice, hsceiLatestPrice), 0.000001);
 	}
 	
 	@Test

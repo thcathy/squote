@@ -39,7 +39,7 @@ public class QuoteControllerIntegrationTest {
 	@Autowired QuoteController quoteController;
 	
 	private MockMvc mockMvc;
-	    
+	   
     @Before
     public void setup() {    	
     	this.mockMvc = MockMvcBuilders.standaloneSetup(quoteController).build();        
@@ -47,7 +47,7 @@ public class QuoteControllerIntegrationTest {
     
     @Test
 	public void getSingleQuote_Given2800_ShouldReturnXmlMessageWithPrice() throws Exception {	
-		mockMvc.perform(get("/quote/single/2800").characterEncoding("utf-8"))
+		mockMvc.perform(get("/quote/single/2800").characterEncoding(WebConstants.RESPONSE_ENCODING))
 			.andExpect(status().isOk())
 			.andExpect(content().contentType("application/xml"))
 			.andExpect(xpath("/stockQuote[price=NA]").doesNotExist());
@@ -59,7 +59,7 @@ public class QuoteControllerIntegrationTest {
 		// Given
 		final String inputCodes = "753,2828,2800";
 		        
-		MvcResult mvcResult = mockMvc.perform(get("/quote/list?codes=" + inputCodes).characterEncoding("utf-8"))
+		MvcResult mvcResult = mockMvc.perform(get("/quote/list?codes=" + inputCodes).characterEncoding(WebConstants.RESPONSE_ENCODING))
 		.andExpect(status().isOk())
 		.andExpect(view().name("quote/list")).andReturn();
 		

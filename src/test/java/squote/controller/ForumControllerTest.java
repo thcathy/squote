@@ -34,6 +34,8 @@ public class ForumControllerTest {
 	@Resource ForumController controller;
 	@Resource VisitedForumThreadRepository visitedRepo;
 	@Value("${forum.threadEarliestDay}") int threadShouldNotOlderDay;
+	
+	private static int MIN_NUM_OF_THREADS = 200;
 		
 	@Test
 	public void list_MusicPage1_ShouldReturnDecendingForumThreadsNotOlderThanConfig() {
@@ -41,7 +43,7 @@ public class ForumControllerTest {
 		controller.list("MUSIC", 1, modelMap);
 		@SuppressWarnings("unchecked") List<ForumThread> contents = (List<ForumThread>) modelMap.get("contents");
 		
-		assertTrue("Number of thread " + contents.size() + " < 200", contents.size() > 200);
+		assertTrue("Number of thread " + contents.size() + " < " + MIN_NUM_OF_THREADS, contents.size() > MIN_NUM_OF_THREADS);
 		boolean descSortedByDate = IntStream.range(0, contents.size()-1)
 									.allMatch(i -> contents.get(i).getCreatedDate().getTime() >= contents.get(i+1).getCreatedDate().getTime());
 		assertTrue("Contents are decending ordered by created date", descSortedByDate);

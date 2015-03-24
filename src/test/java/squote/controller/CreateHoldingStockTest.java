@@ -53,6 +53,9 @@ public class CreateHoldingStockTest {
 	private MockMvc mockMvc;
 	private StockQuote hsceiQuote;
 	private StockQuote hsiQuote;
+	
+	private static String HSI_PRICE = "25000";
+	private static String HSCEI_PRICE = "12500";
     
     @Before
     public void setup() {    	
@@ -61,10 +64,10 @@ public class CreateHoldingStockTest {
         this.mockMvc = MockMvcBuilders.standaloneSetup(quoteController).build();
         
         hsiQuote = new StockQuote(IndexCode.HSI.name);
-        hsiQuote.setPrice("25000");
+        hsiQuote.setPrice(HSI_PRICE);
         
         hsceiQuote = new StockQuote(IndexCode.HSCEI.name);
-        hsceiQuote.setPrice("12500");
+        hsceiQuote.setPrice(HSCEI_PRICE);
     }
     	
 	@Test
@@ -88,7 +91,7 @@ public class CreateHoldingStockTest {
 	
 	@Test
 	public void postCreateHoldingStock_GivenRightExeMsg_ShouldCreateHoldingStock() throws Exception {
-		// Given
+		// Given		
 		StockQuote quote = new StockQuote("HSCEI");
         quote.setPrice("10,368.13");
         Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.of(quote));        
@@ -165,7 +168,7 @@ public class CreateHoldingStockTest {
 		assertEquals(10000, holdingStock.getQuantity());
 		assertEquals(new BigDecimal("48900.0000"), holdingStock.getGross());
 		assertEquals(SquoteConstants.Side.SELL, holdingStock.getSide());
-		assertEquals("12500", holdingStock.getHsce().toString());
+		assertEquals(HSCEI_PRICE, holdingStock.getHsce().toString());
 		assertEquals(total+1, holdingStockRepo.count());
 	}
 }

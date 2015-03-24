@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import squote.SpringQuoteWebApplication;
+import squote.controller.WebConstants;
 import squote.domain.HoldingStock;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -44,7 +45,7 @@ public class HoldingStockControllerTest {
 	
 	@Test
 	public void holdingStock_ShouldShowListView() throws Exception {		
-		mockMvc.perform(get("/holdingstock/").characterEncoding("utf-8"))
+		mockMvc.perform(get("/holdingstock/").characterEncoding(WebConstants.RESPONSE_ENCODING))
 		.andExpect(status().isOk())
 		.andExpect(view().name("holdingstock/list"));
 
@@ -53,7 +54,7 @@ public class HoldingStockControllerTest {
 	
 	@Test
 	public void list_ShowReturnHoldingSTocksSortedByCreatedDate() throws Exception {
-		MvcResult mvcResult = mockMvc.perform(get("/holdingstock/").characterEncoding("utf-8"))
+		MvcResult mvcResult = mockMvc.perform(get("/holdingstock/").characterEncoding(WebConstants.RESPONSE_ENCODING))
 								.andExpect(status().isOk())
 								.andExpect(view().name("holdingstock/list"))
 								.andReturn();
