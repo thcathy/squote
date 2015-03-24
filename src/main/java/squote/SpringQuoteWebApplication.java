@@ -86,7 +86,7 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 
 	// Schedule jobs
 
-	@Scheduled(fixedDelay = 60000)
+	@Scheduled(fixedDelay = 600000)
 	public void checkWebs() {
 		checkWebService().check();
 	}
