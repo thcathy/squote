@@ -64,12 +64,10 @@ public class MarketReportService {
 		Optional<StockQuote> hsi = new HSINetParser(Index(HSI), Date(calendar.getTime())).parse();
 		Optional<MarketDailyReport> r = new HSINetParser(Index(HSI), Date(calendar.getTime())).parse()
 				.map(i -> HKMAMonetaryBaseParser.retrieveMonetaryBase(calendar.getTime()))
-				.map(m -> {
-						MarketDailyReport report = new MarketDailyReport(calendar.getTime(), 
+				.map(m -> new MarketDailyReport(calendar.getTime(), 
 						m.get(), 
-						hsi.get(), new HSINetParser(Index(HSCEI), Date(calendar.getTime())).parse().get());						
-						return report;
-				});								
+						hsi.get(), new HSINetParser(Index(HSCEI), Date(calendar.getTime())).parse().get())
+				);								
 		r.ifPresent(x -> mktDailyRptRepo.save(x));
 		return r.orElse(null);
 	}
