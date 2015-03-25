@@ -44,37 +44,41 @@ public class MarketReportService {
 		return c;
 	}
 				
-	public MarketDailyReport getPreviousMarketDailyReport(Calendar calendar) {		
-		java.util.Optional<MarketDailyReport> reportOption = IntStream.range(0, 10).mapToObj(i-> {					
+	public MarketDailyReport getMarketDailyReportOnBefore(Calendar calendar) {		
+		Optional<MarketDailyReport> reportOption = IntStream.range(0, 10).mapToObj(i-> {
 					calendar.add(Calendar.DATE, -1);
-					if (DateUtils.isWeekEnd(calendar)) return null;
-					
-					// if db contain, return			
-					MarketDailyReport report = mktDailyRptRepo.findByDate(MarketDailyReport.formatDate(calendar.getTime()));
-					if (report != null) return report;
-								
-					Optional<StockQuote> hsi = new HSINetParser(Index(HSI), Date(calendar.getTime())).parse();
-					if (!hsi.isPresent()) return null;
-					
-					java.util.Optional<MonetaryBase> monetaryBase = HKMAMonetaryBaseParser.retrieveMonetaryBase(calendar.getTime());
-					if (monetaryBase.isPresent()) {
-						report = new MarketDailyReport(calendar.getTime(), 
-								monetaryBase.get(), 
-								hsi.get(), new HSINetParser(Index(HSCEI), Date(calendar.getTime())).parse().get());
-						mktDailyRptRepo.save(report);
-						return report;
-					}					
-					return report;
+					return getMarketDailyReportAt(calendar);
 				}).filter(x->x!=null).findFirst();
 		
 		return reportOption.orElse(new MarketDailyReport(calendar.getTime()));		
 	}
+
+	private MarketDailyReport getMarketDailyReportAt(Calendar calendar) {		
+		if (DateUtils.isWeekEnd(calendar)) return null;
+				 		
+		Optional<MarketDailyReport> report = Optional.ofNullable(mktDailyRptRepo.findByDate(MarketDailyReport.formatDate(calendar.getTime())));
+		return report.orElse(getMarketDailyReportFromWebAndPersist(calendar));				
+	}
 	
-	public MarketDailyReport getTodayMarketDailyReport() { return getPreviousMarketDailyReport(Calendar.getInstance()); }
+	private MarketDailyReport getMarketDailyReportFromWebAndPersist(Calendar calendar) {		
+		Optional<StockQuote> hsi = new HSINetParser(Index(HSI), Date(calendar.getTime())).parse();
+		Optional<MarketDailyReport> r = new HSINetParser(Index(HSI), Date(calendar.getTime())).parse()
+				.map(i -> HKMAMonetaryBaseParser.retrieveMonetaryBase(calendar.getTime()))
+				.map(m-> {
+						MarketDailyReport report = new MarketDailyReport(calendar.getTime(), 
+						m.get(), 
+						hsi.get(), new HSINetParser(Index(HSCEI), Date(calendar.getTime())).parse().get());
+						mktDailyRptRepo.save(report);
+						return report;
+				});								
+		return r.orElse(null);
+	}
+
+	public MarketDailyReport getTodayMarketDailyReport() { return getMarketDailyReportOnBefore(Calendar.getInstance()); }
 	
 	public List<CompletableFuture<MarketDailyReport>> getMarketDailyReport(Calendar... from) {
 		return Arrays.stream(from).map(c-> 
-					queryService.submit( ()->getPreviousMarketDailyReport(c) )
+					queryService.submit( ()->getMarketDailyReportOnBefore(c) )
 				)
 				.collect(Collectors.toList());		
 	}

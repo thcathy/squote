@@ -2,6 +2,7 @@ package squote;
 
 import javax.servlet.Filter;
 
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -24,6 +25,7 @@ import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
 import squote.service.CentralWebQueryService;
 import squote.service.CheckWebService;
+import squote.service.CheckWebTest;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
 
@@ -75,8 +77,11 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 
 	@Bean
 	public CheckWebService checkWebService() {
-		return new CheckWebService(checkWebUrlList.split(","), adminEmail,
-				appEmail, smtpUsername, smtpPassword);
+		return new CheckWebService.Builder()
+					.checkUrls(checkWebUrlList.split(","))
+					.fromEmail(appEmail).toEmail(adminEmail)
+					.smtpAccount(new UsernamePasswordCredentials(smtpUsername, smtpPassword))
+					.build();				
 	}
 			
 	@Override
