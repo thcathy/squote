@@ -16,16 +16,12 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.filter.CharacterEncodingFilter;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
-import squote.controller.ForumController;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
 import squote.service.CentralWebQueryService;
 import squote.service.CheckWebService;
-import squote.service.CheckWebTest;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
 
