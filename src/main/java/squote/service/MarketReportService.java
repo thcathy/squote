@@ -67,10 +67,10 @@ public class MarketReportService {
 				.map(m -> {
 						MarketDailyReport report = new MarketDailyReport(calendar.getTime(), 
 						m.get(), 
-						hsi.get(), new HSINetParser(Index(HSCEI), Date(calendar.getTime())).parse().get());
-						mktDailyRptRepo.save(report);
+						hsi.get(), new HSINetParser(Index(HSCEI), Date(calendar.getTime())).parse().get());						
 						return report;
 				});								
+		r.ifPresent(x -> mktDailyRptRepo.save(x));
 		return r.orElse(null);
 	}
 
