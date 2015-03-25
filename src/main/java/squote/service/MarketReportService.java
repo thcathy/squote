@@ -47,17 +47,17 @@ public class MarketReportService {
 	public MarketDailyReport getMarketDailyReportOnBefore(Calendar calendar) {		
 		Optional<MarketDailyReport> reportOption = IntStream.range(0, 10).mapToObj(i-> {
 					calendar.add(Calendar.DATE, -1);
-					return getMarketDailyReportAt(calendar);
+					if (DateUtils.isWeekEnd(calendar)) 
+						return null;
+					else 
+						return getMarketDailyReportFromDb(calendar).orElse(getMarketDailyReportFromWebAndPersist(calendar));
 				}).filter(x->x!=null).findFirst();
 		
 		return reportOption.orElse(new MarketDailyReport(calendar.getTime()));		
 	}
 
-	private MarketDailyReport getMarketDailyReportAt(Calendar calendar) {		
-		if (DateUtils.isWeekEnd(calendar)) return null;
-				 		
-		Optional<MarketDailyReport> report = Optional.ofNullable(mktDailyRptRepo.findByDate(MarketDailyReport.formatDate(calendar.getTime())));
-		return report.orElse(getMarketDailyReportFromWebAndPersist(calendar));				
+	private Optional<MarketDailyReport> getMarketDailyReportFromDb(Calendar calendar) {						 		
+		return Optional.ofNullable(mktDailyRptRepo.findByDate(MarketDailyReport.formatDate(calendar.getTime())));		
 	}
 	
 	private MarketDailyReport getMarketDailyReportFromWebAndPersist(Calendar calendar) {		

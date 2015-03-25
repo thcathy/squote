@@ -237,14 +237,11 @@ public class QuoteController extends AbstractController {
 	private void saveQueryIfNeeded(String codes, String action) {
 		try {				
 			if ("save".equals(action.toLowerCase())) {
-				StockQuery q = stockQueryRepo.findByKey(STOCK_QUERY_KEY);
-				if (q == null) {
-					q = new StockQuery(codes);
-					q.setKey(STOCK_QUERY_KEY);
-				}
-				else 
-					q.setDelimitedStocks(codes);		
-				
+				StockQuery q = Optional.ofNullable(stockQueryRepo.findByKey(STOCK_QUERY_KEY))
+					.orElse(new StockQuery(codes));
+					
+				q.setDelimitedStocks(codes);
+				q.setKey(STOCK_QUERY_KEY);
 				stockQueryRepo.save(q);
 			}
 		} catch (Exception e) {
