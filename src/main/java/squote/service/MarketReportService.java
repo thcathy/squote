@@ -48,10 +48,10 @@ public class MarketReportService {
 		Optional<MarketDailyReport> reportOption = IntStream.range(0, 10).mapToObj(i-> {
 					calendar.add(Calendar.DATE, -1);
 					if (DateUtils.isWeekEnd(calendar)) 
-						return null;
+						return MarketDailyReport.EMPTY_REPORT;
 					else 
 						return getMarketDailyReportFromDb(calendar).orElse(getMarketDailyReportFromWebAndPersist(calendar));
-				}).filter(x->x!=null).findFirst();
+				}).filter(x->!x.isEmpty()).findFirst();
 		
 		return reportOption.orElse(new MarketDailyReport(calendar.getTime()));		
 	}
@@ -69,7 +69,7 @@ public class MarketReportService {
 						hsi.get(), new HSINetParser(Index(HSCEI), Date(calendar.getTime())).parse().get())
 				);								
 		r.ifPresent(x -> mktDailyRptRepo.save(x));
-		return r.orElse(null);
+		return r.orElse(MarketDailyReport.EMPTY_REPORT);
 	}
 
 	public MarketDailyReport getTodayMarketDailyReport() { return getMarketDailyReportOnBefore(Calendar.getInstance()); }

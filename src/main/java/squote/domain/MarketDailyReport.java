@@ -17,6 +17,8 @@ public class MarketDailyReport {
 	private StockQuote hsi;
 	private StockQuote hscei;
 	
+	public static MarketDailyReport EMPTY_REPORT = new MarketDailyReport();
+	
 	public MarketDailyReport() {}
 	public MarketDailyReport(int date) { this.date = date; }
 	public MarketDailyReport(Date date) { this.date = formatDate(date); }
@@ -25,14 +27,17 @@ public class MarketDailyReport {
 		this.moneyBase = moneyBase;
 		this.hsi = hsiQuote;
 		this.hscei = hsceQuote;
-	}
-	
+	}		
 	public static int formatDate(Date date) { return Integer.valueOf(new SimpleDateFormat("yyyyMMdd").format(date)); }
 
 	@Override
 	public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
+	
+	public boolean isEmpty() {
+		return date < 20120000;
+	}
 
 	public int getDate() {
         return this.date;
