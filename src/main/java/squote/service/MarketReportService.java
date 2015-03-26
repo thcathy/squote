@@ -10,7 +10,6 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -18,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import squote.domain.MarketDailyReport;
-import squote.domain.MonetaryBase;
 import squote.domain.StockQuote;
 import squote.domain.repository.MarketDailyReportRepository;
 import squote.web.parser.HKMAMonetaryBaseParser;

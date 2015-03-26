@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
+import org.apache.http.StatusLine;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -86,10 +87,10 @@ public class HttpClient {
 		    log.debug("Request status: {}", response1.getStatusLine());
 		    log.debug("Request cookies: {}", cookieStore.getCookies());
 		    
-		    return entity.getContent();
-		} catch (Exception e) {			
-			return new NullInputStream(0);
+		    if (response1.getStatusLine().getStatusCode() < 300) return entity.getContent();
+		} catch (Exception e) {
 		}
+		return new NullInputStream(0);
 	}
 	
 	public Document getDocument(String url) {

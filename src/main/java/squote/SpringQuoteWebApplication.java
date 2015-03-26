@@ -18,6 +18,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
+import com.github.sendgrid.SendGrid;
+
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
 import squote.service.CentralWebQueryService;
@@ -76,7 +78,7 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 		return new CheckWebService.Builder()
 					.checkUrls(checkWebUrlList.split(","))
 					.fromEmail(appEmail).toEmail(adminEmail)
-					.smtpAccount(new UsernamePasswordCredentials(smtpUsername, smtpPassword))
+					.sendGrid(new SendGrid(smtpUsername, smtpPassword))
 					.build();				
 	}
 			

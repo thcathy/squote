@@ -10,7 +10,6 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -238,7 +237,7 @@ public class QuoteController extends AbstractController {
 		try {				
 			if ("save".equals(action.toLowerCase())) {
 				StockQuery q = Optional.ofNullable(stockQueryRepo.findByKey(STOCK_QUERY_KEY))
-					.orElse(new StockQuery(codes));
+										.orElse(new StockQuery(codes));
 					
 				q.setDelimitedStocks(codes);
 				q.setKey(STOCK_QUERY_KEY);
