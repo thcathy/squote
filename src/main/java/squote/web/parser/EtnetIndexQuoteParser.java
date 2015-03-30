@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import squote.domain.StockQuote;
-import thc.util.HttpClient;
+import thc.util.HttpClientImpl;
 
 public class EtnetIndexQuoteParser extends WebParser<List<StockQuote>> {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -30,7 +30,7 @@ public class EtnetIndexQuoteParser extends WebParser<List<StockQuote>> {
 	public Optional<List<StockQuote>> parse() {
 		List<StockQuote> indexes = new ArrayList<StockQuote>();
 		try {
-			Document doc = new HttpClient("UTF-8").getDocument("http://www.etnet.com.hk/www/eng/stocks/indexes_main.php");
+			Document doc = new HttpClientImpl("UTF-8").newInstance().getDocument("http://www.etnet.com.hk/www/eng/stocks/indexes_main.php");
 			indexes.add(retrieveIndexQuote(doc.select("a[href=indexes_detail.php?subtype=HSI]").first()));
 			indexes.add(retrieveIndexQuote(doc.select("a[href=indexes_detail.php?subtype=CEI]").first()));			
 		} catch (Exception e) {

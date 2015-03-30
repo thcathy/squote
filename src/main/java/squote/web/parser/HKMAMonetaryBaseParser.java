@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import squote.domain.MonetaryBase;
-import thc.util.HttpClient;
+import thc.util.HttpClientImpl;
 import thc.util.NumberUtils;
 
 public class HKMAMonetaryBaseParser implements Callable<java.util.Optional<MonetaryBase>> {
@@ -53,7 +53,7 @@ public class HKMAMonetaryBaseParser implements Callable<java.util.Optional<Monet
 	}
 	
 	private static MonetaryBase parseMonetaryBaseFromURL(String url) {
-		Document doc = new HttpClient().getDocument(url);
+		Document doc = new HttpClientImpl().newInstance().getDocument(url);
 		return new MonetaryBase(
 				getNumber(doc, "Certificates of Indebtedness"),
 				getNumber(doc,"Government Notes/Coins in Circulation"),

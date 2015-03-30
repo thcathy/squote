@@ -112,8 +112,7 @@ public class ForumController extends AbstractController {
     private List<ForumThreadParser> getParserByType(ContentType type, int batch) {
     	return type.urls.stream()
     			.flatMap(url -> (Stream<ForumThreadParser>) 
-    					IntStream.rangeClosed(fromPage(batch), toPage(batch))
-    							.boxed()
+    					IntStream.rangeClosed(fromPage(batch), toPage(batch)).boxed()
     							.map(i -> ForumThreadParser.buildParser(url,i))
     			)
     			.collect(Collectors.toList());    			

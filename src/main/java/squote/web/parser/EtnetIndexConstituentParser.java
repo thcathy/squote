@@ -10,7 +10,7 @@ import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import thc.util.HttpClient;
+import thc.util.HttpClientImpl;
 
 public class EtnetIndexConstituentParser {
 	private static final Logger log = LoggerFactory.getLogger(EtnetIndexConstituentParser.class);
@@ -19,7 +19,7 @@ public class EtnetIndexConstituentParser {
 		List<String> results = new ArrayList<String>();
 		try
 		{			
-			Document doc =  new HttpClient("UTF-8").getDocument(url);
+			Document doc =  new HttpClientImpl("UTF-8").getDocument(url);
 			for (Iterator<Element> i = doc.select("a[href^=realtime/quote.php?code=]").iterator(); i.hasNext();) {				
 				Element e = i.next();
 				if (StringUtils.isNumeric(e.html())) results.add(Integer.valueOf(e.html()).toString());

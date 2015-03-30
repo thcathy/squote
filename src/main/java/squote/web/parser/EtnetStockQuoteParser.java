@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import squote.domain.StockQuote;
-import thc.util.HttpClient;
+import thc.util.HttpClientImpl;
 import thc.util.StringUtils;
 
 public class EtnetStockQuoteParser {
@@ -19,7 +19,7 @@ public class EtnetStockQuoteParser {
 			
 	public Optional<StockQuote> parse(String code) {		
 		try {
-			Document doc = new HttpClient("UTF-8").getDocument(URL + code);
+			Document doc = new HttpClientImpl("UTF-8").newInstance().getDocument(URL + code);
 						
 			StockQuote q = new StockQuote(code);
 			q.setPrice(doc.select("div[id^=StkDetailMainBox] span[class^=Price ]").text().replaceAll("[0\\D]+$",""));

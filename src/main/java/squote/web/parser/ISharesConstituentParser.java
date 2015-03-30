@@ -9,7 +9,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import thc.util.HttpClient;
+import thc.util.HttpClientImpl;
  
 public class ISharesConstituentParser {
 	private static final Logger log = LoggerFactory.getLogger(ISharesConstituentParser.class);
@@ -18,7 +18,7 @@ public class ISharesConstituentParser {
 		
 	public static List<String> parseMSCIChina() {		
 		try {
-			List<String> lines = IOUtils.readLines(new HttpClient("utf-8").makeGetRequest(MSCIChinaConstituentsURL));
+			List<String> lines = IOUtils.readLines(new HttpClientImpl("utf-8").newInstance().makeGetRequest(MSCIChinaConstituentsURL));
 			List<String> results = lines.stream()
 				.map(l->l.split("\",\""))
 				.map(l->{System.out.println(Arrays.toString(l)); return l;})
@@ -36,7 +36,7 @@ public class ISharesConstituentParser {
 		String URL = "http://www.ishares.com/us/products/239657/ishares-msci-hong-kong-etf/1395165510754.ajax?fileType=csv&fileName=EWH_holdings&dataType=fund";
 		
 		try {
-			List<String> lines = IOUtils.readLines(new HttpClient("utf-8").makeGetRequest(URL));
+			List<String> lines = IOUtils.readLines(new HttpClientImpl("utf-8").newInstance().makeGetRequest(URL));
 			List<String> results = lines.stream()				
 				.map(line->line.split("\",\""))				
 				.filter(line -> line.length > 12 && line[11].contains("Hong Kong Exchanges And Clearing Ltd"))

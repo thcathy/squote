@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import squote.domain.ForumThread;
 import thc.util.HttpClient;
+import thc.util.HttpClientImpl;
 
 import com.google.common.base.Optional;
 
@@ -59,7 +60,7 @@ public abstract class ForumThreadParser implements Callable<List<ForumThread>> {
 	
 	public List<ForumThread> parse() {
 		log.debug("parse url: {}", url);
-		HttpClient httpClient = new HttpClient(encoding);		
+		HttpClient httpClient = new HttpClientImpl(encoding).newInstance();		
 		List<ForumThread> results = new ArrayList<ForumThread>();
 		
 		if (loginUrl.isPresent()) httpClient.makeGetRequest(loginUrl.get());	// perform login for particular forum

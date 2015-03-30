@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import squote.SquoteConstants;
 import squote.domain.StockQuote;
 import thc.util.DateUtils;
-import thc.util.HttpClient;
+import thc.util.HttpClientImpl;
 import thc.util.NumberUtils;
 
 public class HSINetParser extends WebParser<StockQuote> {	
@@ -45,7 +45,7 @@ public class HSINetParser extends WebParser<StockQuote> {
 		SimpleDateFormat format = new SimpleDateFormat("dMMMyy", Locale.US);
 		String url = MessageFormat.format(DailyReportURL, StringUtils.lowerCase(index.toString()), format.format(date));
 		try {
-			String[] result = IOUtils.readLines(new HttpClient("utf-8").makeGetRequest(url)).get(4).split("\t");
+			String[] result = IOUtils.readLines(new HttpClientImpl("utf-8").newInstance().makeGetRequest(url)).get(4).split("\t");
 			StockQuote quote = new StockQuote(index.toString());
 			quote.setLastUpdate(NumberUtils.extractNumber(result[0]));
 			quote.setHigh(NumberUtils.extractNumber(result[3]));

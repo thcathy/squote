@@ -10,7 +10,7 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import thc.util.HttpClient;
+import thc.util.HttpClientImpl;
 import thc.util.NumberUtils;
 
 
@@ -39,7 +39,7 @@ public class HistoryQuoteParser {
 		String url = getQuoteURL(stock,fromDate,toDate);
 		try
 		{	
-			Document doc = new HttpClient("utf-8").getDocument(url);
+			Document doc = new HttpClientImpl("utf-8").newInstance().getDocument(url);
 			String price = doc.select("td[class^=yfnc_tabledata1]:eq(6)").first().text();
 			return Optional.of( new BigDecimal(NumberUtils.extractDouble(price)));
 		} catch (Exception e) {			

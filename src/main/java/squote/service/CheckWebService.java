@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import thc.util.HttpClient;
+import thc.util.HttpClientImpl;
 
 import com.github.sendgrid.SendGrid;
 
@@ -23,22 +24,26 @@ public class CheckWebService {
 	private final String fromEmail;
 	//private final Credentials smtpAccount;
 	private final SendGrid sendGrid;
+	private final HttpClient clientFactory;
 			
 	public static class Builder {
 		private String[] urls;
 		private String fromEmail;
 		private String toEmail;
 		private SendGrid sendGrid;
+		private HttpClient clientFactory;
 
 		public Builder checkUrls(String[] urls) { this.urls = urls; return this;}
 		public Builder fromEmail(String email) { this.fromEmail = email; return this; }
 		public Builder toEmail(String email) { this.toEmail = email; return this; }
 		public Builder sendGrid(SendGrid sendGrid) { this.sendGrid = sendGrid; return this; }
+		public Builder httpClient(HttpClient clientFactory) { this.clientFactory = clientFactory; return this; }
 		
 		public CheckWebService build() {
 			notEmpty(urls);
 			notBlank(toEmail);
 			notNull(sendGrid);
+			if (clientFactory == null) clientFactory = new HttpClientImpl();
 			return new CheckWebService(this); 
 		}
 	}
@@ -48,12 +53,13 @@ public class CheckWebService {
 		this.fromEmail = builder.fromEmail;
 		this.toEmail = builder.toEmail;
 		this.sendGrid = builder.sendGrid;
+		this.clientFactory = builder.clientFactory;
 	}
 
 	public void check() {
 		for (String url : urls) {
 			log.debug("Check {}", url);
-			InputStream s = new HttpClient().makeGetRequest(url);
+			InputStream s = clientFactory.newInstance().makeGetRequest(url);
 			if (s instanceof NullInputStream) {
 				log.info("Fail to ping {}, sending email", url);
 				sendPingFailEmail(url);			
