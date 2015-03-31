@@ -4,6 +4,6 @@ import java.util.concurrent.Callable;
 
 import squote.domain.StockQuote;
 
-public interface StockQuoteParser extends Callable<StockQuote> {
+public interface StockQuoteParser {
 	public StockQuote getStockQuote();
 }

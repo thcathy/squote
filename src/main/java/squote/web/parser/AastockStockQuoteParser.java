@@ -18,9 +18,6 @@ public class AastockStockQuoteParser implements StockQuoteParser {
 	public AastockStockQuoteParser(String code) { this.code = code; }
 	
 	@Override
-	public StockQuote call() throws Exception { return getStockQuote(); }
-
-	@Override
 	public StockQuote getStockQuote() {
 		StockQuote quote = new StockQuote(code);
 		try

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
+import org.apache.commons.io.input.NullInputStream;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -59,12 +60,12 @@ public class CheckWebServiceTest {
 		String url1 = "abc.funfunspell.com";
 		String url2 = "http://aklerj.com/";
 		HttpClient httpClient = mock(HttpClient.class, RETURNS_DEEP_STUBS);
-		when(httpClient.newInstance().makeGetRequest(Mockito.any())).thenReturn(new ByteArrayInputStream("".getBytes() ));
+		when(httpClient.newInstance().makeGetRequest(Mockito.any())).thenReturn(new NullInputStream(0));
 		CheckWebService checker = new CheckWebService.Builder()
 			.checkUrls(new String[] {url1, url2})
 			.fromEmail("a").toEmail("b")
 			.sendGrid(sendGrid)	
-			.httpClient(new HttpClientImpl())
+			.httpClient(httpClient)
 			.build();
 		
 		// Run

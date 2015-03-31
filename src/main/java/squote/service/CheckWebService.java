@@ -43,7 +43,7 @@ public class CheckWebService {
 			notEmpty(urls);
 			notBlank(toEmail);
 			notNull(sendGrid);
-			if (clientFactory == null) clientFactory = new HttpClientImpl();
+			notNull(clientFactory);
 			return new CheckWebService(this); 
 		}
 	}
