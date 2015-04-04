@@ -2,7 +2,6 @@ package squote;
 
 import javax.servlet.Filter;
 
-import org.apache.http.auth.UsernamePasswordCredentials;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -18,14 +17,15 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
-import com.github.sendgrid.SendGrid;
-
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
 import squote.service.CentralWebQueryService;
 import squote.service.CheckWebService;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
+import thc.util.HttpClientImpl;
+
+import com.github.sendgrid.SendGrid;
 
 @Configuration
 @EnableAutoConfiguration
@@ -79,6 +79,7 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 					.checkUrls(checkWebUrlList.split(","))
 					.fromEmail(appEmail).toEmail(adminEmail)
 					.sendGrid(new SendGrid(smtpUsername, smtpPassword))
+					.httpClient(new HttpClientImpl())
 					.build();				
 	}
 			

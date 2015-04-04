@@ -7,12 +7,10 @@ import static org.apache.commons.lang3.Validate.notNull;
 import java.io.InputStream;
 
 import org.apache.commons.io.input.NullInputStream;
-import org.apache.http.auth.Credentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import thc.util.HttpClient;
-import thc.util.HttpClientImpl;
 
 import com.github.sendgrid.SendGrid;
 
