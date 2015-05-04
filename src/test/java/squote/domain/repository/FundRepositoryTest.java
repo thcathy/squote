@@ -26,11 +26,15 @@ public class FundRepositoryTest {
 	@Autowired FundRepository repo;
 	
 	@Before
-	public void createFund() {
+	public void persistFund() {
+		repo.save(createSimpleFund());	
+	}
+	
+	private Fund createSimpleFund() {
 		Fund f1 = new Fund("Winning Fund");
 		f1.buyStock("2828", 400, new BigDecimal("40000"));
 		f1.buyStock("2828", 1000, new BigDecimal("95000"));
-		repo.save(f1);	
+		return f1;
 	}
 	
 	@After
@@ -55,4 +59,23 @@ public class FundRepositoryTest {
 		assertEquals(new BigDecimal("115000"), f2.getHoldings().get("2828").getGross());
 		assertNotNull(f2.getHoldings().get("2828").getDate());
 	}	
+	
+	@Test
+	public void save_ShouldNotPersistSpotPriceInFundHolding() {
+		Fund f1 = createSimpleFund();
+		BigDecimal price2828 = new BigDecimal(125);
+		f1.getHoldings().get("2828").calculateNetProfit(price2828);
+		repo.save(f1);		
+		assertEquals(price2828, f1.getHoldings().get("2828").getSpotPrice());		
+		
+		try {
+			Fund f2 = repo.findOne("Winning Fund");
+			f2.getHoldings().get("2828").getSpotPrice();
+		} catch (IllegalStateException e) {
+			return;
+		}
+		fail("Spot Price should not ready when fund retrieve from db");
+		
+	}
+	
 }
