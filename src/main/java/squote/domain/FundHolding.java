@@ -1,5 +1,6 @@
 package squote.domain;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -20,7 +21,7 @@ public class FundHolding {
 		this.date = date;
 	}
 	
-	public BigDecimal getPrice() { return gross.divide(BigDecimal.valueOf(quantity)); }
+	public BigDecimal getPrice() { return gross.divide(BigDecimal.valueOf(quantity), 2, RoundingMode.HALF_UP); }
 		
 	@Override
 	public String toString() {

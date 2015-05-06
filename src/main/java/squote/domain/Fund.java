@@ -53,6 +53,7 @@ public class Fund {
 	
 	private FundHolding decreaseHolding(FundHolding fundHolding, int qty,
 			BigDecimal gross) {		
-		return FundHolding.create(fundHolding.getCode(), fundHolding.getQuantity() - qty, fundHolding.getGross().subtract(gross));
+		BigDecimal orgGross = fundHolding.getPrice().multiply(new BigDecimal(qty));
+		return FundHolding.create(fundHolding.getCode(), fundHolding.getQuantity() - qty, fundHolding.getGross().subtract(orgGross));
 	}
 }
