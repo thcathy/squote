@@ -24,27 +24,11 @@ import org.slf4j.LoggerFactory;
 
 public class HttpClientImpl implements HttpClient {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
-	
-	private static final boolean hasProxyServer;
-	private static final boolean hasProxyUser;
-	private static final String proxyHost;
-	private static final String proxyPort;
-	private static final String proxyUsername;
-	private static final String proxyPassword;
-	
+		
 	private BasicCookieStore cookieStore = new BasicCookieStore();
 	private CloseableHttpClient httpclient;
 	private String encoding = "utf-8";
-	
-	static {		
-		proxyHost = System.getProperty("http.proxyHost");
-		proxyPort = System.getProperty("http.proxyPort");
-		proxyUsername = System.getProperty("http.proxyUsername");
-		proxyPassword = System.getProperty("http.proxyPassword");
-		hasProxyServer = hasProxyServer();
-		hasProxyUser = hasProxyServer && hasProxyUser();
-	}
-	
+		
 	public HttpClientImpl() {
 	}
 	
@@ -54,40 +38,19 @@ public class HttpClientImpl implements HttpClient {
 	@Override
 	public HttpClient newInstance() {
 		HttpClientImpl instance = new HttpClientImpl();
-		CredentialsProvider credsProvider = new BasicCredentialsProvider();
-		if (hasProxyUser) {
-	        credsProvider.setCredentials(
-	                new AuthScope(proxyHost, Integer.valueOf(proxyPort)),
-	                new UsernamePasswordCredentials(proxyUsername, proxyPassword));
-		}
 		
-		if (hasProxyServer) {
-			instance.httpclient = HttpClients.custom().setProxy(new HttpHost(proxyHost,Integer.valueOf(proxyPort))).setDefaultCredentialsProvider(credsProvider)
+		instance.httpclient = HttpClients.custom()
 					.setDefaultCookieStore(cookieStore).setUserAgent("Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0; Trident/5.0)").build();
-		} else {
-			instance.httpclient = HttpClients.custom()
-					.setDefaultCookieStore(cookieStore).setUserAgent("Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0; Trident/5.0)").build();
-		}
+		
 		instance.encoding = this.encoding;
 		return instance;
 	}
 	
-	private static boolean hasProxyServer() {
-		return StringUtils.isNotBlank(proxyHost) && NumberUtils.isDigits(proxyPort);
-	}
-
-	private static boolean hasProxyUser() {
-		return StringUtils.isNotBlank(proxyUsername) && StringUtils.isNotBlank(proxyPassword);
-	}
-
 	public HttpClientImpl(String encoding) {
 		this();
 		this.encoding = encoding;
 	}
 	
-	/* (non-Javadoc)
-	 * @see thc.util.HttpClient#makeGetRequest(java.lang.String)
-	 */
 	@Override
 	public InputStream makeGetRequest(String url) {
 		HttpGet httpget = new HttpGet(url);
@@ -105,9 +68,6 @@ public class HttpClientImpl implements HttpClient {
 		return new NullInputStream(0);
 	}
 	
-	/* (non-Javadoc)
-	 * @see thc.util.HttpClient#getDocument(java.lang.String)
-	 */
 	@Override
 	public Document getDocument(String url) {
 		try {

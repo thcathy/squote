@@ -1,12 +1,11 @@
 package squote.domain.repository;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.math.BigDecimal;
 
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -28,17 +27,11 @@ public class FundRepositoryTest {
 	private final String FUND_NAME = "Winning Fund";
 	
 	@Autowired FundRepository repo;
-	
-	@Before
-	public void Fund() {
-		Fund f1 = createFund1();
-		repo.save(f1);	
-	}
-
-	private Fund createFund1() {
-		Fund f1 = new Fund(FUND_NAME);
+		
+	private Fund createSimpleFund() {
+		Fund f1 = new Fund("Winning Fund");
 		f1.buyStock("2828", 400, new BigDecimal("40000"));
-		f1.buyStock("2828", 1000, new BigDecimal("95000"));
+		f1.buyStock("2828", 1000, new BigDecimal("100000"));
 		return f1;
 	}
 	
@@ -48,25 +41,8 @@ public class FundRepositoryTest {
 	}
 	
 	@Test
-	public void selectAndUpdate_GivenFundObj_ShouldFindAndUpdateSuccessfully() throws Exception {				
-		Fund f = repo.findOne(FUND_NAME);
-		log.debug("Found Winning Fund: {}", f);
-		assertEquals(1400, f.getHoldings().get("2828").getQuantity());
-		assertEquals(new BigDecimal("135000"), f.getHoldings().get("2828").getGross());
-		assertNotNull(f.getHoldings().get("2828").getDate());
-		
-		f.sellStock("2828", 200, new BigDecimal("20000"));
-		repo.save(f);
-		
-		Fund f2 = repo.findOne(FUND_NAME);
-		log.debug("Found updated Winning Fund: {}", f2);
-		assertEquals(1200, f2.getHoldings().get("2828").getQuantity());
-		assertNotNull(f2.getHoldings().get("2828").getDate());
-	}	
-	
-	@Test
 	public void sellStock_GivenAFund_ShouldDecreaseQtyAndGrossButPriceUnchange() {
-		Fund f = createFund1();
+		Fund f = createSimpleFund();
 		int sellQty = 200;
 		int sellGross = 25000;
 		BigDecimal orgPrice = f.getHoldings().get("2828").getPrice();
@@ -81,4 +57,24 @@ public class FundRepositoryTest {
 		assertEquals(orgPrice, hcei.getPrice());
 		
 	}
+
+	@Test
+	public void save_ShouldNotPersistSpotPriceInFundHolding() {
+		Fund f1 = createSimpleFund();
+		BigDecimal price2828 = new BigDecimal(125);
+		f1.getHoldings().get("2828").calculateNetProfit(price2828);
+		repo.save(f1);		
+		assertEquals(price2828, f1.getHoldings().get("2828").getSpotPrice());		
+		
+		try {
+			Fund f2 = repo.findOne("Winning Fund");
+			f2.getHoldings().get("2828").getSpotPrice();
+		} catch (IllegalStateException e) {
+			return;
+		}
+		fail("Spot Price should not ready when fund retrieve from db");
+		
+	}
+	
+
 }

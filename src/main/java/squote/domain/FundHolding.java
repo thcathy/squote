@@ -5,6 +5,7 @@ import java.util.Date;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.springframework.data.annotation.Transient;
 import org.springframework.format.annotation.DateTimeFormat;
 
 public class FundHolding {	
@@ -12,6 +13,10 @@ public class FundHolding {
 	private final int quantity;
 	private final BigDecimal gross;
 	private final @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
+	
+	@Transient
+	private BigDecimal spotPrice;
+	private BigDecimal netProfit;
 		
 	public FundHolding(String code, int quantity, BigDecimal gross, Date date) {
 		super();
@@ -20,20 +25,34 @@ public class FundHolding {
 		this.gross = gross;
 		this.date = date;
 	}
-	
-	public BigDecimal getPrice() { return gross.divide(BigDecimal.valueOf(quantity), 2, RoundingMode.HALF_UP); }
 		
+	public static FundHolding create(String code, int qty, BigDecimal gross) {		
+		return new FundHolding(code, qty, gross, new Date());
+	}
+					
 	@Override
 	public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
+	
+	public void calculateNetProfit(BigDecimal spotPrice) {
+		if (spotPrice == null) throw new IllegalArgumentException("Spot Price cannot null");
+		this.spotPrice = spotPrice;
+		this.netProfit = spotPrice.multiply(new BigDecimal(quantity)).subtract(gross);
+	}
 
+	public BigDecimal getPrice() { return gross.divide(BigDecimal.valueOf(quantity), 4, RoundingMode.HALF_UP); }
 	public String getCode() { return this.code; }
 	public int getQuantity() { return this.quantity;}
 	public BigDecimal getGross() { return this.gross; }
 	public Date getDate() { return this.date; }
-
-	public static FundHolding create(String code, int qty, BigDecimal gross) {		
-		return new FundHolding(code, qty, gross, new Date());
-	}	
+	public BigDecimal getNetProfit() {
+		if (netProfit == null) throw new IllegalStateException("Net Profit hadn't calculated");
+		return this.netProfit; 
+	}
+	public BigDecimal getSpotPrice() {
+		if (spotPrice == null) throw new IllegalStateException("Spot Price hadn't calculated");
+		return this.spotPrice; 
+	}
+	
 }
