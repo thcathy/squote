@@ -56,4 +56,18 @@ public class Fund {
 		BigDecimal orgGross = fundHolding.getPrice().multiply(new BigDecimal(qty));
 		return FundHolding.create(fundHolding.getCode(), fundHolding.getQuantity() - qty, fundHolding.getGross().subtract(orgGross));
 	}
+
+	public Fund calculateNetProfit(Map<String, StockQuote> quoteMap) {
+		holdings.forEach((key, value) -> {
+			value.calculateNetProfit(new BigDecimal(quoteMap.get(key).getPrice()));
+		});
+		
+		return this;
+	}
+
+	public BigDecimal getNetProfit() {
+		return holdings.values().stream()
+			.map(v -> v.getNetProfit())			
+	        .reduce(BigDecimal.ZERO, BigDecimal::add);
+	}
 }
