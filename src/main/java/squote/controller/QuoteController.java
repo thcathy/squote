@@ -36,11 +36,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import squote.SquoteConstants.IndexCode;
+import squote.domain.Fund;
 import squote.domain.HoldingStock;
 import squote.domain.MarketDailyReport;
 import squote.domain.StockExecutionMessage;
 import squote.domain.StockQuery;
 import squote.domain.StockQuote;
+import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.StockQueryRepository;
 import squote.service.CentralWebQueryService;
@@ -68,6 +70,7 @@ public class QuoteController extends AbstractController {
 	@Autowired StockPerformanceService stockPerformanceService;
 	@Autowired CentralWebQueryService webQueryService;
 	@Autowired HoldingStockRepository holdingStockRepo;
+	@Autowired FundRepository fundRepo;
 	
 	public QuoteController() {
 		super("quote");
@@ -152,7 +155,8 @@ public class QuoteController extends AbstractController {
 		updateCookie(codes, response);
 			
 		List<HoldingStock> holdingStocks = Lists.newArrayList(holdingStockRepo.findAll(new Sort("date")));
-		Set<String> codeSet = uniqueStockCodes(codes, holdingStocks); 
+		List<Fund> funds = Lists.newArrayList(fundRepo.findAll());
+		Set<String> codeSet = uniqueStockCodes(codes, holdingStocks, funds); 
 				
 		// Submit web queries
 		Future<Optional<List<StockQuote>>> indexeFutures = webQueryService.submit(new EtnetIndexQuoteParser());
@@ -162,6 +166,7 @@ public class QuoteController extends AbstractController {
 		// After all concurrent jobs submitted
 		List<StockQuote> indexes = ConcurrentUtils.collect(indexeFutures).get();
 		Map<String, StockQuote> allQuotes = collectAllStockQuotes(stockQuoteFutures);
+		funds.forEach( f -> f.calculateNetProfit(allQuotes) );
 			
 		modelMap.put("codes", codes);
 		modelMap.put("quotes", 
@@ -174,6 +179,7 @@ public class QuoteController extends AbstractController {
 		modelMap.put("tHistory", collectMktReportHistories(mktReports));		
 		modelMap.put("holdingMap", holdingStocks.stream().collect(Collectors.toMap(x->x, x->allQuotes.get(x.getCode()))));
 		modelMap.put("hsce", indexes.stream().filter(a -> IndexCode.HSCEI.name.equals(a.getStockCode())).findFirst().get());
+		modelMap.put("funds", funds);
 		
 		return page("/list");
 	}
@@ -212,9 +218,10 @@ public class QuoteController extends AbstractController {
 				.collect(Collectors.toList());
 	}
 	
-	private Set<String> uniqueStockCodes(String codes, List<HoldingStock> holdingStocks) {
+	private Set<String> uniqueStockCodes(String codes, List<HoldingStock> holdingStocks, List<Fund> funds) {
 		Set<String> codeSet = Sets.newHashSet(codes.split(CODE_SEPARATOR));		
 		holdingStocks.forEach(x->codeSet.add(x.getCode()));
+		funds.forEach( f -> codeSet.addAll(f.getHoldings().keySet()) );
 		return codeSet;
 	}
 
