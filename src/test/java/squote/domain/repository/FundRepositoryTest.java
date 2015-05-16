@@ -29,7 +29,7 @@ public class FundRepositoryTest {
 	@Autowired FundRepository repo;
 		
 	private Fund createSimpleFund() {
-		Fund f1 = new Fund("Winning Fund");
+		Fund f1 = new Fund(FUND_NAME);
 		f1.buyStock("2828", 400, new BigDecimal("40000"));
 		f1.buyStock("2828", 1000, new BigDecimal("100000"));
 		return f1;

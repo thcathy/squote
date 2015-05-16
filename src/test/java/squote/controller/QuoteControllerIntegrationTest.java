@@ -89,6 +89,8 @@ public class QuoteControllerIntegrationTest {
 				
 		assertEquals(IndexCode.HSCEI.name, hscei.getStockCode());
 		
+		assertNotNull(modelMap.get("Funds"));
+		
 		assertEquals(2, indexes.size());
 	}
 }

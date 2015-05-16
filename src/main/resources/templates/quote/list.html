@@ -36,6 +36,17 @@
 			<td><a th:href="@{/holdingstock/}">Manage holding stock</a></td>
 		</tr>
 	</table>
+	<br/>	
+	<table style="font-size: 10px;" th:each="f : ${funds}">
+		<tr th:each="entry : ${f.holdings}">
+			<td th:text="${entry.key.code}"></td>
+			<td th:text="${entry.value.quantity}"></td>
+			<td th:text="${entry.value.spotPrice}"></td>			
+			<td th:text="${entry.value.gross}"></td>
+			<td th:text="${entry.value.netProfit}"></td>
+			<td th:text="${#numbers.formatDecimal(entry.value.netProfit/entry.value.gross*100, 1, 2) }"></td>			
+		</tr>		
+	</table>
 	<br/>
 	<table style="font-size: 10px;" cellspacing="4">
 		<thead>
