@@ -1,8 +1,13 @@
 <configuration>
 
-	<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
-		<!-- encoders are assigned the type ch.qos.logback.classic.encoder.PatternLayoutEncoder 
-			by default -->
+	<appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>logFile.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- daily rollover -->
+			<fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+			<maxHistory>30</maxHistory>
+		</rollingPolicy>
+
 		<encoder>
 			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
 			</pattern>
@@ -10,7 +15,7 @@
 	</appender>
 
 	<appender name="async" class="ch.qos.logback.classic.AsyncAppender">
-		<appender-ref ref="stdout" />
+		<appender-ref ref="file" />
 	</appender>
 
 	<logger name="org.apache" level="info" />

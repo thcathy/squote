@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -89,7 +88,7 @@ public class QuoteControllerIntegrationTest {
 				
 		assertEquals(IndexCode.HSCEI.name, hscei.getStockCode());
 		
-		assertNotNull(modelMap.get("Funds"));
+		assertNotNull(modelMap.get("funds"));
 		
 		assertEquals(2, indexes.size());
 	}

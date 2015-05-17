@@ -38,9 +38,21 @@
 	</table>
 	<br/>	
 	<table style="font-size: 10px;" th:each="f : ${funds}">
+		<thead>
+			<tr>
+				<th>code</th>
+				<th>qty</th>
+				<th>price</th>
+				<th>spot</th>
+				<th>gross</th>
+				<th>+/-</th>
+				<th>%</th>
+			</tr>
+		</thead>
 		<tr th:each="entry : ${f.holdings}">
-			<td th:text="${entry.key.code}"></td>
+			<td th:text="${entry.key}"></td>
 			<td th:text="${entry.value.quantity}"></td>
+			<td th:text="${entry.value.price}"></td>
 			<td th:text="${entry.value.spotPrice}"></td>			
 			<td th:text="${entry.value.gross}"></td>
 			<td th:text="${entry.value.netProfit}"></td>

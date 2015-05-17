@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -75,6 +76,19 @@ public class FundRepositoryTest {
 		fail("Spot Price should not ready when fund retrieve from db");
 		
 	}
+	
+	@Test
+	@Rollback(false)
+	public void save_ShouldWorks() {
+		Fund myFund = new Fund("New Fund");
+		myFund.buyStock("1138", 20000, new BigDecimal(70800));
+		myFund.buyStock("288", 20000, new BigDecimal(23450));
+		myFund.buyStock("883", 13000, new BigDecimal(176420));
+		myFund.buyStock("1138", 10000, new BigDecimal(58800));
+		repo.save(myFund);
+		//repo.delete(myFund);
+	}
+	
 	
 
 }
