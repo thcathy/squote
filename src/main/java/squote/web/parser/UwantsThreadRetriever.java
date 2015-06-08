@@ -9,7 +9,7 @@ import com.google.common.base.Optional;
 public class UwantsThreadRetriever extends ForumThreadParser {
 
 	public UwantsThreadRetriever(String url, String source) {
-		super(url, source, "Big5", Optional.<String>absent());
+		super(url, source, "Big5", Optional.of("http://www.discuss.com.hk/logging.php?action=login&loginsubmit=yes&username=thcathy&password=ilovekw"));
 	}
 
 	@Override
