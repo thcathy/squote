@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import squote.SquoteConstants;
-import squote.SquoteConstants.IndexCode;
 import squote.domain.StockQuote;
 import thc.util.DateUtils;
 import thc.util.HttpClientImpl;
@@ -48,7 +47,7 @@ public class HSINetParser extends WebParser<StockQuote> {
 		String url = MessageFormat.format(DailyReportURL, StringUtils.lowerCase(index.toString().toLowerCase()), format.format(date));
 		try {
 			List<String> csv = IOUtils.readLines(new HttpClientImpl("utf-8").newInstance().makeGetRequest(url));
-			String[] result = splitBasedOnIndexType(csv, index);
+			String[] result = csv.get(4).split("\t");
 			StockQuote quote = new StockQuote(index.toString());
 			quote.setLastUpdate(NumberUtils.extractNumber(result[0]));
 			quote.setHigh(NumberUtils.extractNumber(result[3]));
@@ -63,12 +62,5 @@ public class HSINetParser extends WebParser<StockQuote> {
 			log.warn("Fail to retrieveDailyReportFromHSINet: reason: {} url: {}", e.getMessage(),url);
 			return Optional.empty();
 		}
-	}
-	
-	private String[] splitBasedOnIndexType(List<String> input, IndexCode code) {
-		if (IndexCode.HSI.equals(code))
-			return input.get(4).split("\t");
-		else
-			return input.get(2).split("\t");
 	}
 }

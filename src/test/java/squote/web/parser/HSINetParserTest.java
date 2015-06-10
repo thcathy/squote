@@ -22,7 +22,7 @@ public class HSINetParserTest {
 		}).filter(x->!DateUtils.isWeekEnd(x)).findFirst().get().getTime();
 		HSINetParser parser = new HSINetParser(IndexCode.HSCEI, weekday);
 		
-		assertTrue(parser.parse().get().getPriceDoubleValue() > 1);		
+		assertTrue(parser.parse().get().getPriceDoubleValue() > 1);
 	}
 	
 	@Test
