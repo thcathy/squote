@@ -4,6 +4,7 @@ import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import squote.SquoteConstants;
+import squote.SquoteConstants.IndexCode;
 import squote.domain.StockQuote;
 import thc.util.DateUtils;
 import thc.util.HttpClientImpl;
@@ -43,9 +45,10 @@ public class HSINetParser extends WebParser<StockQuote> {
 		}
 		
 		SimpleDateFormat format = new SimpleDateFormat("dMMMyy", Locale.US);
-		String url = MessageFormat.format(DailyReportURL, StringUtils.lowerCase(index.toString()), format.format(date));
+		String url = MessageFormat.format(DailyReportURL, StringUtils.lowerCase(index.toString().toLowerCase()), format.format(date));
 		try {
-			String[] result = IOUtils.readLines(new HttpClientImpl("utf-8").newInstance().makeGetRequest(url)).get(4).split("\t");
+			List<String> csv = IOUtils.readLines(new HttpClientImpl("utf-8").newInstance().makeGetRequest(url));
+			String[] result = splitBasedOnIndexType(csv, index);
 			StockQuote quote = new StockQuote(index.toString());
 			quote.setLastUpdate(NumberUtils.extractNumber(result[0]));
 			quote.setHigh(NumberUtils.extractNumber(result[3]));
@@ -60,5 +63,12 @@ public class HSINetParser extends WebParser<StockQuote> {
 			log.warn("Fail to retrieveDailyReportFromHSINet: reason: {} url: {}", e.getMessage(),url);
 			return Optional.empty();
 		}
+	}
+	
+	private String[] splitBasedOnIndexType(List<String> input, IndexCode code) {
+		if (IndexCode.HSI.equals(code))
+			return input.get(4).split("\t");
+		else
+			return input.get(2).split("\t");
 	}
 }
