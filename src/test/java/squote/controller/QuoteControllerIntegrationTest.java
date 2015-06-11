@@ -4,17 +4,24 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
 
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -26,9 +33,14 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.ModelMap;
 
 import squote.SpringQuoteWebApplication;
+import squote.SquoteConstants;
 import squote.SquoteConstants.IndexCode;
+import squote.domain.HoldingStock;
 import squote.domain.MarketDailyReport;
 import squote.domain.StockQuote;
+import squote.domain.repository.HoldingStockRepository;
+import squote.web.parser.EtnetIndexQuoteParser;
+import thc.util.DateUtils;
  
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -36,6 +48,7 @@ import squote.domain.StockQuote;
 @ActiveProfiles("dev")
 public class QuoteControllerIntegrationTest {
 	@Autowired QuoteController quoteController;
+	@Autowired HoldingStockRepository holdingStockRepo;
 	
 	private MockMvc mockMvc;
 	   
@@ -91,5 +104,31 @@ public class QuoteControllerIntegrationTest {
 		assertNotNull(modelMap.get("funds"));
 		
 		assertEquals(2, indexes.size());
+	}
+	
+	@Test	
+	public void postCreateHoldingStock_GivenTodayExeMsg_ShouldCreateHoldingStockUseIndexFromRealtimeQuote() throws Exception {
+		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
+		scbSellMsg += "已於4.8900元成功執行\n";
+		scbSellMsg += DateUtils.toString(org.apache.commons.lang3.time.DateUtils.addDays(new Date(), -1), "yyyyMMdd") + "000013235";
+		
+		long total = holdingStockRepo.count();
+				
+		// When
+		MvcResult mvcResult = mockMvc.perform(
+					post("/quote/createholdingstock").characterEncoding("utf-8")
+					.param("message", scbSellMsg)
+				).andExpect(status().isOk())
+				.andExpect(model().attribute("resultMessage", "Created holding stock"))
+				.andExpect(view().name("quote/createholdingstock")).andReturn();
+		
+		// Expect
+		HoldingStock holdingStock = (HoldingStock) mvcResult.getModelAndView().getModelMap().get("holdingStock");
+		assertNotNull(holdingStock);
+		assertEquals("1138", holdingStock.getCode());
+		assertEquals(10000, holdingStock.getQuantity());
+		assertEquals(new BigDecimal("48900.0000"), holdingStock.getGross());
+		assertEquals(SquoteConstants.Side.SELL, holdingStock.getSide());
+		assertEquals(total+1, holdingStockRepo.count());
 	}
 }
