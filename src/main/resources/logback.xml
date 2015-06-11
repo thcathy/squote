@@ -1,7 +1,7 @@
 <configuration>
 
 	<appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>logFile.log</file>
+		<file>log/squote.log</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<!-- daily rollover -->
 			<fileNamePattern>log/squote.%d{yyyy-MM-dd}.log</fileNamePattern>

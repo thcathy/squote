@@ -15,7 +15,7 @@ public final class DateUtils {
 	}
 	
 	public static boolean isOverMonth(Date d1, Date d2, int numOfMonth) {
-		return Math.abs(d1.getTime() - d2.getTime()) > 86400000 * 31 * numOfMonth;
+		return Math.abs(d1.getTime() - d2.getTime()) > (long)86400000 * 31 * numOfMonth;
 	}
 	
 	public static String toString(Date d, String pattern) {
