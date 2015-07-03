@@ -15,7 +15,7 @@ public class Fund {
 			
 	private final @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
 	private final Map<String, FundHolding> holdings = new ConcurrentHashMap<>();
-	
+		
 	public Fund(String name) {
 		this.name = name;
 		this.date = new Date();
@@ -65,9 +65,15 @@ public class Fund {
 		return this;
 	}
 
-	public BigDecimal getNetProfit() {
+	public BigDecimal netProfit() {
 		return holdings.values().stream()
-			.map(v -> v.getNetProfit())			
+			.map(v -> v.netProfit())			
 	        .reduce(BigDecimal.ZERO, BigDecimal::add);
+	}
+	
+	public BigDecimal getGross() {
+		return holdings.values().stream()
+				.map(v -> v.getGross())
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
 	}
 }

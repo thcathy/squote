@@ -65,11 +65,11 @@ public class FundRepositoryTest {
 		BigDecimal price2828 = new BigDecimal(125);
 		f1.getHoldings().get("2828").calculateNetProfit(price2828);
 		repo.save(f1);		
-		assertEquals(price2828, f1.getHoldings().get("2828").getSpotPrice());		
+		assertEquals(price2828, f1.getHoldings().get("2828").spotPrice());		
 		
 		try {
 			Fund f2 = repo.findOne("Winning Fund");
-			f2.getHoldings().get("2828").getSpotPrice();
+			f2.getHoldings().get("2828").spotPrice();
 		} catch (IllegalStateException e) {
 			return;
 		}

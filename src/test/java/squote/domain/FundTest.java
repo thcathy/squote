@@ -30,6 +30,7 @@ public class FundTest {
 		Fund f = createSimpleFund();
 		
 		Fund fundWithNetProfit = f.calculateNetProfit(quoteMap);
-		assertEquals(11000, fundWithNetProfit.getNetProfit().intValue());
+		assertEquals(11000, fundWithNetProfit.netProfit().intValue());
+		assertEquals(75000, fundWithNetProfit.getGross().intValue());
 	}
 }
