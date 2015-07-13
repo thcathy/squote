@@ -12,16 +12,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -39,7 +37,6 @@ import squote.domain.HoldingStock;
 import squote.domain.MarketDailyReport;
 import squote.domain.StockQuote;
 import squote.domain.repository.HoldingStockRepository;
-import squote.web.parser.EtnetIndexQuoteParser;
 import thc.util.DateUtils;
  
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -55,6 +52,11 @@ public class QuoteControllerIntegrationTest {
     @Before
     public void setup() {    	
     	this.mockMvc = MockMvcBuilders.standaloneSetup(quoteController).build();        
+    }
+    
+    @AfterClass
+    public void clearup() {
+    	holdingStockRepo.deleteAll();
     }
     
     @Test
@@ -110,7 +112,7 @@ public class QuoteControllerIntegrationTest {
 	public void postCreateHoldingStock_GivenTodayExeMsg_ShouldCreateHoldingStockUseIndexFromRealtimeQuote() throws Exception {
 		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
 		scbSellMsg += "已於4.8900元成功執行\n";
-		scbSellMsg += DateUtils.toString(org.apache.commons.lang3.time.DateUtils.addDays(new Date(), -1), "yyyyMMdd") + "000013235";
+		scbSellMsg += DateUtils.toString(new Date(), "yyyyMMdd") + "000013235";
 		
 		long total = holdingStockRepo.count();
 				

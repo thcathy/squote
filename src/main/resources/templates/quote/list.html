@@ -26,6 +26,7 @@
 		<tr th:each="entry : ${holdingMap}">
 			<td th:text="${entry.key.code}"></td>			
 			<td th:text="${#numbers.formatDecimal(entry.key.relativePerformance(entry.value.priceDoubleValue,hsce.priceDoubleValue), 1, 2)}">price</td>
+			<td th:text="${#numbers.formatDecimal(entry.key.performance(entry.value.priceDoubleValue), 1, 2)}+'%'"></td>
 			<td th:text="${entry.key.side}"></td>
 			<td th:text="${entry.key.gross}"></td>
 			<td th:text="${entry.key.quantity}"></td>
@@ -33,7 +34,7 @@
 			<td th:text="${#dates.format(entry.key.date, 'yyyy-MM-dd')}"></td>	
 		</tr>
 		<tr>
-			<td><a th:href="@{/holdingstock/}">Manage holding stock</a></td>
+			<td colspan="5"><a th:href="@{/holdingstock/}">Manage holding stock</a></td>
 		</tr>
 	</table>
 	<br/>	
