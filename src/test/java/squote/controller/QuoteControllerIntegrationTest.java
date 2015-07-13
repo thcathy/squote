@@ -16,7 +16,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,8 +54,8 @@ public class QuoteControllerIntegrationTest {
     	this.mockMvc = MockMvcBuilders.standaloneSetup(quoteController).build();        
     }
     
-    @AfterClass
-    public static void clearup() {
+    @After
+    public void clearup() {
     	holdingStockRepo.deleteAll();
     }
     
