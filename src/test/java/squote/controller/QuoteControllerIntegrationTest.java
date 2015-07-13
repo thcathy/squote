@@ -55,7 +55,7 @@ public class QuoteControllerIntegrationTest {
     }
     
     @AfterClass
-    public void clearup() {
+    public static void clearup() {
     	holdingStockRepo.deleteAll();
     }
     
