@@ -46,11 +46,11 @@ public class FundHolding {
 	public int getQuantity() { return this.quantity;}
 	public BigDecimal getGross() { return this.gross; }
 	public Date getDate() { return this.date; }
-	public BigDecimal getNetProfit() {
+	public BigDecimal netProfit() {
 		if (netProfit == null) throw new IllegalStateException("Net Profit hadn't calculated");
 		return this.netProfit; 
 	}
-	public BigDecimal getSpotPrice() {
+	public BigDecimal spotPrice() {
 		if (spotPrice == null) throw new IllegalStateException("Spot Price hadn't calculated");
 		return this.spotPrice; 
 	}

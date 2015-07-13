@@ -18,4 +18,9 @@ public class RootController {
 	String index() {
 		return "index";
 	}
+	
+	@RequestMapping("/fund")
+	String fund() {
+		return "fund";
+	}
 }
