@@ -41,4 +41,10 @@ public class FundController {
 		});		
 		return fund.get();				
 	}
+	
+	@RequestMapping(value = "/create/{fundName}")
+	public Fund create(@PathVariable String fundName) {
+		log.debug("Create new fund: {}", fundName);
+		return fundRepo.save(new Fund(fundName));
+	}
 }

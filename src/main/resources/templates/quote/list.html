@@ -44,10 +44,10 @@
 				<th th:text="${f.name}"></th>
 				<th></th>
 				<th></th>
-				<th th:text=""></th>
+				<th></th>
 				<th th:text="${f.gross}"></th>
-				<th th:text="${f.netProfit}"></th>
-				<th th:text="${#numbers.formatDecimal(f.netProfit/f.gross*100, 1, 2) }">%</th>
+				<th th:text="${f.netProfit()}"></th>
+				<th th:text="${#numbers.formatDecimal(f.netProfit()/(f.gross+1)*100, 1, 2) }">%</th>
 			</tr>
 			<tr>
 				<th>code</th>
@@ -66,7 +66,7 @@
 			<td th:text="${entry.value.spotPrice()}"></td>			
 			<td th:text="${entry.value.gross}"></td>
 			<td th:text="${entry.value.netProfit()}"></td>
-			<td th:text="${#numbers.formatDecimal(entry.value.netProfit/entry.value.gross*100, 1, 2) }">%</td>			
+			<td th:text="${#numbers.formatDecimal(entry.value.netProfit()/entry.value.gross*100, 1, 2) }">%</td>			
 		</tr>		
 	</table>
 	<br/>
