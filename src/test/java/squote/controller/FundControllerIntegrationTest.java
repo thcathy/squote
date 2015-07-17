@@ -80,5 +80,21 @@ public class FundControllerIntegrationTest {
 		Fund result = fundRepo.findOne("newfund");
 		assertEquals("newfund", result.name);
 	}
-
+	
+	@Test
+	public void urlDelete_ShouldRemoveFund() throws Exception {
+		mockMvc.perform(get("/rest/fund/delete/testfund"))
+			.andExpect(status().isOk());
+			
+		assertEquals(null, fundRepo.findOne("testfund"));
+	}
+	
+	@Test
+	public void urlremove_ShouldRemoveAStockFromFund() throws Exception {
+		mockMvc.perform(get("/rest/fund/testfund/remove/2800"))
+				.andExpect(status().isOk());
+		
+		Fund result = fundRepo.findOne("testfund");
+		assertEquals(null, result.getHoldings().get("2800"));
+	}	
 }

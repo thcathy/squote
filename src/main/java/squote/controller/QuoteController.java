@@ -177,11 +177,21 @@ public class QuoteController extends AbstractController {
 		modelMap.put("indexes", indexes);
 		modelMap.put("tbase", ConcurrentUtils.collect(mktReports.get(0)));
 		modelMap.put("tHistory", collectMktReportHistories(mktReports));		
-		modelMap.put("holdingMap", holdingStocks.stream().collect(Collectors.toMap(x->x, x->allQuotes.get(x.getCode()))));
+		modelMap.put("holdingMap", collectHoldingStockWithQuotesAsMap(holdingStocks, allQuotes));
 		modelMap.put("hsce", indexes.stream().filter(a -> IndexCode.HSCEI.name.equals(a.getStockCode())).findFirst().get());
 		modelMap.put("funds", funds);
 		
 		return page("/list");
+	}
+
+	private Map<HoldingStock, StockQuote> collectHoldingStockWithQuotesAsMap(
+			List<HoldingStock> holdingStocks, Map<String, StockQuote> allQuotes) {
+		Map<HoldingStock, StockQuote> resultMap = new LinkedHashMap<>();
+		holdingStocks.stream()
+			.sorted( (s1, s2) -> s1.getDate().compareTo(s2.getDate()) )
+			.forEach( s -> resultMap.put(s, allQuotes.get(s.getCode())) );
+		
+		return resultMap;
 	}
 
 	private Object collectMktReportHistories(List<CompletableFuture<MarketDailyReport>> mktReports) {

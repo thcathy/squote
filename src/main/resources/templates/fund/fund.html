@@ -14,9 +14,10 @@
 		  .controller('fundMgmtController', ['$scope','$http', function($scope,$http) {
 			
 			$scope.submit = function() {
-				$scope.status='Loading...';
-				alert($scope.queryString);
-				$http({url: $scope.queryString}).
+				var queryString='/rest/fund/' + $scope.queryString;
+				$scope.status='loading ' + queryString;
+				alert(queryString);
+				$http({url: queryString}).
 					success(function(data, status, headers, config) {						
 						$scope.status=data;
 					}).
@@ -33,9 +34,11 @@
 		<input type="submit" id="submit" value="Submit" />
 	</form>
 	<ul>
-		<li>/rest/fund/create/{fundName}</li>
-		<li>/rest/fund/{fundName}/buy/{code}/{qty}/{gross}</li>
-		<li>/rest/fund/{fundName}/sell/{code}/{qty}/{gross}</li>
+		<li>create/{fundName}</li>
+		<li>delete/{fundName}</li>
+		<li>{fundName}/buy/{code}/{qty}/{gross}</li>
+		<li>{fundName}/sell/{code}/{qty}/{gross}</li>
+		<li>{fundName}/remove/{code}</li>
 	</ul>
 	<div ng-bind="status"></div>
 </body>

@@ -47,4 +47,21 @@ public class FundController {
 		log.debug("Create new fund: {}", fundName);
 		return fundRepo.save(new Fund(fundName));
 	}
+	
+	@RequestMapping(value = "/delete/{fundName}")
+	public String delete(@PathVariable String fundName) {
+		log.debug("Delete fund: {}", fundName);
+		fundRepo.delete(fundName);
+		return "Done";
+	}
+	
+	
+	@RequestMapping(value = "/{fundName}/remove/{code}")
+	public Fund removeStock(@PathVariable String fundName, @PathVariable String code) {
+		log.debug("remove stock {} from fund {}", code, fundName);
+		Fund fund = fundRepo.findOne(fundName);
+		fund.getHoldings().remove(code);
+		fundRepo.save(fund);
+		return fund;
+	}
 }
