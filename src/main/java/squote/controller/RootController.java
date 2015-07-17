@@ -21,6 +21,6 @@ public class RootController {
 	
 	@RequestMapping("/fund")
 	String fund() {
-		return "fund";
+		return "fund/fund";
 	}
 }

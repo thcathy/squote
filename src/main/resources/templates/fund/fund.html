@@ -1,0 +1,42 @@
+<html ng-app="fundMgmt">
+<head>
+	<title>fund rest mgmt</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" /> 
+	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+	<style>
+		td {
+			padding-right: 2px;
+		}		
+	</style>	
+	<script type="text/javascript">	
+		angular.module('fundMgmt',[])
+		  .controller('fundMgmtController', ['$scope','$http', function($scope,$http) {
+			
+			$scope.submit = function() {
+				$scope.status='Loading...';
+				alert($scope.queryString);
+				$http({url: $scope.queryString}).
+					success(function(data, status, headers, config) {						
+						$scope.status=data;
+					}).
+					error(function(data, status, headers, config) {
+						$scope.status=headers + status + data;
+					});
+			};			
+		}]);		
+	</script>
+</head>
+<body ng-controller="fundMgmtController">	
+	<form ng-submit="submit()">
+		<input type="text" ng-model="queryString" name="text" style="width: 300px" />
+		<input type="submit" id="submit" value="Submit" />
+	</form>
+	<ul>
+		<li>/rest/fund/create/{fundName}</li>
+		<li>/rest/fund/{fundName}/buy/{code}/{qty}/{gross}</li>
+		<li>/rest/fund/{fundName}/sell/{code}/{qty}/{gross}</li>
+	</ul>
+	<div ng-bind="status"></div>
+</body>
+</html>
