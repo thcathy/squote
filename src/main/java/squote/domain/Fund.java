@@ -11,7 +11,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 public class Fund {
 	@Id
-    private final String name;
+    public final String name;
 			
 	private final @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
 	private final Map<String, FundHolding> holdings = new ConcurrentHashMap<>();

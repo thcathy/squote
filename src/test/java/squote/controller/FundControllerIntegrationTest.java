@@ -1,6 +1,6 @@
 package squote.controller;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -16,10 +16,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import squote.SpringQuoteWebApplication;
 import squote.controller.rest.FundController;
@@ -73,6 +70,15 @@ public class FundControllerIntegrationTest {
 		Fund result = fundRepo.findOne("testfund");
 		assertEquals(400, result.getHoldings().get("2828").getQuantity());
 		assertEquals(40000, result.getHoldings().get("2828").getGross().intValue());	// gross is deduce base on original gross price
+	}
+	
+	@Test
+	public void urlcreate_givenNewName_shouldCreateNewFund() throws Exception {
+		mockMvc.perform(get("/rest/fund/create/newfund"))
+				.andExpect(status().isOk());
+		
+		Fund result = fundRepo.findOne("newfund");
+		assertEquals("newfund", result.name);
 	}
 
 }
