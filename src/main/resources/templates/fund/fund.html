@@ -16,13 +16,12 @@
 			$scope.submit = function() {
 				var queryString='/rest/fund/' + $scope.queryString;
 				$scope.status='loading ' + queryString;
-				alert(queryString);
 				$http({url: queryString}).
-					success(function(data, status, headers, config) {						
-						$scope.status=data;
+					success(function(data, status, headers, config) {
+						$scope.status=angular.toJson(data, true);
 					}).
 					error(function(data, status, headers, config) {
-						$scope.status=headers + status + data;
+						$scope.status=angular.toJson(data, true);
 					});
 			};			
 		}]);		

@@ -1,6 +1,6 @@
 package squote.domain;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -31,6 +31,6 @@ public class FundTest {
 		
 		Fund fundWithNetProfit = f.calculateNetProfit(quoteMap);
 		assertEquals(11000, fundWithNetProfit.netProfit().intValue());
-		assertEquals(75000, fundWithNetProfit.getGross().intValue());
+		assertEquals(75000, fundWithNetProfit.gross().intValue());
 	}
 }

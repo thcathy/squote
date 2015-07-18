@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.format.annotation.DateTimeFormat;
 
 public class Fund {
@@ -71,7 +72,8 @@ public class Fund {
 	        .reduce(BigDecimal.ZERO, BigDecimal::add);
 	}
 	
-	public BigDecimal getGross() {
+	@Transient
+	public BigDecimal gross() {
 		return holdings.values().stream()
 				.map(v -> v.getGross())
 				.reduce(BigDecimal.ZERO, BigDecimal::add);

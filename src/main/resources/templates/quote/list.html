@@ -45,9 +45,9 @@
 				<th></th>
 				<th></th>
 				<th></th>
-				<th th:text="${f.gross}"></th>
+				<th th:text="${f.gross()}"></th>
 				<th th:text="${f.netProfit()}"></th>
-				<th th:text="${#numbers.formatDecimal(f.netProfit()/(f.gross+1)*100, 1, 2) }">%</th>
+				<th th:text="${#numbers.formatDecimal(f.netProfit()/(f.gross()+1)*100, 1, 2) }">%</th>
 			</tr>
 			<tr>
 				<th>code</th>
