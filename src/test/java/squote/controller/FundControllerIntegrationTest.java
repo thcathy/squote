@@ -54,7 +54,7 @@ public class FundControllerIntegrationTest {
 
 	@Test
 	public void urlbuy_addStockAndSave() throws Exception {
-		mockMvc.perform(get("/rest/fund/testfund/buy/2800/100/10000"))
+		mockMvc.perform(get("/rest/fund/testfund/buy/2800/100/100"))
 				.andExpect(status().isOk());
 				
 		Fund result = fundRepo.findOne("testfund");
@@ -64,7 +64,7 @@ public class FundControllerIntegrationTest {
 
 	@Test
 	public void urlsell_minusStockAndSave() throws Exception {
-		mockMvc.perform(get("/rest/fund/testfund/sell/2828/100/12000")).andExpect(
+		mockMvc.perform(get("/rest/fund/testfund/sell/2828/100/120")).andExpect(
 				status().isOk());
 		
 		Fund result = fundRepo.findOne("testfund");

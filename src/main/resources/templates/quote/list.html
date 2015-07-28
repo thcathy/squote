@@ -26,7 +26,7 @@
 		<tr th:each="entry : ${holdingMap}">
 			<td th:text="${entry.key.code}"></td>			
 			<td th:text="${#numbers.formatDecimal(entry.key.relativePerformance(entry.value.priceDoubleValue,hsce.priceDoubleValue), 1, 2)}">price</td>
-			<td th:text="${#numbers.formatDecimal(entry.key.performance(entry.value.priceDoubleValue), 1, 2)}+'%'"></td>
+			<td><span th:if="${entry.key.side.toString() =='BUY'}" th:text="${#numbers.formatDecimal(entry.key.performance(entry.value.priceDoubleValue), 1, 2)}+'%'"></span></td>
 			<td th:text="${entry.key.side}"></td>
 			<td th:text="${entry.key.gross}"></td>
 			<td th:text="${entry.key.quantity}"></td>

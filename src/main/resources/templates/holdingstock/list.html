@@ -12,5 +12,8 @@ function deleteIt(id) {
 		<td><a href="#" th:attr="onclick='deleteIt(\''+${s.id}+'\')'">delete</a></td>
 		<td th:text="${s}">detail</td>
 	</tr>	
-</table>	
+</table>
+<p><a th:href="@{/quote/list}">Quote list</a></p>
+<p><a th:href="@{/}">Index</a></p>
 </div>
+
