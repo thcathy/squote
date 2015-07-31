@@ -32,6 +32,10 @@
 		<input type="text" ng-model="queryString" name="text" style="width: 300px" />
 		<input type="submit" id="submit" value="Submit" />
 	</form>
+	<p>Existing Fund Names: </p>
+	<ul>
+		<li th:each="f : ${funds}" th:text="f.name"></li>
+	</ul>
 	<ul>
 		<li>create/{fundName}</li>
 		<li>delete/{fundName}</li>

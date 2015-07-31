@@ -7,10 +7,27 @@ function deleteIt(id) {
 }
 </script>
 <h3>Holding Stocks</h3>
-<table style="font-size: 10px;">	
+<table style="font-size: 10px;" cellpadding="3">	
+	<thead>		
+		<tr>
+			<th>Delete</th>
+			<th>code</th>
+			<th>side</th>
+			<th>qty</th>
+			<th>gross</th>
+			<th>hsce</th>
+			<th>created date</th>
+		</tr>
+	</thead>
 	<tr th:each="s : ${holdingStocks}">
+	
 		<td><a href="#" th:attr="onclick='deleteIt(\''+${s.id}+'\')'">delete</a></td>
-		<td th:text="${s}">detail</td>
+		<td th:text="${s.code}"></td>
+		<td th:text="${s.side}"></td>
+		<td th:text="${s.quantity}"></td>
+		<td th:text="${s.gross}"></td>
+		<td th:text="${s.hsce}"></td>
+		<td th:text="${#dates.format(s.date, 'yyyy-MM-dd')}"></td>
 	</tr>	
 </table>	
 </div>
