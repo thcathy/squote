@@ -40,7 +40,7 @@
 	<br/>	
 	<table>
 		<tr>
-			<td th:each="f : ${funds}" th:include="fund :: fundsummary" th:with="fund=${f}"></td>
+			<td th:each="f : ${funds}" th:include="fragments/fund :: fundsummary (fund=${f})"></td>
 		</tr>
 	</table>	
 	<br/>

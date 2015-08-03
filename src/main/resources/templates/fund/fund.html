@@ -34,8 +34,9 @@
 	</form>
 	<p>Existing Fund Names: </p>
 	<ul>
-		<li th:each="f : ${funds}" th:text="f.name"></li>
+		<li th:each="f : ${funds}" th:text="${f.name}"></li>
 	</ul>
+	<p>URL:</p>
 	<ul>
 		<li>create/{fundName}</li>
 		<li>delete/{fundName}</li>
