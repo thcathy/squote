@@ -1,38 +1,38 @@
 <!DOCTYPE html>
 <html>
   <body>
-  	<div th:fragment="fundsummary (fund)">
-    <table  style="font-size: 10px; text-align: right;" >
-		<thead>
-			<tr>
-				<th th:text="${fund.name}"></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th th:text="${fund.gross()}"></th>
-				<th th:text="${fund.netProfit()}"></th>
-				<th th:text="${#numbers.formatDecimal(fund.netProfit()/(fund.gross()+1)*100, 1, 2) }">%</th>
-			</tr>
-			<tr>
-				<th>code</th>
-				<th>qty</th>
-				<th>price</th>
-				<th>spot</th>
-				<th>gross</th>
-				<th>+/-</th>
-				<th>%</th>
-			</tr>
-		</thead>
-		<tr th:each="entry : ${fund.holdings}">
-			<td th:text="${entry.key}"></td>
-			<td th:text="${entry.value.quantity}"></td>
-			<td th:text="${entry.value.price}"></td>
-			<td th:text="${entry.value.spotPrice()}"></td>			
-			<td th:text="${entry.value.gross}"></td>
-			<td th:text="${entry.value.netProfit()}"></td>
-			<td th:text="${#numbers.formatDecimal(entry.value.netProfit()/entry.value.gross*100, 1, 2) }">%</td>			
-		</tr>		
-	</table>
-	</div>
+  	
+	    <table  style="font-size: 10px; text-align: right;" th:fragment="fundsummary (fund)">
+			<thead>
+				<tr>
+					<th th:text="${fund.name}">a</th>
+					<th></th>
+					<th></th>
+					<th></th>
+					<th th:text="${fund.gross()}"></th>
+					<th th:text="${fund.netProfit()}"></th>
+					<th th:text="${#numbers.formatDecimal(fund.netProfit()/(fund.gross()+1)*100, 1, 2) }">%</th>
+				</tr>
+				<tr>
+					<th>code</th>
+					<th>qty</th>
+					<th>price</th>
+					<th>spot</th>
+					<th>gross</th>
+					<th>+/-</th>
+					<th>%</th>
+				</tr>
+			</thead>
+			<tr th:each="entry : ${fund.holdings}">
+				<td th:text="${entry.key}"></td>
+				<td th:text="${entry.value.quantity}"></td>
+				<td th:text="${entry.value.price}"></td>
+				<td th:text="${entry.value.spotPrice()}"></td>			
+				<td th:text="${entry.value.gross}"></td>
+				<td th:text="${entry.value.netProfit()}"></td>
+				<td th:text="${#numbers.formatDecimal(entry.value.netProfit()/entry.value.gross*100, 1, 2) }">%</td>			
+			</tr>		
+		</table>
+	
   </body>
 </html>
