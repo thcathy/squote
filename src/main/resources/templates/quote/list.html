@@ -38,37 +38,11 @@
 		</tr>
 	</table>
 	<br/>	
-	<table  style="font-size: 10px; text-align: right;" th:each="f : ${funds}">
-		<thead>
-			<tr>
-				<th th:text="${f.name}"></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th th:text="${f.gross()}"></th>
-				<th th:text="${f.netProfit()}"></th>
-				<th th:text="${#numbers.formatDecimal(f.netProfit()/(f.gross()+1)*100, 1, 2) }">%</th>
-			</tr>
-			<tr>
-				<th>code</th>
-				<th>qty</th>
-				<th>price</th>
-				<th>spot</th>
-				<th>gross</th>
-				<th>+/-</th>
-				<th>%</th>
-			</tr>
-		</thead>
-		<tr th:each="entry : ${f.holdings}">
-			<td th:text="${entry.key}"></td>
-			<td th:text="${entry.value.quantity}"></td>
-			<td th:text="${entry.value.price}"></td>
-			<td th:text="${entry.value.spotPrice()}"></td>			
-			<td th:text="${entry.value.gross}"></td>
-			<td th:text="${entry.value.netProfit()}"></td>
-			<td th:text="${#numbers.formatDecimal(entry.value.netProfit()/entry.value.gross*100, 1, 2) }">%</td>			
-		</tr>		
-	</table>
+	<table>
+		<tr>
+			<td th:each="f : ${funds}" th:include="fund :: fundsummary" th:with="fund=${f}"></td>
+		</tr>
+	</table>	
 	<br/>
 	<table style="font-size: 10px;" cellspacing="4">
 		<thead>
