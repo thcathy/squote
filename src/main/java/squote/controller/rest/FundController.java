@@ -20,23 +20,23 @@ public class FundController {
 		
 	@Autowired FundRepository fundRepo;
 			
-	@RequestMapping(value = "/{fundName}/buy/{code}/{qty}/{gross}")	
-	public Fund buy(@PathVariable String fundName, @PathVariable String code, @PathVariable int qty, @PathVariable String gross) {
-		log.debug("buy {} {} with gross {} for fund {}", qty, code, gross, fundName);
+	@RequestMapping(value = "/{fundName}/buy/{code}/{qty}/{price}")	
+	public Fund buy(@PathVariable String fundName, @PathVariable String code, @PathVariable int qty, @PathVariable String price) {
+		log.debug("buy {} {} with price {} for fund {}", qty, code, price, fundName);
 		Optional<Fund> fund = Optional.of(fundRepo.findOne(fundName));
 		fund.ifPresent(f -> {
-			f.buyStock(code, qty, new BigDecimal(gross));
+			f.buyStock(code, qty, new BigDecimal(qty).multiply(new BigDecimal(price)));
 			fundRepo.save(f);
 		});		
 		return fund.get();				
 	}	
 	
-	@RequestMapping(value = "/{fundName}/sell/{code}/{qty}/{gross}")	
-	public Fund sell(@PathVariable String fundName, @PathVariable String code, @PathVariable int qty, @PathVariable String gross) {
-		log.debug("sell {} {} with gross {} for fund {}", qty, code, gross, fundName);
+	@RequestMapping(value = "/{fundName}/sell/{code}/{qty}/{price}")	
+	public Fund sell(@PathVariable String fundName, @PathVariable String code, @PathVariable int qty, @PathVariable String price) {
+		log.debug("sell {} {} with price {} for fund {}", qty, code, price, fundName);
 		Optional<Fund> fund = Optional.of(fundRepo.findOne(fundName));
 		fund.ifPresent(f -> {
-			f.sellStock(code, qty, new BigDecimal(gross));
+			f.sellStock(code, qty, new BigDecimal(qty).multiply(new BigDecimal(price)));
 			fundRepo.save(f);
 		});		
 		return fund.get();				
