@@ -50,6 +50,8 @@ public class ForumController extends AbstractController {
 		}), 
 		MOVIE(new String[]{
 				"http://www.uwants.com/forumdisplay.php?fid=231&page=%d",
+				"http://www.uwants.com/forumdisplay.php?fid=7&page=%d",
+				"http://www.uwants.com/forumdisplay.php?fid=406&page=%d",
 				"http://www.tvboxnow.com/forum-231-%d.html",
 				"http://www.tvboxnow.com/forum-232-%d.html",
 				"http://www.tvboxnow.com/forum-233-%d.html"

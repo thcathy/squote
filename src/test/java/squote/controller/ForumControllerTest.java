@@ -59,6 +59,27 @@ public class ForumControllerTest {
 	}
 	
 	@Test
+	public void list_MoviePage1_ShouldReturnDecendingForumThreadsNotOlderThanConfig() {
+		ModelMap modelMap = new ModelMap();
+		controller.list("MOVIE", 1, modelMap);
+		@SuppressWarnings("unchecked") List<ForumThread> contents = (List<ForumThread>) modelMap.get("contents");
+		
+		assertTrue("Number of thread " + contents.size() + " < " + 50, contents.size() > 50);
+		boolean descSortedByDate = IntStream.range(0, contents.size()-1)
+									.allMatch(i -> contents.get(i).getCreatedDate().getTime() >= contents.get(i+1).getCreatedDate().getTime());
+		assertTrue("Contents are decending ordered by created date", descSortedByDate);
+		contents.forEach(x -> {
+			assert StringUtils.isNotBlank(x.getUrl());			
+			assert StringUtils.isNotBlank(x.getTitle());
+		});
+		
+		Date earliestCreatedDate = DateUtils.addDays(new Date(), -threadShouldNotOlderDay);
+		contents.forEach(x -> {
+			assertTrue("The thread created on " + x.getCreatedDate() + " is older than " + threadShouldNotOlderDay + " days", x.getCreatedDate().compareTo(earliestCreatedDate) >= 0); 
+		});
+	}
+	
+	@Test
 	public void visited_GivenUrl_ShouldCreateEntityVisitedForumThread() {
 		String url = "http://www.uwants.com/viewthread.php?tid=18017060&extra=page%3D1";
 		controller.visited(url);
