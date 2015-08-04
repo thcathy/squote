@@ -1,6 +1,5 @@
 package squote.service;
 
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -13,7 +12,7 @@ import squote.SpringQuoteWebApplication;
 public class CheckWebIntegrationTest {
 	@Autowired CheckWebService checker;
 	
-	@Test
+	//@Test
 	public void check_GivenCorrectConfig_ShouldShouldRunWithoutException() {
 		checker.check();
 	}
