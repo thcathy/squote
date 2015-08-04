@@ -40,7 +40,7 @@
 	<br/>	
 	<table>
 		<tr>
-			<td th:each="f : ${funds}"><table th:replace="fragments/fund :: fundsummary (fund=${f})"></table></td>
+			<td th:each="f : ${funds}" style="vertical-align: top;"><table th:replace="fragments/fund :: fundsummary (fund=${f})"></table></td>
 		</tr>
 	</table>	
 	<br/>

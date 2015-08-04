@@ -21,7 +21,6 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
 import squote.service.CentralWebQueryService;
-import squote.service.CheckWebService;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
 import thc.util.HttpClientImpl;
@@ -43,8 +42,7 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	@PropertySource({"classpath:application.properties", "classpath:application-dev.properties"})
 	static class Dev {}
 
-	// application properties
-	@Value("${checkweb.url.list}")			private String checkWebUrlList;
+	// application properties	
 	@Value("${adminstrator.email}") 		private String adminEmail;
 	@Value("${application.email}")			private String appEmail;
 	@Value("${smtp.username}")				private String smtpUsername;
@@ -73,28 +71,11 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	public StockPerformanceService stockPerformanceService() {
 		return new StockPerformanceService(centrolWebQueryService().getExecutor());
 	}
-
-	@Bean
-	public CheckWebService checkWebService() {
-		return new CheckWebService.Builder()
-					.checkUrls(checkWebUrlList.split(","))
-					.fromEmail(appEmail).toEmail(adminEmail)
-					.sendGrid(new SendGrid(smtpUsername, smtpPassword))
-					.httpClient(new HttpClientImpl())
-					.build();				
-	}
 			
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
 		return application.sources(SpringQuoteWebApplication.class);
 	}	
-
-	// Schedule jobs
-
-	@Scheduled(fixedDelay = 600000)
-	public void checkWebs() {
-		checkWebService().check();
-	}
 
 	@Bean
 	public Filter characterEncodingFilter() {

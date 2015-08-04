@@ -33,4 +33,20 @@ public class FundTest {
 		assertEquals(11000, fundWithNetProfit.netProfit().intValue());
 		assertEquals(75000, fundWithNetProfit.gross().intValue());
 	}
+	
+	@Test
+	public void interestPayment_givenInterest_ShouldSubstractFromHolding() {
+		Fund f = createSimpleFund();
+		FundHolding returnHolding = f.payInterest("2800", new BigDecimal("80.5"));
+		FundHolding selectedHolding = f.getHoldings().get("2800");
+		
+		assertEquals(1000, selectedHolding.getQuantity());
+		assertEquals(1000, returnHolding.getQuantity());
+		
+		assertEquals(new BigDecimal("24919.5"), selectedHolding.getGross());
+		assertEquals(new BigDecimal("24919.5"), returnHolding.getGross());
+		
+		assertEquals(new BigDecimal("24.9195"), selectedHolding.getPrice());
+		assertEquals(new BigDecimal("24.9195"), returnHolding.getPrice());		
+	}
 }

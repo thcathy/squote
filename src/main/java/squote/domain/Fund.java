@@ -16,6 +16,7 @@ public class Fund {
 			
 	private final @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
 	private final Map<String, FundHolding> holdings = new ConcurrentHashMap<>();
+	private BigDecimal profit = new BigDecimal("0");
 		
 	public Fund(String name) {
 		this.name = name;
@@ -39,6 +40,15 @@ public class Fund {
 		else
 			holdings.put(code, updatedHolding);		
 	}
+	
+	public FundHolding payInterest(String code, BigDecimal interest) {			
+		FundHolding holding = holdings.get(code);
+		if (holding != null) {
+			holding = FundHolding.create(code, holding.getQuantity(), holding.getGross().subtract(interest));
+			holdings.put(code, holding);
+		}
+		return holding;
+	}
 
 	@Override
 	public String toString() {
@@ -57,7 +67,7 @@ public class Fund {
 		BigDecimal orgGross = fundHolding.getPrice().multiply(new BigDecimal(qty));
 		return FundHolding.create(fundHolding.getCode(), fundHolding.getQuantity() - qty, fundHolding.getGross().subtract(orgGross));
 	}
-
+	
 	public Fund calculateNetProfit(Map<String, StockQuote> quoteMap) {
 		holdings.forEach((key, value) -> {
 			value.calculateNetProfit(new BigDecimal(quoteMap.get(key).getPrice()));
@@ -77,5 +87,13 @@ public class Fund {
 		return holdings.values().stream()
 				.map(v -> v.getGross())
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
+	}
+	
+	public void setProfit(BigDecimal profit) {
+		this.profit = profit;
+	}
+	
+	public BigDecimal getProfit() {
+		return profit;
 	}
 }

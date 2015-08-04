@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import squote.SpringQuoteWebApplication;
 import squote.controller.rest.FundController;
 import squote.domain.Fund;
+import squote.domain.FundHolding;
 import squote.domain.repository.FundRepository;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -54,12 +55,12 @@ public class FundControllerIntegrationTest {
 
 	@Test
 	public void urlbuy_addStockAndSave() throws Exception {
-		mockMvc.perform(get("/rest/fund/testfund/buy/2800/100/100"))
+		mockMvc.perform(get("/rest/fund/testfund/buy/2800/100/100.1/"))
 				.andExpect(status().isOk());
 				
 		Fund result = fundRepo.findOne("testfund");
 		assertEquals(1100, result.getHoldings().get("2800").getQuantity());
-		assertEquals(35000, result.getHoldings().get("2800").getGross().intValue());
+		assertEquals(35010, result.getHoldings().get("2800").getGross().intValue());
 	}
 
 	@Test
@@ -79,6 +80,7 @@ public class FundControllerIntegrationTest {
 		
 		Fund result = fundRepo.findOne("newfund");
 		assertEquals("newfund", result.name);
+		assertEquals(0, result.getProfit().intValue());
 	}
 	
 	@Test
@@ -96,5 +98,51 @@ public class FundControllerIntegrationTest {
 		
 		Fund result = fundRepo.findOne("testfund");
 		assertEquals(null, result.getHoldings().get("2800"));
-	}	
+	}
+	
+	@Test
+	public void payInterest_ShouldSaveSubstractedFund() throws Exception {
+		mockMvc.perform(get("/rest/fund/testfund/payinterest/2828/100.5/"))
+			.andExpect(status().isOk());
+		
+		Fund fund = fundRepo.findOne("testfund");
+		FundHolding newHolding = fund.getHoldings().get("2828");
+		
+		assertEquals(500, newHolding.getQuantity());		
+		assertEquals(new BigDecimal("49899.5"), newHolding.getGross());			
+		assertEquals(new BigDecimal("99.7990"), newHolding.getPrice());
+	}
+	
+	@Test
+	public void addProfit_givenListOfValue_shouldAddedToProfit() throws Exception {
+		mockMvc.perform(get("/rest/fund/testfund/add/profit/101,50.5/"))
+			.andExpect(status().isOk());
+		
+		mockMvc.perform(get("/rest/fund/testfund/add/profit/98.2/"))
+		.andExpect(status().isOk());
+		
+		Fund fund = fundRepo.findOne("testfund");
+		assertEquals(new BigDecimal("249.7"), fund.getProfit());
+	}
+	
+	@Test
+	public void addExpense_givenListOfValue_shouldMinusFromProfit() throws Exception {
+		mockMvc.perform(get("/rest/fund/testfund/subtract/profit/30,2.32,.89/"))
+			.andExpect(status().isOk());
+		
+		mockMvc.perform(get("/rest/fund/testfund/subtract/profit/5/"))
+		.andExpect(status().isOk());
+		
+		Fund fund = fundRepo.findOne("testfund");
+		assertEquals(new BigDecimal("-38.21"), fund.getProfit());
+	}
+	
+	@Test
+	public void setProfit_givenValue_shouldBeTheProfit() throws Exception {
+		mockMvc.perform(get("/rest/fund/testfund/set/profit/123.456/"))
+			.andExpect(status().isOk());
+				
+		Fund fund = fundRepo.findOne("testfund");
+		assertEquals(new BigDecimal("123.456"), fund.getProfit());
+	}
 }

@@ -12,9 +12,12 @@
 	<script type="text/javascript">	
 		angular.module('fundMgmt',[])
 		  .controller('fundMgmtController', ['$scope','$http', function($scope,$http) {
+			$scope.history = "";
 			
 			$scope.submit = function() {
 				var queryString='/rest/fund/' + $scope.queryString;
+				if (queryString.slice(-1) != '/') queryString += '/';
+				$scope.history = queryString + "\n" + $scope.history;
 				$scope.status='loading ' + queryString;
 				$http({url: queryString}).
 					success(function(data, status, headers, config) {
@@ -40,10 +43,13 @@
 	<ul>
 		<li>create/{fundName}</li>
 		<li>delete/{fundName}</li>
-		<li>{fundName}/buy/{code}/{qty}/{price}</li>
-		<li>{fundName}/sell/{code}/{qty}/{price}</li>
+		<li>{fundName}/{buy,sell}/{code}/{qty}/{price}</li>		
 		<li>{fundName}/remove/{code}</li>
+		<li>{fundName}/payinterest/{code}/{amount}<li>
+		<li>{fundName}/set/profit/{amount}<li>
+		<li>{fundName}/{add,subtract}/profit/{amounts(comma separated)}</li>
 	</ul>
+	<div ng-bind="history" style="white-space: pre;"></div>
 	<div ng-bind="status" style="white-space: pre;"></div>
 </body>
 </html>
