@@ -4,17 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.io.input.NullInputStream;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.jsoup.Jsoup;
@@ -40,7 +33,8 @@ public class HttpClientImpl implements HttpClient {
 		HttpClientImpl instance = new HttpClientImpl();
 		
 		instance.httpclient = HttpClients.custom()
-					.setDefaultCookieStore(cookieStore).setUserAgent("Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0; Trident/5.0)").build();
+					.setDefaultCookieStore(cookieStore).setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.130 Safari/537.36")
+					.build();
 		
 		instance.encoding = this.encoding;
 		return instance;
