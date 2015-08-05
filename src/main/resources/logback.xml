@@ -9,8 +9,25 @@
 		</rollingPolicy>
 
 		<encoder>
-			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
-			</pattern>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+	
+	<appender name="restrequest" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>log/rest.log</file>
+		
+		<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+      		<fileNamePattern>rest.%i.log</fileNamePattern>
+      		<minIndex>1</minIndex>
+      		<maxIndex>3</maxIndex>
+    	</rollingPolicy>
+
+	    <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+	      <maxFileSize>10MB</maxFileSize>
+	    </triggeringPolicy>
+		
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
 		</encoder>
 	</appender>
 
@@ -20,6 +37,9 @@
 
 	<logger name="org.apache" level="info" />
 	<logger name="org.springframework" level="info" />
+	<logger name="squote.controller.rest.FundController" level="debug">
+		<appender-ref ref="rest" />
+	</logger>
 
 	<root level="info">
 		<appender-ref ref="async" />

@@ -2,7 +2,6 @@ package squote.controller.rest;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.function.BinaryOperator;
 
 import org.slf4j.Logger;
@@ -34,23 +33,21 @@ public class FundController {
 	@RequestMapping(value = "/{fundName}/buy/{code}/{qty}/{price}")	
 	public Fund buy(@PathVariable String fundName, @PathVariable String code, @PathVariable int qty, @PathVariable String price) {
 		log.debug("buy {} {} with price {} for fund {}", qty, code, price, fundName);
-		Optional<Fund> fund = Optional.of(fundRepo.findOne(fundName));
-		fund.ifPresent(f -> {
-			f.buyStock(code, qty, new BigDecimal(qty).multiply(new BigDecimal(price)));
-			fundRepo.save(f);
-		});		
-		return fund.get();				
+		Fund fund = fundRepo.findOne(fundName);
+		fund.buyStock(code, qty, new BigDecimal(qty).multiply(new BigDecimal(price)));
+		fundRepo.save(fund);
+		log.debug("Updated Fund: {}", fund);
+		return fund;				
 	}	
 	
 	@RequestMapping(value = "/{fundName}/sell/{code}/{qty}/{price}")	
 	public Fund sell(@PathVariable String fundName, @PathVariable String code, @PathVariable int qty, @PathVariable String price) {
 		log.debug("sell {} {} with price {} for fund {}", qty, code, price, fundName);
-		Optional<Fund> fund = Optional.of(fundRepo.findOne(fundName));
-		fund.ifPresent(f -> {
-			f.sellStock(code, qty, new BigDecimal(qty).multiply(new BigDecimal(price)));
-			fundRepo.save(f);
-		});		
-		return fund.get();				
+		Fund fund = fundRepo.findOne(fundName);
+		fund.sellStock(code, qty, new BigDecimal(qty).multiply(new BigDecimal(price)));
+		fundRepo.save(fund);
+		log.debug("Updated Fund: {}", fund);
+		return fund;				
 	}
 	
 	@RequestMapping(value = "/create/{fundName}")
@@ -75,6 +72,7 @@ public class FundController {
 		Fund fund = fundRepo.findOne(fundName);
 		fund.getHoldings().remove(code);
 		fundRepo.save(fund);
+		log.debug("Updated Fund: {}", fund);
 		return fund;
 	}
 	
@@ -84,6 +82,7 @@ public class FundController {
 		Fund fund = fundRepo.findOne(fundName);
 		FundHolding newHolding = fund.payInterest(code, new BigDecimal(amount));
 		fundRepo.save(fund);
+		log.debug("Updated Fund: {}", fund);
 		return newHolding;
 	}
 	
@@ -93,6 +92,7 @@ public class FundController {
 		Fund fund = fundRepo.findOne(fundName);
 		fund.setProfit(new BigDecimal(amount));
 		fundRepo.save(fund);
+		log.debug("Updated Fund: {}", fund);
 		return fund.getProfit();
 	}
 	
@@ -105,6 +105,7 @@ public class FundController {
 			.reduce(fund.getProfit(), action.accumulator);
 		fund.setProfit(newProfit);
 		fundRepo.save(fund);
+		log.debug("Updated Fund: {}", fund);
 		return newProfit;
 	}
 }
