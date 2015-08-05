@@ -5,6 +5,6 @@
 </head>
 <body style="font-size: 16px;">
 	<p th:utext="${@environment.getProperty('build.timestamp')}"></p>
-	<footer th:replace="fragments/fund :: footer"></footer>		
+	<footer th:include="fragments/layout :: footer"></footer>		
 </body>
 </html>

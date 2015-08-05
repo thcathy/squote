@@ -6,6 +6,5 @@
 	</form>
 	<p th:text="${resultMessage}"></p>
 	<p th:text="${holdingStock}"></p>
-	<p><a th:href="@{/holdingstock/}">Holding stocks list</a></p>
-	<p><a th:href="@{/quote/list}">Quote list</a></p>	
+	<footer th:include="fragments/layout :: footer"></footer>	
 </div>

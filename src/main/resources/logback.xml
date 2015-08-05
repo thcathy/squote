@@ -38,7 +38,7 @@
 	<logger name="org.apache" level="info" />
 	<logger name="org.springframework" level="info" />
 	<logger name="squote.controller.rest.FundController" level="debug">
-		<appender-ref ref="rest" />
+		<appender-ref ref="restrequest" />
 	</logger>
 
 	<root level="info">
