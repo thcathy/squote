@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <body>
+  	<div th:fragment="footer">
+  		<style type="text/css">
+  			.footer {  				
+  				border-top: 1px solid #e4e4e4;
+  				font-family: Myriad Set Pro,Helvetica Neue,Helvetica,Arial,sans-serif;
+  				font-size: 12px;
+  				margin-left: -35px;
+  			}
+  			
+  			.footer ul, .footer ol {
+  				list-style: none;
+  				margin: 0px;
+  			}
+  			
+  			.footer div {
+  				display: inline-block;
+  				vertical-align: top;
+  			}
+  		</style>  		
+		<nav role="navigation" class="footer">
+			<div>			
+				<ul>
+					<p>Forum</p>
+					<li><a th:href="@{/forum/list/MUSIC/1}">Music</a></li>
+					<li><a th:href="@{/forum/list/MOVIE/1}">Movie</a></li>
+				</ul>
+			</div>
+			<div>					
+				<ul>
+					<p>Quote</p>
+					<li><a th:href="@{/quote/list}">Quotes</a></li>
+					<li><a th:href="@{/quote/single/2828}">Single</a></li>
+					<li><a th:href="@{/quote/stocksperf}">Stock perf</a></li>
+				</ul>
+			</div>
+			<div>					
+				<ul>
+					<p>Entity Mgmt</p>
+					<li><a th:href="@{/holdingstock/}">List holdings</a></li>
+					<li><a th:href="@{/quote/createholdingstock}">Create holding</a></li>
+					<li><a th:href="@{/quote/stocksperf}">Mkt daily rpt</a></li>
+					<li><a th:href="@{/fund}">Fund Restful</a></li>
+				</ul>
+			</div>			
+		</nav>
+	</div>
+  </body>
+</html>
