@@ -2,35 +2,35 @@
 <html>
   <body>  	
     <table  style="font-size: 10px; text-align: right;" th:fragment="fundsummary (fund)">
-		<thead>
+		
 			<tr>
-				<th th:text="${fund.name}">a</th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th th:text="${fund.profit}"></th>
-				<th></th>
+				<td th:text="${fund.name}">a</td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td th:text="${fund.profit}"></td>
+				<td></td>
 			</tr>
 			<tr>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th></th>
-				<th th:text="${fund.gross()}"></th>
-				<th th:text="${fund.netProfit()}"></th>
-				<th th:text="${#numbers.formatDecimal(fund.netProfit()/(fund.gross()+1)*100, 1, 2) }">%</th>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td th:text="${fund.gross()}"></td>
+				<td th:text="${fund.netProfit()}"></td>
+				<td th:text="${#numbers.formatDecimal(fund.netProfit()/(fund.gross()+1)*100, 1, 2) }">%</td>
 			</tr>
 			<tr>
-				<th>code</th>
-				<th>qty</th>
-				<th>price</th>
-				<th>spot</th>
-				<th>gross</th>
-				<th>+/-</th>
-				<th>%</th>
+				<td>code</td>
+				<td>qty</td>
+				<td>price</td>
+				<td>spot</td>
+				<td>gross</td>
+				<td>+/-</td>
+				<td>%</td>
 			</tr>
-		</thead>
+		
 		<tr th:each="entry : ${fund.holdings}">
 			<td th:text="${entry.key}"></td>
 			<td th:text="${entry.value.quantity}"></td>

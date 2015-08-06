@@ -6,8 +6,8 @@
 	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
 	<style>
 		td {
-			padding-right: 2px;
-			padding-top: 2px;
+			padding: 2px;
+			
 			font-family: 'Lucida Grande', Verdana, Arial, Sans-Serif;
 			font-size: 10px;
 		}
@@ -22,28 +22,28 @@
 		<tr>
 			<td>Code</td>
 			<td>Name</td>
-			<td>Price</td>
-			<td>Change</td>
-			<td>1 year %</td>
-			<td>2 year %</td>
-			<td>3 year %</td>
+			<td style="text-align: right;">Price</td>
+			<td style="text-align: right;">1 year %</td>
+			<td style="text-align: right;">2 year %</td>
+			<td style="text-align: right;">3 year %</td>
+			<td style="text-align: right;">PE</td>
+			<td style="text-align: right;">Yield</td>
+			<td style="text-align: right;">NAV</td>
 			<td>Year Low - High</td>
-			<td>PE</td>
-			<td>Yield</td>
-			<td>NAV</td>
+			<td style="text-align: right;">Change</td>
 		</tr>
 		<tr ng-repeat="quote in quotes" ng-style="quote.stockCode === '2828' &amp;&amp; {'background-color': 'rgb(185, 213, 237)'}">
 			<td>{{quote.stockCode}}</td>
 			<td>{{quote.stockName}}</td>
-			<td>{{quote.price}}</td>
-			<td>{{quote.change}}</td>
-			<td>{{quote.lastYearPercentage.toFixed(2)}}</td>
-			<td>{{quote.last2YearPercentage.toFixed(2)}}</td>
-			<td>{{quote.last3YearPercentage.toFixed(2)}}</td>
+			<td style="text-align: right;">{{quote.price}}</td>
+			<td style="text-align: right;">{{quote.lastYearPercentage.toFixed(2)}}</td>
+			<td style="text-align: right;">{{quote.last2YearPercentage.toFixed(2)}}</td>
+			<td style="text-align: right;">{{quote.last3YearPercentage.toFixed(2)}}</td>
+			<td style="text-align: right;">{{quote.pe}}</td>
+			<td style="text-align: right;">{{quote.yield}}</td>
+			<td style="text-align: right;">{{quote.nav}}</td>
 			<td>{{quote.yearLow}} - {{quote.yearHigh}}</td>
-			<td>{{quote.pe}}</td>
-			<td>{{quote.yield}}</td>
-			<td>{{quote.nav}}</td>
+			<td style="text-align: right;">{{quote.change}}</td>
 		</tr>
 	</table>
 	<div ng-bind="status"></div>

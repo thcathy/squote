@@ -13,9 +13,9 @@
 	<table style="font-size: 10px;">
 		<tr th:each="q : ${quotes}">			
 			<td th:text="${q.stockCode}">stock code</td>
-			<td th:text="${q.price}">price</td>
-			<td th:text="${q.changeAmount}">change amt</td>
-			<td th:text="${q.change}">change</td>
+			<td th:text="${q.price}" style="text-align: right;">price</td>
+			<td th:text="${q.changeAmount}" style="text-align: right;">change amt</td>
+			<td th:text="${q.change}" style="text-align: right;">change</td>
 			<td th:text="${q.low}+'-'+${q.high}">low - high</td>
 			<td th:text="${q.lastUpdate}">last update</td>		
 		</tr>				
@@ -24,12 +24,12 @@
 	<table style="font-size: 10px;">
 		<tr th:each="entry : ${holdingMap}">
 			<td th:text="${entry.key.code}">code</td>			
-			<td th:text="${#numbers.formatDecimal(entry.key.relativePerformance(entry.value.priceDoubleValue,hsce.priceDoubleValue), 1, 2)}">price</td>
-			<td><span th:if="${entry.key.side.toString() =='BUY'}" th:text="${#numbers.formatDecimal(entry.key.performance(entry.value.priceDoubleValue), 1, 2)}+'%'"></span></td>
+			<td style="text-align: right;" th:text="${#numbers.formatDecimal(entry.key.relativePerformance(entry.value.priceDoubleValue,hsce.priceDoubleValue), 1, 2)}">price</td>
+			<td style="text-align: right;"><span th:if="${entry.key.side.toString() =='BUY'}" th:text="${#numbers.formatDecimal(entry.key.performance(entry.value.priceDoubleValue), 1, 2)}+'%'"></span></td>
 			<td th:text="${entry.key.side}"></td>
-			<td th:text="${entry.key.gross}"></td>
-			<td th:text="${entry.key.quantity}"></td>
-			<td th:text="${#numbers.formatDecimal(entry.key.price, 1, 2)}"></td>
+			<td style="text-align: right;" th:text="${#numbers.formatDecimal(entry.key.gross,1,2)}"></td>
+			<td style="text-align: right;" th:text="${entry.key.quantity}"></td>
+			<td style="text-align: right;" th:text="${#numbers.formatDecimal(entry.key.price, 1, 2)}"></td>
 			<td th:text="${#dates.format(entry.key.date, 'yyyy-MM-dd')}"></td>	
 		</tr>
 		<tr>
@@ -37,7 +37,7 @@
 		</tr>
 	</table>
 	<br/>	
-	<div th:each="f : ${funds}" style="vertical-align: top;"><div th:include="fragments/fund :: fundsummary (fund=${f})" style="display: inline-block;">Single fund summary</div></div>
+	<div th:each="f : ${funds}" style="vertical-align: top; display: inline-block;"><div th:replace="fragments/fund :: fundsummary (fund=${f})" >Single fund summary</div></div>
 	<br/>
 	<table cellspacing="4" style="font-size: 10px;">
 		<thead>
