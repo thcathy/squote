@@ -1,30 +1,29 @@
-<div>
+<div style="font-family: 'Lucida Grande', Verdana, Arial, Sans-Serif; font-size: 10px;">
 	<form>
 		<input type="text"  style="width: 40px;" name="action" /><input type="submit" /><input type="text" style="width: 500px" name="codes" th:value="${codes}" />
-	</form>
-			
+	</form>			
 	<table style="font-size: 10px;">
 		<tr th:each="q : ${indexes}">
-			<td th:text="${q.stockCode}"></td>
-			<td th:text="${q.price}"></td>
-			<td th:text="${q.change}"></td>
-			<td th:text="${q.low}+'-'+${q.high}"></td>
+			<td th:text="${q.stockCode}">stock code</td>
+			<td th:text="${q.price}">price</td>
+			<td th:text="${q.change}">change</td>
+			<td th:text="${q.low}+'-'+${q.high}">low - high</td>
 		</tr>	
 	</table>
-	<table style="font-size: 10px;">			
+	<table style="font-size: 10px;">
 		<tr th:each="q : ${quotes}">			
-			<td th:text="${q.stockCode}"></td>
-			<td th:text="${q.price}"></td>
-			<td th:text="${q.changeAmount}"></td>
-			<td th:text="${q.change}"></td>
-			<td th:text="${q.low}+'-'+${q.high}"></td>
-			<td th:text="${q.lastUpdate}"></td>		
+			<td th:text="${q.stockCode}">stock code</td>
+			<td th:text="${q.price}">price</td>
+			<td th:text="${q.changeAmount}">change amt</td>
+			<td th:text="${q.change}">change</td>
+			<td th:text="${q.low}+'-'+${q.high}">low - high</td>
+			<td th:text="${q.lastUpdate}">last update</td>		
 		</tr>				
 	</table>	
 	<br/>
 	<table style="font-size: 10px;">
 		<tr th:each="entry : ${holdingMap}">
-			<td th:text="${entry.key.code}"></td>			
+			<td th:text="${entry.key.code}">code</td>			
 			<td th:text="${#numbers.formatDecimal(entry.key.relativePerformance(entry.value.priceDoubleValue,hsce.priceDoubleValue), 1, 2)}">price</td>
 			<td><span th:if="${entry.key.side.toString() =='BUY'}" th:text="${#numbers.formatDecimal(entry.key.performance(entry.value.priceDoubleValue), 1, 2)}+'%'"></span></td>
 			<td th:text="${entry.key.side}"></td>
@@ -38,13 +37,9 @@
 		</tr>
 	</table>
 	<br/>	
-	<table>
-		<tr>
-			<td th:each="f : ${funds}" style="vertical-align: top;"><table th:replace="fragments/fund :: fundsummary (fund=${f})"></table></td>
-		</tr>
-	</table>	
+	<div th:each="f : ${funds}" style="vertical-align: top;"><div th:include="fragments/fund :: fundsummary (fund=${f})" style="display: inline-block;">Single fund summary</div></div>
 	<br/>
-	<table style="font-size: 10px;" cellspacing="4">
+	<table cellspacing="4" style="font-size: 10px;">
 		<thead>
 			<tr>
 				<td>day before</td>
