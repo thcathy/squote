@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -24,10 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-
-import com.google.common.collect.Lists;
 
 import squote.domain.ForumThread;
 import squote.domain.VisitedForumThread;
@@ -36,6 +32,8 @@ import squote.domain.repository.VisitedForumThreadRepository;
 import squote.domain.repository.WishListRepository;
 import squote.service.CentralWebQueryService;
 import squote.web.parser.ForumThreadParser;
+
+import com.google.common.collect.Lists;
 
 @RequestMapping("/forum")
 @Controller
@@ -138,7 +136,7 @@ public class ForumController extends AbstractController {
 	}
 	
 	private void isWished(ForumThread f, List<WishList> wishLists) {
-		if (wishLists.stream().anyMatch(t -> f.getTitle().contains(t.text)))
+		if (!f.isVisited() && wishLists.stream().anyMatch(t -> f.getTitle().contains(t.text)))
 			f.setWished(true);
 	}
 }
