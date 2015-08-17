@@ -3,7 +3,6 @@ package squote.controller;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -12,6 +11,8 @@ import javax.annotation.Resource;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,21 +23,27 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.ui.ModelMap;
 
 import squote.SpringQuoteWebApplication;
+import squote.controller.repository.WishListController;
 import squote.domain.ForumThread;
 import squote.domain.VisitedForumThread;
+import squote.domain.WishList;
 import squote.domain.repository.VisitedForumThreadRepository;
+import squote.domain.repository.WishListRepository;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = SpringQuoteWebApplication.class)
 @ActiveProfiles("dev")
 public class ForumControllerTest {
+	private static final String WISHLIST_ITEM2 = "歌詞";
+	private static final String WISHLIST_ITEM1 = "320K MP3";
 	@Resource ForumController controller;
 	@Resource VisitedForumThreadRepository visitedRepo;
+	@Resource WishListRepository wishListRepo;
 	@Value("${forum.threadEarliestDay}") int threadShouldNotOlderDay;
 	
 	private static int MIN_NUM_OF_THREADS = 200;
-		
+			
 	@Test
 	public void list_MusicPage1_ShouldReturnDecendingForumThreadsNotOlderThanConfig() {
 		ModelMap modelMap = new ModelMap();
@@ -56,6 +63,23 @@ public class ForumControllerTest {
 		contents.forEach(x -> {
 			assertTrue("The thread created on " + x.getCreatedDate() + " is older than " + threadShouldNotOlderDay + " days", x.getCreatedDate().compareTo(earliestCreatedDate) >= 0); 
 		});
+	}
+	
+	@Test
+	public void list_givenWishListItem_shouldMarkItemAsWished() {
+		wishListRepo.save(new WishList(WISHLIST_ITEM1));
+		wishListRepo.save(new WishList(WISHLIST_ITEM2));
+		
+		try {
+			ModelMap modelMap = new ModelMap();
+			controller.list("MUSIC", 1, modelMap);
+			List<ForumThread> contents = (List<ForumThread>) modelMap.get("contents");
+			contents.stream()
+				.filter(this::isWishList)
+				.forEach(x -> assertTrue(x.isWished()));			
+		} finally {
+			wishListRepo.deleteAll();
+		}
 	}
 	
 	@Test
@@ -86,5 +110,9 @@ public class ForumControllerTest {
 		VisitedForumThread t = visitedRepo.findOne(url);
 		assertEquals(t.getUrl(),url);		
 		visitedRepo.delete(t);
+	}
+	
+	private boolean isWishList(ForumThread f) {
+		return f.getTitle().contains(WISHLIST_ITEM1) || f.getTitle().contains(WISHLIST_ITEM2);  
 	}
 }

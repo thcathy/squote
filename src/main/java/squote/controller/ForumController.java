@@ -27,9 +27,13 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.google.common.collect.Lists;
+
 import squote.domain.ForumThread;
 import squote.domain.VisitedForumThread;
+import squote.domain.WishList;
 import squote.domain.repository.VisitedForumThreadRepository;
+import squote.domain.repository.WishListRepository;
 import squote.service.CentralWebQueryService;
 import squote.web.parser.ForumThreadParser;
 
@@ -66,6 +70,7 @@ public class ForumController extends AbstractController {
 	
 	@Resource private CentralWebQueryService executeService;
 	@Resource private VisitedForumThreadRepository visitedThreadRepo;
+	@Resource private WishListRepository wishListRepo;
 	
 	@Autowired
 	public ForumController(@Value("${forum.threadEarliestDay}") int threadShouldNotOlderDay, @Value("${forum.pagePerBatch}") int pagePerBatch) {
@@ -73,32 +78,23 @@ public class ForumController extends AbstractController {
 		earliestCreatedDate = DateUtils.addDays(new Date(), -threadShouldNotOlderDay);
 		this.pagePerBatch = pagePerBatch;
 	}
-	
-	@RequestMapping(value = "/")
-	@ResponseBody
-	public String index() {
-		return "Usage: /list/{type}/{batch}";
-	}
-		
+			
     @RequestMapping(value = "/list/{type}/{batch}")
     public String list(@PathVariable String type, @PathVariable int batch, ModelMap modelMap) {
     	log.debug("list: type [{}], batch [{}]", type, batch);
 
     	List<ForumThreadParser> parsers = getParserByType(ContentType.valueOf(type.toUpperCase()), batch);    	   	
-    	List<ForumThread> contents = parsers.parallelStream()
-											.map(p -> CompletableFuture.supplyAsync(() -> p.parse(), executeService.getExecutor()))
-											.map(f -> f.join())
-											.flatMap(x->x.stream())
-											.filter(f -> f.getCreatedDate().compareTo(earliestCreatedDate) >= 0)
-											.sorted((a,b)->b.getCreatedDate().compareTo(a.getCreatedDate()))
-											.collect(Collectors.toList());
-    	contents.forEach(f->isVisited(f));
+    	List<ForumThread> contents = collectSortedForumThread(parsers);
+    	contents.forEach(this::isVisited);
+    	
+    	List<WishList> wishLists = Lists.newArrayList(wishListRepo.findAll());
+    	contents.forEach(f -> isWished(f, wishLists));
     	
 		modelMap.put("contents", contents);    	
     	return page("/list");
     }
     
-    @RequestMapping(value = "/visited", method = RequestMethod.POST)
+	@RequestMapping(value = "/visited", method = RequestMethod.POST)
     @ResponseBody
     public void visited(@RequestBody String url) {    	
     	log.debug("visited: url [{}]", url);
@@ -110,6 +106,8 @@ public class ForumController extends AbstractController {
     private void isVisited(ForumThread f) {
     	if (visitedThreadRepo.exists(f.getUrl())) f.setVisited(true);
     }
+    
+    
         
     private List<ForumThreadParser> getParserByType(ContentType type, int batch) {
     	return type.urls.stream()
@@ -119,6 +117,17 @@ public class ForumController extends AbstractController {
     			)
     			.collect(Collectors.toList());    			
     }
+    
+    private List<ForumThread> collectSortedForumThread(
+			List<ForumThreadParser> parsers) {
+		return parsers.parallelStream()
+				.map(p -> CompletableFuture.supplyAsync(() -> p.parse(), executeService.getExecutor()))
+				.map(CompletableFuture::join)
+				.flatMap(List::stream)
+				.filter(f -> f.getCreatedDate().compareTo(earliestCreatedDate) >= 0)
+				.sorted((a,b)->b.getCreatedDate().compareTo(a.getCreatedDate()))
+				.collect(Collectors.toList());
+	}
 
 	private int toPage(int batch) {
 		return pagePerBatch * batch;
@@ -126,5 +135,10 @@ public class ForumController extends AbstractController {
 
 	private int fromPage(int batch) {
 		return 1 + (pagePerBatch * (batch-1));
+	}
+	
+	private void isWished(ForumThread f, List<WishList> wishLists) {
+		if (wishLists.stream().anyMatch(t -> f.getTitle().contains(t.text)))
+			f.setWished(true);
 	}
 }

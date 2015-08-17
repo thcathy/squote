@@ -15,6 +15,7 @@ public class ForumThread {
     private final String title;
     private final String source;
     private boolean isVisited = false;
+    private boolean isWished = false;
 
 	@DateTimeFormat(pattern = "yyyy-MM-dd")
     public final Date createdDate;
@@ -40,7 +41,8 @@ public class ForumThread {
 	public Date getCreatedDate() {	return createdDate;}
 
 	public boolean isVisited() {return isVisited;}
-	public void setVisited(boolean isVisited) {	this.isVisited = isVisited;}
+	public void setVisited(boolean isVisited) { this.isVisited = isVisited;}
 	
-	
+	public boolean isWished() {return isWished;}
+	public void setWished(boolean isWished) { this.isWished = isWished;}
 }
