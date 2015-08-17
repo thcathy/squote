@@ -1,11 +1,4 @@
 <div style="font-family: 'Lucida Grande', Verdana, Arial, Sans-Serif;">
-<script type="text/javascript">
-function deleteIt(id) {
-	if (window.confirm('Delete it?')) {
-		window.location.replace('/holdingstock/delete/'+id);
-	}
-}
-</script>
 <h3>Holding Stocks</h3>
 <table style="font-size: 10px;" cellpadding="3">	
 	<thead>		
@@ -19,9 +12,8 @@ function deleteIt(id) {
 			<th>created date</th>
 		</tr>
 	</thead>
-	<tr th:each="s : ${holdingStocks}">
-	
-		<td><a href="#" th:attr="onclick='deleteIt(\''+${s.id}+'\')'">delete</a></td>
+	<tr th:each="s : ${holdingStocks}">	
+		<td><a th:href="'/holdingstock/delete/'+${s.id}">delete</a></td>
 		<td th:text="${s.code}"></td>
 		<td th:text="${s.side}"></td>
 		<td th:text="${s.quantity}"></td>

@@ -1,0 +1,18 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<title>Wish List</title>	
+</head>
+<body>	
+	<form>
+		<input type="text"  style="width: 80px;" name="newItem" /><input type="submit" />
+	</form>	
+	<table style="font-size: 10px;" cellpadding="3">
+		<tr th:each="i : ${items}">
+			<td><a th:href="@{/forum/wishlist/delete(item=${i.text})}">delete</a></td>
+			<td th:text="${i.text}"></td>
+			<td th:text="${#dates.format(i.createdDate, 'yyyy-MM-dd')}"></td>
+		</tr>	
+	</table>	
+	<footer th:include="fragments/layout :: footer"></footer>
+</body>
+</html>
