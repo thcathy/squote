@@ -8,8 +8,8 @@
 				<td></td>
 				<td></td>
 				<td></td>
-				<td></td>
 				<td th:text="${fund.profit}"></td>
+				<td th:text="${fund.netProfit().add(fund.profit)}"></td>
 				<td></td>
 			</tr>
 			<tr>
