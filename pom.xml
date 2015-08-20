@@ -22,6 +22,15 @@
 		<mavenBuildTimestamp>${maven.build.timestamp}</mavenBuildTimestamp>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
 	</properties>
+	
+	<repositories>
+	<repository>
+    <id>project_lib</id>
+    <name>Repository in project's lib dir</name>
+    <layout>default</layout>
+    <url>file:///${project.basedir}/lib</url>
+</repository>
+</repositories>
 
 	<build>
 		<plugins>
@@ -115,11 +124,9 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-		   <groupId>jaudiotagger</groupId>
-		   <artifactId>jaudiotagger</artifactId>		  
-		   <version>2.2.3</version>
-		   <scope>system</scope>
-		   <systemPath>${basedir}/lib/jaudiotagger-2.2.3.jar</systemPath>
+		  <groupId>com.mpatric</groupId>
+		  <artifactId>mp3agic</artifactId>
+		  <version>0.8.3</version>
 		</dependency>
 
 		<dependency>
