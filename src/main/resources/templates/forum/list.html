@@ -34,7 +34,7 @@
 		</table>
 
 		<table style="font-size: 10px;">
-			<tr th:each="c : ${contents}" th:classappend="${c.visited}?'visited'" th:classappend="${c.wished}?'wished'">
+			<tr th:each="c : ${contents}" th:class="${c.visited}?'visited'" th:classappend="${c.wished}?'wished'">
 				<td><a target="_blank" th:attr="ng-click='visited(\''+${c.url}+'\')'" th:href="'http://'+${c.url}"
 					th:text="${c.title}">title</a></td>
 				<td th:text="${#dates.format(c.createdDate, 'dd-MM-yyyy')}">date</td>

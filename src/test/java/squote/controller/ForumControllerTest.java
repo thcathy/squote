@@ -11,8 +11,6 @@ import javax.annotation.Resource;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +21,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.ui.ModelMap;
 
 import squote.SpringQuoteWebApplication;
-import squote.controller.repository.WishListController;
 import squote.domain.ForumThread;
 import squote.domain.VisitedForumThread;
 import squote.domain.WishList;
@@ -76,7 +73,7 @@ public class ForumControllerTest {
 			List<ForumThread> contents = (List<ForumThread>) modelMap.get("contents");
 			contents.stream()
 				.filter(this::isWishList)
-				.forEach(x -> assertTrue(x.isWished()));			
+				.forEach(x -> assertTrue("Forum Thread should be true: " + x, x.isVisited() || x.isWished()));			
 		} finally {
 			wishListRepo.deleteAll();
 		}
