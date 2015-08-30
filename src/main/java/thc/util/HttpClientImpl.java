@@ -7,6 +7,7 @@ import org.apache.commons.io.input.NullInputStream;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -47,10 +48,13 @@ public class HttpClientImpl implements HttpClient {
 	
 	@Override
 	public InputStream makeGetRequest(String url) {
-		HttpGet httpget = new HttpGet(url);
-		
+		return makeRequest(new HttpGet(url));
+	}
+	
+	@Override
+	public InputStream makeRequest(HttpUriRequest request) {
 		try {
-			CloseableHttpResponse response1 = httpclient.execute(httpget);
+			CloseableHttpResponse response1 = httpclient.execute(request);
 		    HttpEntity entity = response1.getEntity();		    
 		    		    
 		    log.debug("Request status: {}", response1.getStatusLine());
@@ -58,6 +62,7 @@ public class HttpClientImpl implements HttpClient {
 		    
 		    if (response1.getStatusLine().getStatusCode() < 300) return entity.getContent();
 		} catch (Exception e) {
+			log.info("Cannot make request",e);
 		}
 		return new NullInputStream(0);
 	}

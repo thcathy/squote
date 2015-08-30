@@ -2,6 +2,7 @@ package thc.util;
 
 import java.io.InputStream;
 
+import org.apache.http.client.methods.HttpUriRequest;
 import org.jsoup.nodes.Document;
 
 public interface HttpClient {
@@ -11,5 +12,7 @@ public interface HttpClient {
 	public InputStream makeGetRequest(String url);
 
 	public Document getDocument(String url);
+
+	InputStream makeRequest(HttpUriRequest request);
 
 }
