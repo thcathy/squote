@@ -1,0 +1,24 @@
+<html>
+<head>
+    <title>ID3 tag</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" type="text/css" media="all" href="../css/squote.css" th:href="@{/css/squote.css}" />
+</head>
+<body>
+	<div>
+		<form>
+			Folder: <input type="text"  style="width: 300px;" name="folder" th:value="${folder}" /><br />			
+			From encoding: <input type="text" style="width: 40px;" name="fromEncoding" /> To Encoding: <input type="text"  style="width: 40px;" name="toEncoding" /><br />
+			<input type="submit" name="action" value="preview" />&nbsp;<input type="submit" name="action" value="save" />
+		</form>
+		<hr/>
+		<table th:each="tags : ${tagList}">
+			<tr th:each="tags">
+				<td th:text="${tags.key}">key</td>
+				<td th:text="${tags.value}">value</td>
+			</tr>
+		</table>
+		<footer th:include="fragments/layout :: footer"></footer>	
+	</div>
+</body>
+</html>
