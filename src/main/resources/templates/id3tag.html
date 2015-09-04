@@ -2,7 +2,7 @@
 <head>
     <title>ID3 tag</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" type="text/css" media="all" href="../css/squote.css" th:href="@{/css/squote.css}" />
+    <link rel="stylesheet" type="text/css" media="all" href="../static/css/squote.css" th:href="@{/css/squote.css}" />
 </head>
 <body>
 	<div>
@@ -12,7 +12,7 @@
 			<input type="submit" name="action" value="preview" />&nbsp;<input type="submit" name="action" value="save" />
 		</form>
 		<hr/>
-		<table th:each="tags : ${tagList}">
+		<table th:each="tags : ${tagList}" frame="box">
 			<tr th:each="tag : ${tags}">
 				<td th:text="${tag.key}">key</td>
 				<td th:text="${tag.value}">value</td>
