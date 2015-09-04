@@ -7,7 +7,8 @@
 <body>
 	<div>
 		<form>
-			Folder: <input type="text"  style="width: 300px;" name="folder" th:value="${folder}" /><br />			
+			Input Folder : <input type="text"  style="width: 300px;" name="inputFolder" th:value="${inputFolder}" /><br />
+			Output Folder: <input type="text"  style="width: 300px;" name="outputFolder" th:value="${outputFolder}" /><br />			
 			From encoding: <input type="text" style="width: 40px;" name="fromEncoding" th:value="${fromEncoding}" /> To Encoding: <input type="text"  style="width: 40px;" name="toEncoding" th:value="${toEncoding}" /><br />
 			<input type="submit" name="action" value="preview" />&nbsp;<input type="submit" name="action" value="save" />
 		</form>
