@@ -79,7 +79,7 @@ public class ConvertId3TagControllerTest {
 		assertEquals(uri.getPath(), tagList.get(0).get("FilePath"));
 		assertEquals("李克勤", tagList.get(0).get(AbstractID3v2Tag.ID_ARTIST));
 		assertEquals("我克勤", tagList.get(0).get(AbstractID3v2Tag.ID_ALBUM));
-		assertEquals("你最重要", tagList.get(0).get(AbstractID3v2Tag.ID_TITLE));
+		assertEquals("戀愛為何物 (feat. AGA)", tagList.get(0).get(AbstractID3v2Tag.ID_TITLE));
 	}
 	
 	@Test
@@ -109,13 +109,13 @@ public class ConvertId3TagControllerTest {
 		assertEquals(outputFolder + "/big5.mp3", tagList.get(0).get("FilePath"));
 		assertEquals("李克勤", tagList.get(0).get(AbstractID3v2Tag.ID_ARTIST));
 		assertEquals("我克勤", tagList.get(0).get(AbstractID3v2Tag.ID_ALBUM));
-		assertEquals("你最重要", tagList.get(0).get(AbstractID3v2Tag.ID_TITLE));
+		assertEquals("戀愛為何物 (feat. AGA)", tagList.get(0).get(AbstractID3v2Tag.ID_TITLE));
 		
 		Mp3File mp3 = new Mp3File(tagList.get(0).get("FilePath"));
 		ID3v2 tag = mp3.getId3v2Tag();
 		assertEquals("李克勤", tag.getArtist());
 		assertEquals("我克勤", tag.getAlbum());
-		assertEquals("你最重要", tag.getTitle());
+		assertEquals("戀愛為何物 (feat. AGA)", tag.getTitle());
 		FileUtils.forceDelete(new File(tagList.get(0).get("FilePath")));
 	}
 }

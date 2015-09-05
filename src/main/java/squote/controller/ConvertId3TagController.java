@@ -28,6 +28,7 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.mpatric.mp3agic.EncodedText;
 import com.mpatric.mp3agic.ID3v2;
 import com.mpatric.mp3agic.ID3v2Frame;
 import com.mpatric.mp3agic.ID3v2FrameSet;
@@ -82,10 +83,18 @@ public class ConvertId3TagController {
 			File outputFolderObj = new File(outputFolder);
 			if (!outputFolderObj.exists()) outputFolderObj.mkdirs();
 			
+			String newFilePath = outputFolder + File.separator + new File(mp3.getFilename()).getName();
 			try {
-				String newFilePath = outputFolder + File.separator + new File(mp3.getFilename()).getName();
 				mp3.save(newFilePath);
 				mp3 = new Mp3File(newFilePath);
+			} catch (ArrayIndexOutOfBoundsException e) {
+				try {
+					mp3.getId3v2Tag().clearAlbumImage();
+					mp3.save(newFilePath);
+					mp3 = new Mp3File(newFilePath);
+				} catch (Exception e1) {
+					log.error("Cannot save mp3: " + mp3.getFilename(), e);
+				}
 			} catch (Exception e) {
 				log.error("Cannot save mp3: " + mp3.getFilename(), e);
 			}
@@ -138,8 +147,7 @@ public class ConvertId3TagController {
 		if (set == null) return;
 		ID3v2Frame frame = id3v2Tag.getFrameSets().get(tagId).getFrames().get(0);
 		byte[] utfBytes = new String(ArrayUtils.remove(frame.getData(), 0),"BIG5").trim().getBytes("UTF-8");	// remove leading byte and convert
-        frame.setData(ArrayUtils.add(utfBytes, 0, (byte)3));				// leading byte 3 mean utf-8 in id3 frame
-		
+        frame.setData(ArrayUtils.add(utfBytes, 0, EncodedText.TEXT_ENCODING_UTF_8));		
 	}
 
 	private boolean noInput(String action, String folder) {		
