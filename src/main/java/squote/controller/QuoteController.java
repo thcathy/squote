@@ -48,8 +48,8 @@ import squote.domain.repository.StockQueryRepository;
 import squote.service.CentralWebQueryService;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
-import squote.web.parser.AastockStockQuoteParser;
 import squote.web.parser.EtnetIndexQuoteParser;
+import squote.web.parser.EtnetStockQuoteParser;
 import squote.web.parser.HSINetParser;
 import thc.util.ConcurrentUtils;
 
@@ -79,7 +79,8 @@ public class QuoteController extends AbstractController {
 	@RequestMapping(value = "/single/{code}", produces="application/xml")	
 	public @ResponseBody StockQuote single(@PathVariable String code) {
 		log.debug("single: reqCode [{}]", code);		
-		return StringUtils.isBlank(code)? new StockQuote() : new AastockStockQuoteParser(code).getStockQuote();				
+		return StringUtils.isBlank(code)? new StockQuote() : new EtnetStockQuoteParser().parse(code).get();
+		
 	}
 	
 	@RequestMapping(value="/createholdingstock")
@@ -223,7 +224,7 @@ public class QuoteController extends AbstractController {
 	private List<CompletableFuture<StockQuote>> submitStockQuoteRequests(Set<String> codeSet) {
 		return codeSet.stream()
 				.map( code -> 
-					webQueryService.submit(() -> new AastockStockQuoteParser(code).getStockQuote()) 
+					webQueryService.submit(() -> new EtnetStockQuoteParser().parse(code).get()) 
 				)
 				.collect(Collectors.toList());
 	}

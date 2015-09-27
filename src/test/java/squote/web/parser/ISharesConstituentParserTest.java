@@ -1,5 +1,6 @@
 package squote.web.parser;
  
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public class ISharesConstituentParserTest {
 		assertTrue("MSCI China index should contain 2628",result.contains("2628"));
 		assertTrue("MSCI China index should contain 857",result.contains("857"));
 		assertTrue("MSCI China index should contain 992",result.contains("992"));
+		assertFalse("Should not return any --", result.contains("--"));	
 	}
 	
 	@Test
@@ -25,6 +27,6 @@ public class ISharesConstituentParserTest {
 		assertTrue("MSCI HK index should contain 2",result.contains("2"));
 		assertTrue("MSCI HK index should contain 388",result.contains("388"));
 		assertTrue("MSCI HK index should contain over 30 stocks", result.size() > 30);
-		
+		assertFalse("Should not return any --", result.contains("--"));
 	}
 }

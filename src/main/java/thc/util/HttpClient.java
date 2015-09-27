@@ -14,5 +14,6 @@ public interface HttpClient {
 	public Document getDocument(String url);
 
 	InputStream makeRequest(HttpUriRequest request);
-
+	
+	public void setCookie(String name, String value, String path, String domain);
 }

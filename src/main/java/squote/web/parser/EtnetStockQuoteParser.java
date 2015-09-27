@@ -1,8 +1,6 @@
 package squote.web.parser;
 
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
@@ -44,7 +42,7 @@ public class EtnetStockQuoteParser {
 			
 			return Optional.of(q);
 		} catch (Exception e) {
-			log.warn("Cannot get index quote from Etnet", e);
+			log.warn("Cannot get quote from Etnet for code :" + code, e);
 			return Optional.empty();
 		}	
 	}	

@@ -1,11 +1,13 @@
 package squote.web.parser;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import squote.domain.StockQuote;
+import thc.util.HttpClient;
 import thc.util.HttpClientImpl;
 
 public class AastockStockQuoteParser implements StockQuoteParser {
@@ -22,7 +24,10 @@ public class AastockStockQuoteParser implements StockQuoteParser {
 		StockQuote quote = new StockQuote(code);
 		try
 		{			
-			Document doc = new HttpClientImpl("UTF-8").newInstance().getDocument(AASTOCK_STOCK_QUOTE_URL + code);
+			HttpClient client = new HttpClientImpl("UTF-8").newInstance();
+			client.makeGetRequest(AASTOCK_STOCK_QUOTE_URL + StringUtils.leftPad(code, 5, '0'));
+			client.setCookie("AALTP", "1", "/", "www.aastocks.com");
+			Document doc = client.getDocument(AASTOCK_STOCK_QUOTE_URL + StringUtils.leftPad(code, 5, '0'));
 			// price
 			quote.setPrice(doc.select("ul.UL1 li.LI1:containsOwn(Last)").first().parent().nextElementSibling().child(0).child(0).html());
 			

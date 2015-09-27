@@ -11,7 +11,7 @@ import java.util.stream.IntStream;
 
 import squote.SquoteConstants.IndexCode;
 import squote.domain.StockQuote;
-import squote.web.parser.AastockStockQuoteParser;
+import squote.web.parser.EtnetStockQuoteParser;
 import squote.web.parser.HistoryQuoteParser;
 
 public class StockPerformanceService {
@@ -53,7 +53,7 @@ public class StockPerformanceService {
 	}
 	
 	public StockQuote getDetailStockQuoteWith3PreviousYearPrice(String code) {		
-		StockQuote quote = new AastockStockQuoteParser(code).getStockQuote();		
+		StockQuote quote = new EtnetStockQuoteParser().parse(code).get();		
 		IntStream.rangeClosed(1, 3).forEach(i->
 			new HistoryQuoteParser().getPreviousYearQuote(code, i).ifPresent(p->quote.setPreviousPrice(i, p.doubleValue()))
 		);		

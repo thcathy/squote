@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -29,7 +30,10 @@ public class ISharesConstituentParser {
 			InputStream out = new HttpClientImpl(UTF_8).newInstance().makeGetRequest(MSCIChinaConstituentsURL);
 			Document doc = Jsoup.parse(out, UTF_8, MSCIChinaConstituentsURL);
 			Elements es = doc.getElementsMatchingOwnText("XHKG");
-			for (Element e : es) stockCodes.add(e.parent().siblingElements().first().child(0).ownText());
+			for (Element e : es) {
+				String code = e.parent().siblingElements().first().child(0).ownText();
+				if (NumberUtils.isDigits(code)) stockCodes.add(code);
+			}
 		} catch (Exception e) {
 			log.error("Fail to retrieve list of MSCI China Constituents",e);
 		}		
