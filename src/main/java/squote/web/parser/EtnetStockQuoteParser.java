@@ -32,8 +32,8 @@ public class EtnetStockQuoteParser {
 			Optional<String> updateTime = StringUtils.extractText(doc.select("div[id^=StkDetailTime]").text(), "[0-9]*/[0-9]*/[0-9]* [0-9]*:[0-9]*");
 			updateTime.ifPresent(s -> q.setLastUpdate(s));
 			
-			q.setPe(doc.select("div[id^=StkList] li:eq(33)").text().split(" / ")[0]);
-			q.setYield(doc.select("div[id^=StkList] li:eq(37)").text().split(" / ")[0] + "%");
+			q.setPe(doc.select("div[id^=StkList] li:eq(33)").text().split("/")[0].trim());
+			q.setYield(doc.select("div[id^=StkList] li:eq(37)").text().split("/")[0].trim() + "%");
 			q.setNAV(doc.select("div[id^=StkList] li:eq(49)").text());
 			q.setYearHigh(doc.select("div[id^=StkList] li:eq(19)").text());
 			q.setYearLow(doc.select("div[id^=StkList] li:eq(23)").text());
