@@ -4,18 +4,33 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 
 import org.apache.commons.io.input.NullInputStream;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.auth.AuthOption;
+import org.apache.http.auth.AuthScheme;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.MalformedChallengeException;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.AuthenticationStrategy;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.ProxyAuthenticationStrategy;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.protocol.HttpContext;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
@@ -27,7 +42,16 @@ public class HttpClientImpl implements HttpClient {
 	private BasicCookieStore cookieStore = new BasicCookieStore();
 	private CloseableHttpClient httpclient;
 	private String encoding = "utf-8";
-		
+	private static final ProxySetting proxySetting;
+	
+	static {
+		proxySetting = new ProxySetting(
+				System.getProperty("http.proxyHost"), 
+				System.getProperty("http.proxyPort"), 
+				System.getProperty("http.proxyUsername"), 
+				System.getProperty("http.proxyPassword"));
+	}
+	
 	public HttpClientImpl() {
 	}
 	
@@ -37,7 +61,7 @@ public class HttpClientImpl implements HttpClient {
 		headers.add(new BasicHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"));
 		headers.add(new BasicHeader("Connection", "keep-alive"));
 		headers.add(new BasicHeader("Accept-Encoding", "gzip, deflate, sdch"));
-		headers.add(new BasicHeader("Accept-Language", "zh-TW,zh;q=0.8,en-US;q=0.6,en;q=0.4"));
+		headers.add(new BasicHeader("Accept-Language", "en-US,en;q=0.8"));
 			
 		return headers;
 	}
@@ -48,12 +72,21 @@ public class HttpClientImpl implements HttpClient {
 	@Override
 	public HttpClient newInstance() {
 		HttpClientImpl instance = new HttpClientImpl();
+		HttpClientBuilder httpClientBuilder = HttpClients.custom()				
+							.setDefaultCookieStore(cookieStore).setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.130 Safari/537.36")
+							.setDefaultHeaders(defaultHeader());
 		
-		instance.httpclient = HttpClients.custom()
-					.setDefaultCookieStore(cookieStore).setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.130 Safari/537.36")
-					.setDefaultHeaders(defaultHeader())
-					.build();
+		if (proxySetting.hasProxyServer()) httpClientBuilder.setProxy(new HttpHost(proxySetting.host, Integer.valueOf(proxySetting.port)));
+		if (proxySetting.hasProxyUser()) {
+			CredentialsProvider credsProvider = new BasicCredentialsProvider();		
+			Credentials defaultcreds = new UsernamePasswordCredentials(proxySetting.username, proxySetting.password);		
+			credsProvider.setCredentials( AuthScope.ANY, defaultcreds );
+			httpClientBuilder.setDefaultCredentialsProvider(credsProvider);
+		}
+				
+		instance.httpclient = httpClientBuilder.build();
 		instance.encoding = this.encoding;
+		
 		return instance;
 	}
 	

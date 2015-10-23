@@ -27,7 +27,7 @@ public class EtnetStockQuoteParser {
 			q.setChange(changes[1].replace("(", "").replace(")",""));
 
 			q.setHigh(doc.select("div[id^=StkDetailMainBox] tr:eq(0) td:eq(1) span.Number").text());
-			q.setLow(doc.select("div[id^=StkDetailMainBox] tr:eq(0) td:eq(1) span.Number").text());
+			q.setLow(doc.select("div[id^=StkDetailMainBox] tr:eq(1) td:eq(0) span.Number").text());
 
 			Optional<String> updateTime = StringUtils.extractText(doc.select("div[id^=StkDetailTime]").text(), "[0-9]*/[0-9]*/[0-9]* [0-9]*:[0-9]*");
 			updateTime.ifPresent(s -> q.setLastUpdate(s));
