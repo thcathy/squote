@@ -20,7 +20,7 @@ public class EtnetStockQuoteParser {
 			Document doc = new HttpClientImpl("UTF-8").newInstance().getDocument(URL + code);
 						
 			StockQuote q = new StockQuote(code);
-			q.setPrice(doc.select("div[id^=StkDetailMainBox] span[class^=Price ]").text().replaceAll("[0\\D]+$",""));
+			q.setPrice(doc.select("div[id^=StkDetailMainBox] span[class^=Price ]").text().replaceAll("[\\D]+$",""));
 			
 			String[] changes = doc.select("div[id^=StkDetailMainBox] span[class^=Change]").text().split(" ");
 			q.setChangeAmount(changes[0]);
