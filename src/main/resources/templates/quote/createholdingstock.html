@@ -1,10 +1,31 @@
+<html ng-app="createHoldingStock">
+<head>
+	<title>quote</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" /> 
+	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+	<script type="text/javascript">
+		angular.module('createHoldingStock', [])
+				.controller('createHoldingStockController', ['$scope','$http', function($scope, $http) {
+					$scope.create = function() {
+						var res = $http.post('/rest/create_holding_stock', { message : $scope.message, hscei : $scope.hscei });
+						res.success(function(data, status, headers, config) {
+							$scope.resultMessage=data;
+						});
+					};
+				}]);
+	</script>z
+</head>
+<body ng-controller="createHoldingStockController">
 <div style="font-family: 'Lucida Grande', Verdana, Arial, Sans-Serif;">
-	<form method="post">
-		<textarea id="message" name="message" rows="8" cols="50" th:value="${message}"></textarea><br />
-		hscei:<input type="text"  style="width: 40px;" name="hscei" /><br />
+	<form method="post" ng-click="create()">
+		<textarea id="message" name="message" rows="8" cols="50" ng-model="message"></textarea>
+		<br /> hscei:<input type="text" style="width: 40px;" mg-model="hscei" /><br />
 		<input type="submit" />
 	</form>
-	<p th:text="${resultMessage}"></p>
+	<p>{{resultMessage}}</p>
 	<p th:text="${holdingStock}"></p>
 	<footer th:include="fragments/layout :: footer"></footer>	
 </div>
+</body>
+</html>
