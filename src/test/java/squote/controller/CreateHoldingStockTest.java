@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.Before;
@@ -27,17 +28,22 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.ui.ModelMap;
 
 import squote.SpringQuoteWebApplication;
 import squote.SquoteConstants;
 import squote.SquoteConstants.IndexCode;
+import squote.domain.Fund;
 import squote.domain.HoldingStock;
 import squote.domain.StockQuote;
+import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.service.CentralWebQueryService;
 import squote.web.parser.EtnetIndexQuoteParser;
 import squote.web.parser.HSINetParser;
 import thc.util.DateUtils;
+
+import com.google.common.collect.Lists;
  
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -49,6 +55,7 @@ public class CreateHoldingStockTest {
 		
 	@Autowired QuoteController quoteController;
 	@Autowired HoldingStockRepository holdingStockRepo;
+	@Autowired FundRepository fundRepository;
 	
 	private MockMvc mockMvc;
 	private StockQuote hsceiQuote;
@@ -56,6 +63,15 @@ public class CreateHoldingStockTest {
 	
 	private static String HSI_PRICE = "25000";
 	private static String HSCEI_PRICE = "12500";
+	
+	public static String FUND_NAME = "Winner";
+	
+	private Fund createSimpleFund() {
+		Fund f = new Fund(FUND_NAME);
+		f.buyStock("2828", 500, new BigDecimal(50000));
+		f.buyStock("2800", 1000, new BigDecimal(25000));
+		return f;
+	}
     
     @Before
     public void setup() {    	
@@ -68,6 +84,9 @@ public class CreateHoldingStockTest {
         
         hsceiQuote = new StockQuote(IndexCode.HSCEI.name);
         hsceiQuote.setPrice(HSCEI_PRICE);
+        
+        fundRepository.deleteAll();
+        fundRepository.save(createSimpleFund());
     }
     	
 	@Test
@@ -108,13 +127,16 @@ public class CreateHoldingStockTest {
 				.andExpect(view().name("quote/createholdingstock")).andReturn();
 		
 		// Expect
-		HoldingStock holdingStock = (HoldingStock) mvcResult.getModelAndView().getModelMap().get("holdingStock");
+		ModelMap modelMap = mvcResult.getModelAndView().getModelMap();
+		HoldingStock holdingStock = (HoldingStock) modelMap.get("holdingStock");
+		List<Fund> funds = Lists.newArrayList((Iterable<Fund>) modelMap.get("funds"));
 		assertNotNull(holdingStock);
 		assertEquals("1138", holdingStock.getCode());
 		assertEquals(10000, holdingStock.getQuantity());
 		assertEquals(new BigDecimal("48900.0000"), holdingStock.getGross());
 		assertEquals(SquoteConstants.Side.SELL, holdingStock.getSide());
-		assertEquals("10368.13", holdingStock.getHsce().toString());		
+		assertEquals("10368.13", holdingStock.getHsce().toString());
+		assertEquals(1, funds.size());
 	}
 	
 	@Test

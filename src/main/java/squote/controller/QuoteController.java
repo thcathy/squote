@@ -109,7 +109,8 @@ public class QuoteController extends AbstractController {
 		}
 		
 		modelMap.put("holdingStock", holdingStock);
-		modelMap.put("resultMessage", resultMessage);		
+		modelMap.put("resultMessage", resultMessage);
+		modelMap.put("funds", fundRepo.findAll());
 		return page("/createholdingstock");
 	}
 	
