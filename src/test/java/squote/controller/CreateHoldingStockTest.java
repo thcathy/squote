@@ -114,9 +114,10 @@ public class CreateHoldingStockTest {
 		StockQuote quote = new StockQuote("HSCEI");
         quote.setPrice("10,368.13");
         Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.of(quote));        
-		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
-		scbSellMsg += "已於4.8900元成功執行\n";
-		scbSellMsg += "20140710000013235"; 
+		String scbSellMsg = "渣打:買入6000股883.HK 中國海洋石油\n";
+		scbSellMsg += "已完成\n";
+		scbSellMsg += "平均價HKD7.99\n";
+		scbSellMsg += "O1512110016740"; 
 		
 		// When
 		MvcResult mvcResult = mockMvc.perform(

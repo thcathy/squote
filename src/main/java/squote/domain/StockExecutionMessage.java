@@ -24,7 +24,7 @@ public class StockExecutionMessage {
     private Date date;
     
     public static Optional<StockExecutionMessage> construct(String message) {
-    	if (message.startsWith("渣打") && message.contains("成功執行")) {
+    	if (message.startsWith("渣打") && message.contains("已完成")) {
     		int startPos, endPos;
     		StockExecutionMessage seMsg = new StockExecutionMessage();
     	
@@ -37,21 +37,21 @@ public class StockExecutionMessage {
     		seMsg.quantity = Integer.valueOf(message.substring(startPos, endPos).replaceAll(",", ""));
     		
     		// parse code
-    		startPos = endPos + 2;
-    		endPos = message.indexOf(".", startPos);
+    		startPos = endPos + 1;
+    		endPos = message.indexOf(".", startPos); 
     		seMsg.code = message.substring(startPos, endPos).replaceFirst("^0+(?!$)", "");
     		
     		// parse price
-    		startPos = message.indexOf("已於", endPos) + 2;
-    		endPos = message.indexOf("元", startPos);
+    		startPos = message.indexOf("平均價", endPos) + 6;
+    		endPos = message.indexOf("\n", startPos);
     		seMsg.price = new BigDecimal(message.substring(startPos, endPos));
     		
     		// parse exec id
-    		seMsg.executionId = message.split("\n")[2];
+    		seMsg.executionId = message.split("\n")[3];
     		
     		// parse execution date
     		try {
-				seMsg.date = new SimpleDateFormat("yyyyMMdd").parse(seMsg.executionId.substring(0, 8));
+				seMsg.date = new SimpleDateFormat("yyMMdd").parse(seMsg.executionId.substring(1, 7));
 			} catch (ParseException e) {
 				log.warn("Cannot parse execution date", e);				
 			}
