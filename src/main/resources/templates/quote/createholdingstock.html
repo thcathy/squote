@@ -8,8 +8,11 @@
 		angular.module('createHoldingStock', [])
 				.controller('createHoldingStockController', ['$scope','$http', function($scope, $http) {
 					$scope.create = function() {
-						var res = $http.post('/rest/create_holding_stock', { message : $scope.message, hscei : $scope.hscei });
+						var res = $http.get('/rest/createholding/create', [params:{ message : $scope.message, hscei : $scope.hscei }]);
 						res.success(function(data, status, headers, config) {
+							$scope.resultMessage=data;
+						});
+						res.fail(function(data, status, headers, config) {
 							$scope.resultMessage=data;
 						});
 					};

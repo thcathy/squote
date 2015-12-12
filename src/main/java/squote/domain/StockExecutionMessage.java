@@ -44,7 +44,7 @@ public class StockExecutionMessage {
     		// parse price
     		startPos = message.indexOf("平均價", endPos) + 6;
     		endPos = message.indexOf("\n", startPos);
-    		seMsg.price = new BigDecimal(message.substring(startPos, endPos));
+    		seMsg.price = new BigDecimal(message.substring(startPos, endPos).replaceAll("[^0-9\\.]+", ""));
     		
     		// parse exec id
     		seMsg.executionId = message.split("\n")[3];

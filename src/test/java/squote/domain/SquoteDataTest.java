@@ -41,11 +41,12 @@ public class SquoteDataTest {
     }
 	
 	private HoldingStock createHoldingStock1() {
-		String scbBuyMsg = "渣打: (買入10,000股01138.中海發展股份) \n";
-		scbBuyMsg += "已於5.2300元成功執行\n";
-		scbBuyMsg += "20150205000020865";
+		String scbSellMsg = "渣打:買入6000股883.HK 中國海洋石油\n";
+		scbSellMsg += "已完成\n";
+		scbSellMsg += "平均價HKD7.99\n";
+		scbSellMsg += "O1512110016740"; 
 	
-		StockExecutionMessage msg = StockExecutionMessage.construct(scbBuyMsg).get();
+		StockExecutionMessage msg = StockExecutionMessage.construct(scbSellMsg).get();
 		return HoldingStock.from(msg, new BigDecimal("123"));
 	}
 	

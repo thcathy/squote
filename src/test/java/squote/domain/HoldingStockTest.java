@@ -1,6 +1,6 @@
 package squote.domain;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -27,12 +27,13 @@ public class HoldingStockTest {
 	
 	@Test
 	public void getGross_GivenGrossWithoutDecimal_ShouldShowCorrectFmt() {
-		String scbBuyMsg = "渣打: (買入10,000股01138.中海發展股份) \n";
-		scbBuyMsg += "已於5.2300元成功執行\n";
-		scbBuyMsg += "20150205000020865";
+		String scbSellMsg = "渣打:買入6000股883.HK 中國海洋石油\n";
+		scbSellMsg += "已完成\n";
+		scbSellMsg += "平均價HKD123\n";
+		scbSellMsg += "O1512110016740"; 
 		
-		StockExecutionMessage msg = StockExecutionMessage.construct(scbBuyMsg).get();
+		StockExecutionMessage msg = StockExecutionMessage.construct(scbSellMsg).get();
 		HoldingStock holdingStock = HoldingStock.from(msg, new BigDecimal("123"));
-		assertEquals(new BigDecimal("52300.0000"), holdingStock.getGross());
+		assertEquals(new BigDecimal("738000"), holdingStock.getGross());
 	}
 }

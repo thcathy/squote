@@ -89,15 +89,16 @@ public class CreateHoldingControllerIntegrationTest {
 	public void createHoldingStockFromExecution_givenCorrectMsg_shouldReturnSuccessful() {
 		long holdingQty = holdingRepo.count();
 		String hscei = "10000";
-		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
-		scbSellMsg += "已於4.8900元成功執行\n";
-		scbSellMsg += "20140710000013235"; 
+		String scbSellMsg = "渣打:買入6000股883.HK 中國海洋石油\n";
+		scbSellMsg += "已完成\n";
+		scbSellMsg += "平均價HKD7.99\n";
+		scbSellMsg += "O1512110016740"; 
 				
 		Map<String, Object> resultMap = controller.createHoldingFromExecution(scbSellMsg, hscei);
 		HoldingStock holding = (HoldingStock) resultMap.get("holding");
-		assertEquals(10000, holding.getQuantity());
-		assertEquals(Side.SELL, holding.getSide());
-		assertEquals("1138", holding.getCode());
+		assertEquals(6000, holding.getQuantity());
+		assertEquals(Side.BUY, holding.getSide());
+		assertEquals("883", holding.getCode());
 		assertEquals(new BigDecimal(hscei), holding.getHsce());
 		assertEquals(holdingQty + 1, holdingRepo.count());
 	}
@@ -121,9 +122,10 @@ public class CreateHoldingControllerIntegrationTest {
 	@Test
 	public void createHolding_whenCannotGetHcei_shouldThrowException() {
 		Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.empty()); 
-		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
-		scbSellMsg += "已於4.8900元成功執行\n";
-		scbSellMsg += "20140710000013235"; 
+		String scbSellMsg = "渣打:買入6000股883.HK 中國海洋石油\n";
+		scbSellMsg += "已完成\n";
+		scbSellMsg += "平均價HKD7.99\n";
+		scbSellMsg += "O1512110016740"; 
 		expectedException.expect(RuntimeException.class);
 		expectedException.expectMessage("Cannot get hcei");
 		
@@ -134,9 +136,10 @@ public class CreateHoldingControllerIntegrationTest {
 	public void postCreateHoldingStock_GivenTodayExeMsg_ShouldCreateHoldingStockUseIndexFromRealtimeQuote() throws Exception {
 		// Given
         Mockito.when(mockWebQueryService.parse(Mockito.any(EtnetIndexQuoteParser.class))).thenReturn(Optional.of(Arrays.asList(hsiQuote, hsceiQuote)));
-		String scbSellMsg = "渣打: (沽出10,000股01138.中海發展股份) \n";
-		scbSellMsg += "已於4.8900元成功執行\n";
-		scbSellMsg += DateUtils.toString(new Date(), "yyyyMMdd") + "000013235";
+        String scbSellMsg = "渣打:買入6000股883.HK 中國海洋石油\n";
+		scbSellMsg += "已完成\n";
+		scbSellMsg += "平均價HKD7.99\n";
+		scbSellMsg += "O" + DateUtils.toString(new Date(), "yyMMdd") + "00013235";
 		long totalHoldings = holdingRepo.count();
 				
 		// When
@@ -145,10 +148,10 @@ public class CreateHoldingControllerIntegrationTest {
 		// Expect
 		HoldingStock holding = (HoldingStock) resultMap.get("holding");
 		assertNotNull(holding);
-		assertEquals("1138", holding.getCode());
-		assertEquals(10000, holding.getQuantity());
-		assertEquals(new BigDecimal("48900.0000"), holding.getGross());
-		assertEquals(SquoteConstants.Side.SELL, holding.getSide());
+		assertEquals("883", holding.getCode());
+		assertEquals(6000, holding.getQuantity());
+		assertEquals(new BigDecimal("47940.00"), holding.getGross());
+		assertEquals(SquoteConstants.Side.BUY, holding.getSide());
 		assertEquals(HSCEI_PRICE, holding.getHsce().toString());
 		assertEquals(totalHoldings+1, holdingRepo.count());
 		
