@@ -29,4 +29,9 @@ public class RootController {
 		modelMap.put("funds", fundRepo.findAll());
 		return "fund/fund";
 	}
+	
+	@RequestMapping("/quote/createholdingstock")
+	String createHoldingStock() {
+		return "quote/createholdingstock";
+	}
 }
