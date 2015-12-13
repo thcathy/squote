@@ -31,9 +31,9 @@ public class StockExecutionMessageTest {
 	
 	@Test
 	public void construct_GivenNotCompletedMsg_ShouldReturnAbsent() {
-		String notCompleteMsg = "渣打: (買入10,000股01138.中海發展股份)\n";
-		notCompleteMsg += "2,000股成交於4.0500\n";
-		notCompleteMsg += "20140509000023378";
+		String notCompleteMsg = "渣打:買入240000股362.HK有效至今天";
+		notCompleteMsg += "60000股於HKD0.71成交\n";
+		notCompleteMsg += "O1511300012292";
 		assertTrue(!StockExecutionMessage.construct(notCompleteMsg).isPresent());
 	}
 	
