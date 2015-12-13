@@ -3,7 +3,6 @@ package squote.controller;
 import static squote.SquoteConstants.IndexCode.HSCEI;
 import static squote.service.MarketReportService.pre;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -39,7 +38,6 @@ import squote.SquoteConstants.IndexCode;
 import squote.domain.Fund;
 import squote.domain.HoldingStock;
 import squote.domain.MarketDailyReport;
-import squote.domain.StockExecutionMessage;
 import squote.domain.StockQuery;
 import squote.domain.StockQuote;
 import squote.domain.repository.FundRepository;
@@ -81,37 +79,6 @@ public class QuoteController extends AbstractController {
 		log.debug("single: reqCode [{}]", code);		
 		return StringUtils.isBlank(code)? new StockQuote() : new EtnetStockQuoteParser().parse(code).get();
 		
-	}
-	
-	@RequestMapping(value="/createholdingstock")
-	public String createHoldingStockFromExecution(@RequestParam(value="message", required=false, defaultValue="") String message,
-			@RequestParam(value="hscei", required=false, defaultValue="0") String hscei,
-			ModelMap modelMap) {
-		
-		log.debug("createholdingstock: message[{}]", message);
-		if (StringUtils.isBlank(message)) return page("/createholdingstock");
-		
-		String resultMessage = "";
-		HoldingStock holdingStock = null;
-		
-		Optional<StockExecutionMessage> executionMessage = StockExecutionMessage.construct(message);
-		if (!executionMessage.isPresent()) 
-			resultMessage = "Cannot create holding stock";
-		else {
-			hscei = enrichHscei(hscei, executionMessage.get().getDate());									
-			if ("0".equals(hscei)) {
-				resultMessage = "Cannot get hscei";
-			} else {
-				holdingStock = HoldingStock.from(executionMessage.get(), new BigDecimal(hscei));
-				holdingStockRepo.save(holdingStock);
-				resultMessage = "Created holding stock";
-			}
-		}
-		
-		modelMap.put("holdingStock", holdingStock);
-		modelMap.put("resultMessage", resultMessage);
-		modelMap.put("funds", fundRepo.findAll());
-		return page("/createholdingstock");
 	}
 	
 	private String enrichHscei(String hscei, Date date) {
