@@ -7,7 +7,7 @@ import squote.web.parser.ISharesConstituentParser;
 
 public class SquoteConstants {
 	public enum Side {
-		BUY("買入", 1), SELL("沽出", -1);
+		BUY("買入", 1), SELL("賣出", -1);
 
 		final public String chinese;
 		final public int factor;
