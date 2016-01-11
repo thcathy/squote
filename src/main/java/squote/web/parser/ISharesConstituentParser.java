@@ -6,9 +6,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -16,6 +16,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import thc.util.HttpClientImpl;
  
@@ -42,16 +44,16 @@ public class ISharesConstituentParser {
 		return stockCodes;
 	}
   	
-	public static List<String> parseMSCIHK() {
-		String URL = "http://www.ishares.com/us/products/239657/ishares-msci-hong-kong-etf/1395165510754.ajax?fileType=csv&fileName=EWH_holdings&dataType=fund";
+	public static List<String> parseMSCIHK() {		
+		String URL = "https://www.ishares.com/us/products/239657/ishares-msci-hong-kong-etf/1449138789749.ajax?tab=all&fileType=json";		
+	
+		ObjectMapper mapper = new ObjectMapper();
 		
 		try {
-			List<String> lines = IOUtils.readLines(new HttpClientImpl(UTF_8).newInstance().makeGetRequest(URL));
-			List<String> results = lines.stream()				
-				.map(line->line.split("\",\""))				
-				.filter(line -> line.length > 12 && line[11].contains("Hong Kong Exchanges And Clearing Ltd"))
-				.map(cs->cs[0].replaceAll("\"", ""))
-				.collect(Collectors.toList());
+			List<Map<String,Object>> data = (List<Map<String, Object>>) mapper.readValue(new HttpClientImpl(UTF_8).newInstance().makeGetRequest(URL), Map.class).get("aaData");			
+			List<String> results = data.stream()				
+									.map(m -> (String)m.get("colTicker"))
+									.collect(Collectors.toList());
 			return results;
 		} catch (Exception e) {
 			log.error("Fail to retrieve list of MSCI HK Constituents",e);
