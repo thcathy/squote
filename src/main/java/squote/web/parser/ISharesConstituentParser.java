@@ -2,18 +2,11 @@ package squote.web.parser;
  
 import static org.apache.commons.lang3.CharEncoding.UTF_8;
 
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.math.NumberUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,34 +17,34 @@ import thc.util.HttpClientImpl;
 public class ISharesConstituentParser {
 	private static final Logger log = LoggerFactory.getLogger(ISharesConstituentParser.class);
 	
-	public static String MSCIChinaConstituentsURL = "https://www.blackrock.com/hk/en/terms-and-conditions?targetUrl=%2Fhk%2Fen%2F251576%2Ffund-download.dl&action=ACCEPT";
-		
+	@SuppressWarnings("unchecked")	
 	public static List<String> parseMSCIChina() {		
-		List<String> stockCodes = new ArrayList<>();
-		try {
-			InputStream out = new HttpClientImpl(UTF_8).newInstance().makeGetRequest(MSCIChinaConstituentsURL);
-			Document doc = Jsoup.parse(out, UTF_8, MSCIChinaConstituentsURL);
-			Elements es = doc.getElementsMatchingOwnText("XHKG");
-			for (Element e : es) {
-				String code = e.parent().siblingElements().first().child(0).ownText();
-				if (NumberUtils.isDigits(code)) stockCodes.add(code);
-			}
-		} catch (Exception e) {
-			log.error("Fail to retrieve list of MSCI China Constituents",e);
-		}		
+		String URL = "https://www.blackrock.com/hk/en/terms-and-conditions?targetUrl=%2Fhk%2Fen%2Fproducts%2F251576%2Fishares-msci-china-index-etf%2F1440663547017.ajax%3Ftab%3Dall%26fileType%3Djson&action=ACCEPT";		
+		ObjectMapper mapper = new ObjectMapper();
 		
-		log.debug("Parsed MSCI China Stock Codes {}", stockCodes);
-		return stockCodes;
+		try {			
+			List<Map<String,Object>> data = (List<Map<String, Object>>) mapper.readValue(new HttpClientImpl(UTF_8).newInstance().makeGetRequest(URL), Map.class).get("aaData");			
+			List<String> results = data.stream()					
+									.filter(m -> m.get("colExchangeCode").equals("XHKG"))
+									.map(m -> (String)m.get("colTicker"))
+									.collect(Collectors.toList());
+			return results;
+		} catch (Exception e) {
+			log.error("Fail to retrieve list of MSCI HK Constituents",e);
+			return Collections.emptyList();
+		}	
 	}
   	
+	@SuppressWarnings("unchecked")
 	public static List<String> parseMSCIHK() {		
 		String URL = "https://www.ishares.com/us/products/239657/ishares-msci-hong-kong-etf/1449138789749.ajax?tab=all&fileType=json";		
 	
 		ObjectMapper mapper = new ObjectMapper();
 		
-		try {
+		try {			
 			List<Map<String,Object>> data = (List<Map<String, Object>>) mapper.readValue(new HttpClientImpl(UTF_8).newInstance().makeGetRequest(URL), Map.class).get("aaData");			
-			List<String> results = data.stream()				
+			List<String> results = data.stream()					
+									.filter(m -> m.get("colExchange").equals("Hong Kong Exchanges And Clearing Ltd"))
 									.map(m -> (String)m.get("colTicker"))
 									.collect(Collectors.toList());
 			return results;
