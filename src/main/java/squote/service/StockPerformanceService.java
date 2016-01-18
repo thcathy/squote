@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -44,6 +46,8 @@ public class StockPerformanceService {
 		stockPerformanceQuotes = codes.parallelStream()
 				.map(c -> CompletableFuture.supplyAsync(() -> getDetailStockQuoteWith3PreviousYearPrice(c), executor))
 				.map(f -> f.join())
+				.filter(o -> o.isPresent())
+				.map(o -> o.get())
 				.sorted((x,y)->Double.compare(x.getLastYearPercentage(),y.getLastYearPercentage()))
 				.collect(Collectors.toList());				
 		
@@ -52,12 +56,16 @@ public class StockPerformanceService {
 		return stockPerformanceQuotes;
 	}
 	
-	public StockQuote getDetailStockQuoteWith3PreviousYearPrice(String code) {		
-		StockQuote quote = new EtnetStockQuoteParser().parse(code).get();		
-		IntStream.rangeClosed(1, 3).forEach(i->
-			new HistoryQuoteParser().getPreviousYearQuote(code, i).ifPresent(p->quote.setPreviousPrice(i, p.doubleValue()))
-		);		
-		return quote;
+	public Optional<StockQuote> getDetailStockQuoteWith3PreviousYearPrice(String code) {
+		try {
+			StockQuote quote = new EtnetStockQuoteParser().parse(code).get();		
+			IntStream.rangeClosed(1, 3).forEach(i->
+				new HistoryQuoteParser().getPreviousYearQuote(code, i).ifPresent(p->quote.setPreviousPrice(i, p.doubleValue()))
+			);
+			return Optional.of(quote);
+		} catch (NoSuchElementException e) {
+			return Optional.empty();
+		}
 	}
 		
 }

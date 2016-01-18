@@ -1,12 +1,11 @@
 package squote.service;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -16,7 +15,7 @@ public class StockPerformanceServiceTest {
 	
 	@Test
 	public void getDetailStockQuoteWith3PreviousYearPrice_GivenStockCode_ShouldReturnWith3PreviouYearPrice() {
-		StockQuote quote = new StockPerformanceService(Executors.newFixedThreadPool(50)).getDetailStockQuoteWith3PreviousYearPrice("2828");
+		StockQuote quote = new StockPerformanceService(Executors.newFixedThreadPool(50)).getDetailStockQuoteWith3PreviousYearPrice("2828").get();
 		assertEquals("2828", quote.getStockCode());
 		assertTrue(quote.getPriceDoubleValue() > 0);
 		assertTrue(quote.getLastYearPercentage() != 0);
