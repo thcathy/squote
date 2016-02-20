@@ -45,8 +45,6 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	// application properties	
 	@Value("${adminstrator.email}") 		private String adminEmail;
 	@Value("${application.email}")			private String appEmail;
-	@Value("${smtp.username}")				private String smtpUsername;
-	@Value("${smtp.password}")				private String smtpPassword;
 	@Value("${centralWebQuery.pool.size}")	private int poolSize;
 	
 	// repository interface
