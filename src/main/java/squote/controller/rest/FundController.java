@@ -108,4 +108,9 @@ public class FundController {
 		log.debug("Updated Fund: {}", fund);
 		return newProfit;
 	}
+	
+	@RequestMapping(value = "/getall")
+	public Iterable<Fund> getAll() {
+		return fundRepo.findAll();
+	}
 }

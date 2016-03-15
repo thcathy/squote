@@ -3,6 +3,7 @@ package squote.controller.rest;
 import static squote.SquoteConstants.IndexCode.HSCEI;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,10 +18,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import squote.SquoteConstants.IndexCode;
+import squote.domain.Fund;
 import squote.domain.HoldingStock;
 import squote.domain.StockExecutionMessage;
 import squote.domain.repository.HoldingStockRepository;
 import squote.service.CentralWebQueryService;
+import squote.service.UpdateFundByHoldingService;
 import squote.web.parser.EtnetIndexQuoteParser;
 import squote.web.parser.HSINetParser;
 
@@ -31,6 +34,7 @@ public class CreateHoldingController {
 	
 	@Autowired CentralWebQueryService webQueryService;
 	@Autowired HoldingStockRepository holdingRepo;
+	@Autowired UpdateFundByHoldingService updateFundService;
 	
 	@RequestMapping(value="/create")
 	public Map<String, Object> createHoldingFromExecution(@RequestParam(value="message", required=false, defaultValue="") String exeMsg,
@@ -47,6 +51,13 @@ public class CreateHoldingController {
 		HashMap<String, Object> resultMap = new HashMap<String, Object>();
 		resultMap.put("holding", holding);
 		return resultMap;
+	}
+	
+	@RequestMapping(value="/updatefund")
+	public Fund updateFundByHolding(
+			@RequestParam(value="fundName", required=true) String fundName,
+			@RequestParam(value="holdingId", required=true) String holdingId) {
+		return updateFundService.updateFundByHolding(fundName, new BigInteger(holdingId));
 	}
 	
 	private String enrichHscei(String hscei, Date date) {

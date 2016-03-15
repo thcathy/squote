@@ -32,6 +32,11 @@ public class HoldingStock {
 		this.side = side;
 	}
 	
+	public HoldingStock(BigInteger id, String code, Side side, int quantity, BigDecimal gross, Date date, BigDecimal hsce) {		
+		this(code, side, quantity, gross, date, hsce);
+		this.id = id;
+	}
+
 	public static HoldingStock from(StockExecutionMessage message, BigDecimal hscei) {
 		return new HoldingStock(
 				message.getCode(), 

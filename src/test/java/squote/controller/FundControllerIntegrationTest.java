@@ -1,6 +1,7 @@
 package squote.controller;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -144,5 +145,15 @@ public class FundControllerIntegrationTest {
 				
 		Fund fund = fundRepo.findOne("testfund");
 		assertEquals(new BigDecimal("123.456"), fund.getProfit());
+	}
+	
+	@Test
+	public void getAll_shouldReturnAllFunds() throws Exception {
+		String result = mockMvc.perform(get("/rest/fund/getall/"))
+			.andExpect(status().isOk())
+			.andReturn().getResponse().getContentAsString();
+		
+		assertTrue(result.contains("newfund"));
+		assertTrue(result.contains("testfund"));
 	}
 }
