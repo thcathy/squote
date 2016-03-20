@@ -15,17 +15,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
+import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
 import squote.service.CentralWebQueryService;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
-import thc.util.HttpClientImpl;
-
-import com.github.sendgrid.SendGrid;
+import squote.service.UpdateFundByHoldingService;
 
 @Configuration
 @EnableAutoConfiguration
@@ -48,10 +46,9 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	@Value("${centralWebQuery.pool.size}")	private int poolSize;
 	
 	// repository interface
-	@Autowired
-	private HoldingStockRepository holdingStockRepo;
-	@Autowired
-	private MarketDailyReportRepository marketDailyReportRepo;
+	@Autowired private HoldingStockRepository holdingStockRepo;
+	@Autowired private MarketDailyReportRepository marketDailyReportRepo;
+	@Autowired private FundRepository fundRepo;
 
 	// Serivce Beans
 	@Bean
@@ -70,11 +67,6 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 		return new StockPerformanceService(centrolWebQueryService().getExecutor());
 	}
 			
-	@Override
-	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-		return application.sources(SpringQuoteWebApplication.class);
-	}	
-
 	@Bean
 	public Filter characterEncodingFilter() {
 		CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
@@ -82,7 +74,16 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 		characterEncodingFilter.setForceEncoding(true);
 		return characterEncodingFilter;
 	}
+	
+	@Bean
+	public UpdateFundByHoldingService updateFundByHoldingService() {
+		return new UpdateFundByHoldingService(fundRepo, holdingStockRepo);
+	}
 
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		return application.sources(SpringQuoteWebApplication.class);
+	}	
 	/**
 	 * Main function for the whole application
 	 */
