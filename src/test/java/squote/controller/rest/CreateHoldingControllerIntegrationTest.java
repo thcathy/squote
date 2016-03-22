@@ -6,7 +6,6 @@ import static org.junit.Assert.assertNotNull;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Map;
 import java.util.Optional;
 
 import org.junit.After;
@@ -93,9 +92,8 @@ public class CreateHoldingControllerIntegrationTest {
 		scbSellMsg += "已完成\n";
 		scbSellMsg += "平均價HKD7.99\n";
 		scbSellMsg += "O1512110016740"; 
-				
-		Map<String, Object> resultMap = controller.createHoldingFromExecution(scbSellMsg, hscei);
-		HoldingStock holding = (HoldingStock) resultMap.get("holding");
+		
+		HoldingStock holding = controller.createHoldingFromExecution(scbSellMsg, hscei);
 		assertEquals(6000, holding.getQuantity());
 		assertEquals(Side.BUY, holding.getSide());
 		assertEquals("883", holding.getCode());
@@ -141,12 +139,9 @@ public class CreateHoldingControllerIntegrationTest {
 		scbSellMsg += "平均價HKD7.99\n";
 		scbSellMsg += "O" + DateUtils.toString(new Date(), "yyMMdd") + "00013235";
 		long totalHoldings = holdingRepo.count();
-				
-		// When
-		Map<String, Object> resultMap = controller.createHoldingFromExecution(scbSellMsg, "0");
 		
 		// Expect
-		HoldingStock holding = (HoldingStock) resultMap.get("holding");
+		HoldingStock holding = controller.createHoldingFromExecution(scbSellMsg, "0");
 		assertNotNull(holding);
 		assertEquals("883", holding.getCode());
 		assertEquals(6000, holding.getQuantity());

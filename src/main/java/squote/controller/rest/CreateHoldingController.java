@@ -5,8 +5,6 @@ import static squote.SquoteConstants.IndexCode.HSCEI;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.time.DateUtils;
@@ -37,7 +35,7 @@ public class CreateHoldingController {
 	@Autowired UpdateFundByHoldingService updateFundService;
 	
 	@RequestMapping(value="/create")
-	public Map<String, Object> createHoldingFromExecution(@RequestParam(value="message", required=false, defaultValue="") String exeMsg,
+	public HoldingStock createHoldingFromExecution(@RequestParam(value="message", required=false, defaultValue="") String exeMsg,
 			@RequestParam(value="hscei", required=false, defaultValue="0") String hcei) {
 		
 		log.debug("createHoldingStockFromExecution: execution msg [{}], hscei [{}]", exeMsg, hcei);
@@ -47,10 +45,8 @@ public class CreateHoldingController {
 		hcei = enrichHscei(hcei, executionMessage.get().getDate());
 		HoldingStock holding = HoldingStock.from(executionMessage.get(), new BigDecimal(hcei));
 		holdingRepo.save(holding);
-		
-		HashMap<String, Object> resultMap = new HashMap<String, Object>();
-		resultMap.put("holding", holding);
-		return resultMap;
+	
+		return holding;
 	}
 	
 	@RequestMapping(value="/updatefund")
