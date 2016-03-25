@@ -64,6 +64,10 @@ public class CreateHoldingControllerIntegrationTest {
 		f.buyStock("2800", 1000, new BigDecimal(25000));
 		return f;
 	}
+	
+	private HoldingStock createSell2800Holding() {
+		return new HoldingStock("2800", Side.SELL, 300, new BigDecimal("8190"), new Date(), null);
+	}
 
 	@Before
 	public void setup() {
@@ -149,6 +153,15 @@ public class CreateHoldingControllerIntegrationTest {
 		assertEquals(SquoteConstants.Side.BUY, holding.getSide());
 		assertEquals(HSCEI_PRICE, holding.getHsce().toString());
 		assertEquals(totalHoldings+1, holdingRepo.count());
-		
+	}
+	
+	@Test
+	public void updatefund_GivenHoldingStock_ShouldUpdateAndPersist() throws Exception {
+		HoldingStock holding = holdingRepo.save(createSell2800Holding());
+
+		controller.updateFundByHolding(testFund.name, holding.getId());
+		Fund fund = fundRepo.findOne(testFund.name);
+		assertNotNull(fund);
+		assertEquals(700, fund.getHoldings().get(holding.getCode()).getQuantity());
 	}
 }

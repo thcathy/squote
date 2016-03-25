@@ -3,7 +3,6 @@ package squote.controller.rest;
 import static squote.SquoteConstants.IndexCode.HSCEI;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Date;
 import java.util.Optional;
 
@@ -53,7 +52,9 @@ public class CreateHoldingController {
 	public Fund updateFundByHolding(
 			@RequestParam(value="fundName", required=true) String fundName,
 			@RequestParam(value="holdingId", required=true) String holdingId) {
-		return updateFundService.updateFundByHolding(fundName, new BigInteger(holdingId));
+		log.info("updateFundByHolding: add holding {} to fund {}", holdingId, fundName);
+		
+		return updateFundService.updateFundByHoldingAndPersist(fundName, holdingId);
 	}
 	
 	private String enrichHscei(String hscei, Date date) {

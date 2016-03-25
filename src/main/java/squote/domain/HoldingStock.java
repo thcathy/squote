@@ -1,6 +1,5 @@
 package squote.domain;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Date;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -13,14 +12,16 @@ import squote.SquoteConstants.Side;
 
 public class HoldingStock {
 	@Id
-    private BigInteger id;
+    private String id;
 	
-	private final String code;
-	private final int quantity;
-	private final BigDecimal gross;
-	private final @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
-	private final BigDecimal hsce;
-	private final SquoteConstants.Side side;
+	private String code;
+	private int quantity;
+	private BigDecimal gross;
+	private @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
+	private BigDecimal hsce;
+	private SquoteConstants.Side side;
+	
+	public HoldingStock() {}
 	
 	public HoldingStock(String code, Side side, int quantity, BigDecimal gross, Date date, BigDecimal hsce) {
 		super();
@@ -32,7 +33,7 @@ public class HoldingStock {
 		this.side = side;
 	}
 	
-	public HoldingStock(BigInteger id, String code, Side side, int quantity, BigDecimal gross, Date date, BigDecimal hsce) {		
+	public HoldingStock(String id, String code, Side side, int quantity, BigDecimal gross, Date date, BigDecimal hsce) {		
 		this(code, side, quantity, gross, date, hsce);
 		this.id = id;
 	}
@@ -66,7 +67,7 @@ public class HoldingStock {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 		
-	public BigInteger getId() { return this.id; }
+	public String getId() { return this.id; }
 	public String getCode() { return this.code; }
 	public int getQuantity() { return this.quantity;}
 	public BigDecimal getGross() { return this.gross; }

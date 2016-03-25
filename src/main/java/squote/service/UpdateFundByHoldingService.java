@@ -1,7 +1,6 @@
 package squote.service;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,9 +24,14 @@ public class UpdateFundByHoldingService {
 		this.fundRepo = fundRepo;
 		this.holdingRepo = holdingRepo;
 	}
+	
+	public Fund updateFundByHoldingAndPersist(String fundName, String holdingId) {
+		Fund f = updateFundByHolding(fundName, holdingId);
+		fundRepo.save(f);
+		return f;
+	}
 
-
-	public Fund updateFundByHolding(String fundName, BigInteger holdingId) {
+	public Fund updateFundByHolding(String fundName, String holdingId) {
 		Fund f = fundRepo.findOne(fundName);
 		HoldingStock holding = holdingRepo.findOne(holdingId);
 		

@@ -1,7 +1,5 @@
 package squote.controller.repository;
 
-import java.math.BigInteger;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +33,7 @@ public class HoldingStockController extends AbstractController {
 	@RequestMapping("/delete/{id}")
 	public String delete(@PathVariable String id, ModelMap modelMap) {
 		log.warn("delete: id [{}]", id);
-		holdingStockRepository.delete(new BigInteger(id));
+		holdingStockRepository.delete(id);
 		return list(modelMap);
 	}
 }

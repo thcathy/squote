@@ -5,7 +5,6 @@ import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Date;
 
 import org.junit.Before;
@@ -67,15 +66,15 @@ public class UpdateFundByHoldingTest {
 	}
 	
 	private HoldingStock createBuyHolding() {		
-		return new HoldingStock(new BigInteger("1"), "883", Side.BUY, 6000, new BigDecimal("73800"), new Date(), null);
+		return new HoldingStock("1", "883", Side.BUY, 6000, new BigDecimal("73800"), new Date(), null);
 	}
 	
 	private HoldingStock createSell2800Holding() {
-		return new HoldingStock(new BigInteger("2"), "2800", Side.SELL, 300, new BigDecimal("8190"), new Date(), null);
+		return new HoldingStock("2", "2800", Side.SELL, 300, new BigDecimal("8190"), new Date(), null);
 	}
 	
 	private HoldingStock createSellAll2828Holding() {
-		return new HoldingStock(new BigInteger("3"), "2828", Side.SELL, 500, new BigDecimal("43210.5"), new Date(), null);
+		return new HoldingStock("3", "2828", Side.SELL, 500, new BigDecimal("43210.5"), new Date(), null);
 	}
 	
 	private Fund createSimpleFund() {
