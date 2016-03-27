@@ -3,37 +3,52 @@ package squote.web.parser;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Calendar;
-import java.util.Date;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
 
 import squote.SquoteConstants.IndexCode;
+import squote.domain.StockQuote;
 import thc.util.DateUtils;
 
 public class HSINetParserTest {
 
 	@Test
 	public void parse_givenYesterday_ShouldReturnHSCEI() {
-		Calendar calendar = Calendar.getInstance();
-		Date weekday = IntStream.range(0, 10).mapToObj(i-> {
-			calendar.add(Calendar.DATE, -1);
-			return calendar;
-		}).filter(x->!DateUtils.isWeekEnd(x)).findFirst().get().getTime();
-		HSINetParser parser = new HSINetParser(IndexCode.HSCEI, weekday);
-		
-		assertTrue(parser.parse().get().getPriceDoubleValue() > 1);
+		Optional<Boolean> hsceiFound = IntStream.range(0, 10).mapToObj(i-> {
+			Calendar c = Calendar.getInstance();
+			c.add(Calendar.DATE, -i-1);
+			return c;
+		})
+				.filter(c->!DateUtils.isWeekEnd(c))
+				.map(c -> c.getTime())
+				.map(t -> new HSINetParser(IndexCode.HSCEI, t))
+				.map(p -> {
+					Optional<StockQuote> quote = p.parse();
+					return quote.isPresent() && quote.get().getPriceDoubleValue() > 1;
+				})
+				.filter(x -> x)
+				.findFirst();
+		assertTrue(hsceiFound.get());
 	}
 	
 	@Test
 	public void parse_givenYesterday_ShouldReturnHSI() {
-		Calendar calendar = Calendar.getInstance();
-		Date weekday = IntStream.range(0, 10).mapToObj(i-> {
-			calendar.add(Calendar.DATE, -1);
-			return calendar;
-		}).filter(x->!DateUtils.isWeekEnd(x)).findFirst().get().getTime();
-		HSINetParser parser = new HSINetParser(IndexCode.HSI, weekday);
-		
-		assertTrue(parser.parse().get().getPriceDoubleValue() > 1);
+		Optional<Boolean> hsiFound = IntStream.range(0, 10).mapToObj(i-> {
+			Calendar c = Calendar.getInstance();
+			c.add(Calendar.DATE, -i-1);
+			return c;
+		})
+				.filter(c->!DateUtils.isWeekEnd(c))
+				.map(c -> c.getTime())
+				.map(t -> new HSINetParser(IndexCode.HSI, t))
+				.map(p -> {
+					Optional<StockQuote> quote = p.parse();
+					return quote.isPresent() && quote.get().getPriceDoubleValue() > 1;
+				})
+				.filter(x -> x)
+				.findFirst();
+		assertTrue(hsiFound.get());
 	}
 }
