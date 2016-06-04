@@ -1,5 +1,7 @@
 package squote.controller;
 
+import static java.util.concurrent.CompletableFuture.anyOf;
+import static org.apache.coyote.http11.Constants.a;
 import static squote.SquoteConstants.IndexCode.HSCEI;
 import static squote.service.MarketReportService.pre;
 
@@ -12,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -46,9 +49,7 @@ import squote.domain.repository.StockQueryRepository;
 import squote.service.CentralWebQueryService;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
-import squote.web.parser.EtnetIndexQuoteParser;
-import squote.web.parser.EtnetStockQuoteParser;
-import squote.web.parser.HSINetParser;
+import squote.web.parser.*;
 import thc.util.ConcurrentUtils;
 
 import com.google.common.collect.Lists;
@@ -76,9 +77,13 @@ public class QuoteController extends AbstractController {
 	
 	@RequestMapping(value = "/single/{code}", produces="application/xml")	
 	public @ResponseBody StockQuote single(@PathVariable String code) {
-		log.debug("single: reqCode [{}]", code);		
-		return StringUtils.isBlank(code)? new StockQuote() : new EtnetStockQuoteParser().parse(code).get();
-		
+		log.debug("single: reqCode [{}]", code);
+
+        CompletableFuture<StockQuote> quote = webQueryService.submit(() -> new EtnetStockQuoteParser().parse(code).get());
+        CompletableFuture<StockQuote> quote2 = webQueryService.submit(() -> new AastockStockQuoteParser(code).getStockQuote());
+        CompletableFuture<StockQuote> quote3 = webQueryService.submit(() -> new QuamnetStockQuoteParser(code).getStockQuote());
+
+		return StringUtils.isBlank(code)? new StockQuote() : (StockQuote)CompletableFuture.anyOf(quote, quote2, quote3).join();
 	}
 	
 	private String enrichHscei(String hscei, Date date) {

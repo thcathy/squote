@@ -12,10 +12,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Stopwatch;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -31,12 +34,15 @@ import squote.SquoteConstants.IndexCode;
 import squote.domain.MarketDailyReport;
 import squote.domain.StockQuote;
 import squote.domain.repository.HoldingStockRepository;
- 
+import squote.web.parser.AastockStockQuoteParserTest;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = SpringQuoteWebApplication.class)
 @ActiveProfiles("dev")
 public class QuoteControllerIntegrationTest {
+	private Logger log = LoggerFactory.getLogger(QuoteControllerIntegrationTest.class);
+
 	@Autowired QuoteController quoteController;
 	@Autowired HoldingStockRepository holdingStockRepo;
 	
@@ -53,11 +59,15 @@ public class QuoteControllerIntegrationTest {
     }
     
     @Test
-	public void getSingleQuote_Given2800_ShouldReturnXmlMessageWithPrice() throws Exception {	
+	public void getSingleQuote_Given2800_ShouldReturnXmlMessageWithPrice() throws Exception {
+		Stopwatch timer = Stopwatch.createStarted();
+
 		mockMvc.perform(get("/quote/single/2800").characterEncoding(WebConstants.RESPONSE_ENCODING))
 			.andExpect(status().isOk())
 			.andExpect(content().contentType("application/xml"))
 			.andExpect(xpath("/stockQuote[price=NA]").doesNotExist());
+
+		log.debug("getSingleQuote_Given2800_ShouldReturnXmlMessageWithPrice took: {}", timer.stop());
 	}	
 	
 	@SuppressWarnings("unchecked")

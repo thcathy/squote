@@ -4,14 +4,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.base.Stopwatch;
 import org.apache.commons.lang3.math.NumberUtils;
 
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import squote.domain.StockQuote;
 
-public class AastockStockQuoteParserTest {	
-	//@Test
-	//TODO: fix this test
+public class AastockStockQuoteParserTest {
+	private Logger log = LoggerFactory.getLogger(AastockStockQuoteParserTest.class);
+
+	@Test
 	public void getStockQuote_Given941_ShouldReturn941StockQuote() {
+        Stopwatch timer = Stopwatch.createStarted();
+
 		StockQuote q = new AastockStockQuoteParser("941").getStockQuote();
 		assertEquals("941", q.getStockCode());
 		assertEquals("CHINA MOBILE", q.getStockName());
@@ -26,5 +33,7 @@ public class AastockStockQuoteParserTest {
 		assertNotEquals("NA", q.getNAV());
 		assertTrue(NumberUtils.isNumber(q.getYearLow()));
 		assertTrue(NumberUtils.isNumber(q.getYearHigh()));
+
+        log.debug("getStockQuote_Given941_ShouldReturn941StockQuote took: {}", timer.stop());
 	}
 }

@@ -2,7 +2,6 @@ package squote.web.parser;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,41 +25,37 @@ public class AastockStockQuoteParser implements StockQuoteParser {
 		{			
 			HttpClient client = new HttpClientImpl("UTF-8").newInstance();
 			client.makeGetRequest(AASTOCK_STOCK_QUOTE_URL + StringUtils.leftPad(code, 5, '0'));
-			client.setCookie("AALTP", "1", "/", "www.aastocks.com");
 			Document doc = client.getDocument(AASTOCK_STOCK_QUOTE_URL + StringUtils.leftPad(code, 5, '0'));
+
 			// price
-			quote.setPrice(doc.select("ul.UL1 li.LI1:containsOwn(Last)").first().parent().nextElementSibling().child(0).child(0).html());
-			
+			quote.setPrice(doc.select("div[id=labelLast] span").first().text().substring(1));
+
 			// stock name
-			String name = doc.select("div#quotediv table table div font b").text();
-			quote.setStockName(name.substring(0, name.length()-9));
-			
-			//*[@id="quotediv"]/table[1]/tbody/tr[1]/td/table/tbody/tr/td[1]/div[1]/font[1]/b
-			
+			quote.setStockName(doc.select("span[id$=StockName").first().text());
+
 			// change
-			Elements divs = doc.select("ul.UL1.W1 li.LI1:contains(Chg)");
-			boolean isDown = divs.get(0).parent().nextElementSibling().select("img").first().attr("src").contains("downarrow");
-			quote.setChangeAmount(isDown?"-" + divs.get(0).parent().nextElementSibling().select("span.bold").first().html():"+" + divs.get(0).parent().nextElementSibling().select("span.bold").first().html());
-			quote.setChange(isDown?"-" + divs.get(1).parent().nextElementSibling().select("span.bold").first().html():"+" + divs.get(1).parent().nextElementSibling().select("span.bold").first().html());
+			quote.setChangeAmount(doc.select("div:containsOwn(Change").first().nextElementSibling().nextElementSibling().text());
+			quote.setChange(doc.select("div:containsOwn(Change(%))").first().nextElementSibling().nextElementSibling().text());
 
 			// day high day low
-			quote.setHigh(doc.select("ul.UL1.W2 li.LI1:containsOwn(High)").get(0).parent().nextElementSibling().child(0).html());
-			quote.setLow(doc.select("ul.UL1.W2 li.LI1:containsOwn(Low)").get(0).parent().nextElementSibling().child(0).html());
+			String[] range = doc.select("div:containsOwn(Range)").first().nextElementSibling().nextElementSibling().text().split(" ");
+			quote.setHigh(range[0]);
+			quote.setLow(range[2]);
 
 			// PE
-			quote.setPe(doc.select("td.font12_grey:containsOwn(P/E Ratio)").get(0).nextElementSibling().html());
+			quote.setPe(doc.select("div[id=tbPERatio]").first().child(1).text().split(" / ")[0].substring(1));
 			// yield
-			quote.setYield(doc.select("td.font12_grey:containsOwn(Yield)").get(0).nextElementSibling().html());
+			quote.setYield(doc.select("div:containsOwn(Yield/)").first().parent().parent().child(1).text().split(" / ")[0].substring(1));
 			// NAV
-			quote.setNAV(doc.select("td.font12_grey:containsOwn(NAV)").get(0).nextElementSibling().html());
+			quote.setNAV(doc.select("div[id=tbPBRatio]").first().child(1).text().split(" / ")[1]);
 
 			// 52 high low
-			String[] yearHighLow = doc.select("ul.UL2 li.LI3:containsOwn(52 Week Range)").get(0).parent().nextElementSibling().child(0).html().split(" - ");
+			String[] yearHighLow = doc.select("td:containsOwn(52 Week)").first().nextElementSibling().text().split(" - ");
 			quote.setYearLow(yearHighLow[0]);
 			quote.setYearHigh(yearHighLow[1]);
 
 			// last update
-			quote.setLastUpdate(doc.select("font.font12_white:containsOwn(Last Update:)").get(0).nextElementSibling().html());
+			quote.setLastUpdate(doc.select("span:containsOwn(Updated:)").first().child(0).text());
 		} catch (Exception e) {
 			log.error("Cannot parse stock code: {}", code);
 		}
