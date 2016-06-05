@@ -10,23 +10,26 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import squote.SquoteConstants;
 import thc.util.NumberUtils;
+
+import static squote.SquoteConstants.NA;
 
 @XmlRootElement
 public class StockQuote {
 	private String stockCode = "";
 	private String stockName = "";
-	private String lastUpdate = "NA";
-	private String price = "NA";
-	private String high = "NA";
-	private String low = "NA";
-	private String change = "NA";
-	private String changeAmount = "NA";
-	private String pe = "NA";
-	private String yield = "NA";
-	private String NAV = "NA";
-	private String yearLow = "NA";
-	private String yearHigh = "NA";
+	private String lastUpdate = NA;
+	private String price = NA;
+	private String high = NA;
+	private String low = NA;
+	private String change = NA;
+	private String changeAmount = NA;
+	private String pe = NA;
+	private String yield = NA;
+	private String NAV = NA;
+	private String yearLow = NA;
+	private String yearHigh = NA;
 	private Double yearHighPercentage = null;
 	private Double lastYearPercentage = null;
 	private Double last2YearPercentage = null;

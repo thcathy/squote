@@ -4,7 +4,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import squote.domain.StockQuote;
 import thc.util.HttpClient;
 import thc.util.HttpClientImpl;
@@ -43,19 +42,19 @@ public class AastockStockQuoteParser implements StockQuoteParser {
 			quote.setLow(range[2]);
 
 			// PE
-			quote.setPe(doc.select("div[id=tbPERatio]").first().child(1).text().split(" / ")[0].substring(1));
+			quote.setPe(parse(() -> doc.select("div[id=tbPERatio]").first().child(1).text().split(" / ")[0].substring(1)));
 			// yield
-			quote.setYield(doc.select("div:containsOwn(Yield/)").first().parent().parent().child(1).text().split(" / ")[0].substring(1));
+			quote.setYield(parse(() -> doc.select("div:containsOwn(Yield/)").first().parent().parent().child(1).text().split(" / ")[0].substring(1)));
 			// NAV
-			quote.setNAV(doc.select("div[id=tbPBRatio]").first().child(1).text().split(" / ")[1]);
+			quote.setNAV(parse(() -> doc.select("div[id=tbPBRatio]").first().child(1).text().split(" / ")[1]));
+
+			// last update
+			quote.setLastUpdate(doc.select("span:containsOwn(Updated:)").first().child(0).text());
 
 			// 52 high low
 			String[] yearHighLow = doc.select("td:containsOwn(52 Week)").first().nextElementSibling().text().split(" - ");
 			quote.setYearLow(yearHighLow[0]);
 			quote.setYearHigh(yearHighLow[1]);
-
-			// last update
-			quote.setLastUpdate(doc.select("span:containsOwn(Updated:)").first().child(0).text());
 		} catch (Exception e) {
 			log.error("Cannot parse stock code: {}", code);
 		}

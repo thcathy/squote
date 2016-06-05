@@ -81,9 +81,8 @@ public class QuoteController extends AbstractController {
 
         CompletableFuture<StockQuote> quote = webQueryService.submit(() -> new EtnetStockQuoteParser().parse(code).get());
         CompletableFuture<StockQuote> quote2 = webQueryService.submit(() -> new AastockStockQuoteParser(code).getStockQuote());
-        CompletableFuture<StockQuote> quote3 = webQueryService.submit(() -> new QuamnetStockQuoteParser(code).getStockQuote());
 
-		return StringUtils.isBlank(code)? new StockQuote() : (StockQuote)CompletableFuture.anyOf(quote, quote2, quote3).join();
+		return StringUtils.isBlank(code)? new StockQuote() : (StockQuote)CompletableFuture.anyOf(quote, quote2).join();
 	}
 	
 	private String enrichHscei(String hscei, Date date) {

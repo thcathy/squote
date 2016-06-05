@@ -6,6 +6,8 @@ import squote.web.parser.EtnetIndexConstituentParser;
 import squote.web.parser.ISharesConstituentParser;
 
 public class SquoteConstants {
+	public static String NA = "NA";
+
 	public enum Side {
 		BUY("買入", 1), SELL("賣出", -1);
 
