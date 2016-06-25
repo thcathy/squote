@@ -1,10 +1,12 @@
 package thc.util;
 
+import static org.apache.http.HttpHeaders.HOST;
 import static org.apache.http.HttpHeaders.REFERER;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.input.NullInputStream;
@@ -90,15 +92,16 @@ public class HttpClientImpl implements HttpClient {
     }
 
     @Override
-    public InputStream makeGetRequest(String url) {
-        return makeRequest(new HttpGet(url));
+    public InputStream makeGetRequest(String url, Header... headers ) {
+        return makeRequest(new HttpGet(url), headers);
     }
 
     @Override
-    public InputStream makeRequest(HttpUriRequest request) {
+    public InputStream makeRequest(HttpUriRequest request, Header... headers) {
+    	log.debug("Request url: {}", request.getURI());
+    	
         try {
-            log.debug("Request url: {}", request.getURI());
-            request.addHeader(REFERER, request.getURI().toString());
+        	addHeaders(request, headers);
             CloseableHttpResponse response1 = httpclient.execute(request);
             HttpEntity entity = response1.getEntity();
 
@@ -111,6 +114,12 @@ public class HttpClientImpl implements HttpClient {
         }
         return new NullInputStream(0);
     }
+
+	private void addHeaders(HttpUriRequest request, Header... headers) {
+		Arrays.stream(headers).forEach(h -> request.addHeader(h));
+		request.addHeader(REFERER, request.getURI().toString());
+		request.addHeader(HOST, request.getURI().getHost());
+	}
 
     @Override
     public Document getDocument(String url) {
