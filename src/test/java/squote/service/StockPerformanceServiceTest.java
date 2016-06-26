@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 public class StockPerformanceServiceTest {
     private Logger log = LoggerFactory.getLogger(StockPerformanceServiceTest.class);
 
-    private final ExecutorService executor = Executors.newFixedThreadPool(30);
+    private final ExecutorService executor = Executors.newFixedThreadPool(15);
 
     @Test
 	public void getDetailStockQuoteWith3PreviousYearPrice_GivenStockCode_ShouldReturnWith3PreviouYearPrice() {
