@@ -1,18 +1,14 @@
 package squote.web.parser;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static squote.SquoteConstants.NA;
-
 import com.google.common.base.Stopwatch;
 import org.apache.commons.lang3.math.NumberUtils;
-
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import squote.SquoteConstants;
 import squote.domain.StockQuote;
+
+import static org.junit.Assert.*;
+import static squote.SquoteConstants.NA;
 
 public class AastockStockQuoteParserTest {
 	private Logger log = LoggerFactory.getLogger(AastockStockQuoteParserTest.class);
@@ -58,6 +54,6 @@ public class AastockStockQuoteParserTest {
         assertTrue(NumberUtils.isNumber(q.getYearLow()));
         assertTrue(NumberUtils.isNumber(q.getYearHigh()));
 
-        log.debug("getStockQuote_Given941_ShouldReturn2800StockQuote took: {}", timer.stop());
+        log.debug("getStockQuote_Given2800_ShouldReturn2800StockQuote took: {}", timer.stop());
     }
 }

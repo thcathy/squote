@@ -23,7 +23,7 @@ public class AastockStockQuoteParser implements StockQuoteParser {
 		try
 		{			
 			HttpClient client = new HttpClientImpl("UTF-8").newInstance();
-			client.makeGetRequest(AASTOCK_STOCK_QUOTE_URL + StringUtils.leftPad(code, 5, '0'));
+			
 			Document doc = client.getDocument(AASTOCK_STOCK_QUOTE_URL + StringUtils.leftPad(code, 5, '0'));
 
 			// price

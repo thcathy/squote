@@ -1,31 +1,40 @@
 package squote.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import com.google.common.base.Stopwatch;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import squote.domain.StockQuote;
 
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
-
-import squote.domain.StockQuote;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class StockPerformanceServiceTest {
+    private Logger log = LoggerFactory.getLogger(StockPerformanceServiceTest.class);
 	
 	@Test
 	public void getDetailStockQuoteWith3PreviousYearPrice_GivenStockCode_ShouldReturnWith3PreviouYearPrice() {
+		Stopwatch timer = Stopwatch.createStarted();
+
 		StockQuote quote = new StockPerformanceService(Executors.newFixedThreadPool(50)).getDetailStockQuoteWith3PreviousYearPrice("2828").get();
 		assertEquals("2828", quote.getStockCode());
 		assertTrue(quote.getPriceDoubleValue() > 0);
 		assertTrue(quote.getLastYearPercentage() != 0);
 		assertTrue(quote.getLast2YearPercentage() != 0);
-		assertTrue(quote.getLast3YearPercentage() != 0);		
+		assertTrue(quote.getLast3YearPercentage() != 0);
+
+		log.debug("getDetailStockQuoteWith3PreviousYearPrice_GivenStockCode_ShouldReturnWith3PreviouYearPrice took: {}", timer.stop());
 	}
 			
 	@Test
 	public void getStockPerformanceQuotes_ShouldReturnOne2828QuoteAndAllQuoteSortedByLastYearPercentageChg() {
-		StockPerformanceService service = new StockPerformanceService(Executors.newFixedThreadPool(50));		
+        Stopwatch timer = Stopwatch.createStarted();
+
+		StockPerformanceService service = new StockPerformanceService(Executors.newFixedThreadPool(1));
 		List<StockQuote> quotes = service.getStockPerformanceQuotes();
 		assertTrue(quotes.size() > 50);
 		
@@ -38,5 +47,7 @@ public class StockPerformanceServiceTest {
 				
 		// Get the map again should given same obj
 		assertEquals(quotes, service.getStockPerformanceQuotes());
+
+        log.debug("getStockPerformanceQuotes_ShouldReturnOne2828QuoteAndAllQuoteSortedByLastYearPercentageChg took: {}", timer.stop());
 	}
 }

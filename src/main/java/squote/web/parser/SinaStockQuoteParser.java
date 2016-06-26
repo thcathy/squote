@@ -1,22 +1,18 @@
 package squote.web.parser;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import squote.domain.StockQuote;
 import thc.util.HttpClient;
 import thc.util.HttpClientImpl;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
 
 public class SinaStockQuoteParser implements StockQuoteParser {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -33,7 +29,7 @@ public class SinaStockQuoteParser implements StockQuoteParser {
 	public StockQuote getStockQuote() {
 		StockQuote quote = new StockQuote(code);
 		HttpClient client = new HttpClientImpl("UTF-8").newInstance();
-		
+
 		try
 		{			
 			InputStream stream = client.makeGetRequest(concatUrlWithParam(), XML_HTTP_REQUEST);
@@ -47,7 +43,7 @@ public class SinaStockQuoteParser implements StockQuoteParser {
 
 	@SuppressWarnings("unchecked")
 	private void parseResponse(StockQuote quote, InputStream stream)
-			throws IOException, JsonParseException, JsonMappingException {
+			throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		Map<String, String> value = mapper.readValue(stream, Map.class);
 		

@@ -1,14 +1,5 @@
 package thc.util;
 
-import static org.apache.http.HttpHeaders.HOST;
-import static org.apache.http.HttpHeaders.REFERER;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.commons.io.input.NullInputStream;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -20,11 +11,7 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.*;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.message.BasicHeader;
 import org.jsoup.Jsoup;
@@ -32,11 +19,20 @@ import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.apache.http.HttpHeaders.HOST;
+import static org.apache.http.HttpHeaders.REFERER;
+
 public class HttpClientImpl implements HttpClient {
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     private BasicCookieStore cookieStore = new BasicCookieStore();
-    private CloseableHttpClient httpclient;
+    private CloseableHttpClient httpClient;
     private String encoding = "utf-8";
     private static final ProxySetting proxySetting;
 
@@ -80,7 +76,7 @@ public class HttpClientImpl implements HttpClient {
             httpClientBuilder.setDefaultCredentialsProvider(credsProvider);
         }
 
-        instance.httpclient = httpClientBuilder.build();
+        instance.httpClient = httpClientBuilder.build();
         instance.encoding = this.encoding;
 
         return instance;
@@ -102,7 +98,7 @@ public class HttpClientImpl implements HttpClient {
     	
         try {
         	addHeaders(request, headers);
-            CloseableHttpResponse response1 = httpclient.execute(request);
+            CloseableHttpResponse response1 = httpClient.execute(request);
             HttpEntity entity = response1.getEntity();
 
             log.debug("Request status: {}", response1.getStatusLine());
