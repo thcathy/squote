@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import squote.domain.StockQuote;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
@@ -15,12 +16,14 @@ import static org.junit.Assert.assertTrue;
 
 public class StockPerformanceServiceTest {
     private Logger log = LoggerFactory.getLogger(StockPerformanceServiceTest.class);
-	
-	@Test
+
+    private final ExecutorService executor = Executors.newFixedThreadPool(30);
+
+    @Test
 	public void getDetailStockQuoteWith3PreviousYearPrice_GivenStockCode_ShouldReturnWith3PreviouYearPrice() {
 		Stopwatch timer = Stopwatch.createStarted();
 
-		StockQuote quote = new StockPerformanceService(Executors.newFixedThreadPool(50)).getDetailStockQuoteWith3PreviousYearPrice("2828").get();
+		StockQuote quote = new StockPerformanceService(executor).getDetailStockQuoteWith3PreviousYearPrice("2828").get();
 		assertEquals("2828", quote.getStockCode());
 		assertTrue(quote.getPriceDoubleValue() > 0);
 		assertTrue(quote.getLastYearPercentage() != 0);
@@ -34,7 +37,7 @@ public class StockPerformanceServiceTest {
 	public void getStockPerformanceQuotes_ShouldReturnOne2828QuoteAndAllQuoteSortedByLastYearPercentageChg() {
         Stopwatch timer = Stopwatch.createStarted();
 
-		StockPerformanceService service = new StockPerformanceService(Executors.newFixedThreadPool(1));
+		StockPerformanceService service = new StockPerformanceService(executor);
 		List<StockQuote> quotes = service.getStockPerformanceQuotes();
 		assertTrue(quotes.size() > 50);
 		
