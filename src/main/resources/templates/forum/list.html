@@ -6,8 +6,9 @@
 	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
 	<script type="text/javascript">	
 		angular.module('list',[]).controller('ListController', ['$scope','$http', function($scope,$http) {
-			$scope.visited = function(url) {
-				$http.post('/forum/visited', url);
+			$scope.visited = function($event, url) {
+                $event.target.parentElement.classList.add("visited");
+                $http.post('/forum/visited', url);
 			};
 		}]);		
 	</script>	
@@ -35,7 +36,7 @@
 
 		<table style="font-size: 10px;">
 			<tr th:each="c : ${contents}" th:class="${c.visited}?'visited'" th:classappend="${c.wished}?'wished'">
-				<td><a target="_blank" th:attr="ng-click='visited(\''+${c.url}+'\')'" th:href="'http://'+${c.url}"
+				<td><a target="_blank" th:attr="ng-click='visited($event, \''+${c.url}+'\')'" th:href="'http://'+${c.url}"
 					th:text="${c.title}">title</a></td>
 				<td th:text="${#dates.format(c.createdDate, 'dd-MM-yyyy')}">date</td>
 				<td th:text="${c.source}">source</td>
