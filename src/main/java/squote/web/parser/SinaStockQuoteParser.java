@@ -1,6 +1,7 @@
 package squote.web.parser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
@@ -20,6 +21,7 @@ public class SinaStockQuoteParser implements StockQuoteParser {
 	public static String SINA_STOCK_QUOTE_URL = "http://sina.com.hk/p/api/aastock/Stock/index/";
 	
 	private static final Header XML_HTTP_REQUEST = new BasicHeader("X-Requested-With", "XMLHttpRequest");
+    private static final ObjectReader jsonReader = new ObjectMapper().readerFor(Map.class);
 
 	private final String code;
 
@@ -44,8 +46,8 @@ public class SinaStockQuoteParser implements StockQuoteParser {
 	@SuppressWarnings("unchecked")
 	private void parseResponse(StockQuote quote, InputStream stream)
 			throws IOException {
-		ObjectMapper mapper = new ObjectMapper();
-		Map<String, String> value = mapper.readValue(stream, Map.class);
+
+		Map<String, String> value = jsonReader.readValue(stream);
 		
 		quote.setStockName(value.get("Desp"));
 		quote.setPrice(value.get("Last"));

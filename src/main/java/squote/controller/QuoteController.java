@@ -1,24 +1,7 @@
 package squote.controller;
 
-import static squote.SquoteConstants.IndexCode.HSCEI;
-import static squote.service.MarketReportService.pre;
-
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
@@ -27,34 +10,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
+import org.springframework.web.bind.annotation.*;
 import squote.SquoteConstants.IndexCode;
-import squote.domain.Fund;
-import squote.domain.HoldingStock;
-import squote.domain.MarketDailyReport;
-import squote.domain.StockQuery;
-import squote.domain.StockQuote;
+import squote.domain.*;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.StockQueryRepository;
 import squote.service.CentralWebQueryService;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
-import squote.web.parser.AastockStockQuoteParser;
-import squote.web.parser.EtnetIndexQuoteParser;
-import squote.web.parser.EtnetStockQuoteParser;
-import squote.web.parser.HSINetParser;
-import squote.web.parser.SinaStockQuoteParser;
+import squote.web.parser.*;
 import thc.util.ConcurrentUtils;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
+import static squote.SquoteConstants.IndexCode.HSCEI;
+import static squote.service.MarketReportService.pre;
 
 @RequestMapping("/quote")
 @Controller
@@ -198,7 +175,7 @@ public class QuoteController extends AbstractController {
 	private List<CompletableFuture<StockQuote>> submitStockQuoteRequests(Set<String> codeSet) {
 		return codeSet.stream()
 				.map( code -> 
-					webQueryService.submit(() -> new EtnetStockQuoteParser().parse(code).get()) 
+					webQueryService.submit(() -> new SinaStockQuoteParser(code).getStockQuote())
 				)
 				.collect(Collectors.toList());
 	}

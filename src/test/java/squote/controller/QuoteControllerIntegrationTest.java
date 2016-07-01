@@ -1,17 +1,5 @@
 package squote.controller;
  
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
-
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.base.Stopwatch;
 import org.junit.After;
 import org.junit.Before;
@@ -28,13 +16,18 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.ModelMap;
-
 import squote.SpringQuoteWebApplication;
 import squote.SquoteConstants.IndexCode;
 import squote.domain.MarketDailyReport;
 import squote.domain.StockQuote;
 import squote.domain.repository.HoldingStockRepository;
-import squote.web.parser.AastockStockQuoteParserTest;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -74,11 +67,15 @@ public class QuoteControllerIntegrationTest {
 	@Test
 	public void list_GivenStockCodes_ShouldReturnQuotesWithStocksAndIndexesAndMarketDailyReportHistories() throws Exception {
 		// Given
-		final String inputCodes = "753,2828,2800";
-		        
+		final String inputCodes = "753,2828,2800,3046,2822,1138,1088,883,2883,489,2333,916,2318,5";
+
+		Stopwatch timer = Stopwatch.createStarted();
+
 		MvcResult mvcResult = mockMvc.perform(get("/quote/list?codes=" + inputCodes).characterEncoding(WebConstants.RESPONSE_ENCODING))
 		.andExpect(status().isOk())
 		.andExpect(view().name("quote/list")).andReturn();
+
+		log.debug("quote list page took: {}", timer.stop());
 		
 		ModelMap modelMap = mvcResult.getModelAndView().getModelMap();
 		List<StockQuote> indexes = (List<StockQuote>) modelMap.get("indexes");
