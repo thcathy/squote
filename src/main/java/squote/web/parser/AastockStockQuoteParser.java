@@ -11,7 +11,7 @@ import thc.util.HttpClientImpl;
 public class AastockStockQuoteParser implements StockQuoteParser {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	
-	public static String AASTOCK_STOCK_QUOTE_URL = "http://www.aastocks.com/EN/stock/DetailQuote.aspx?&symbol=";
+	public static String AASTOCK_STOCK_QUOTE_URL = "http://www.aastocks.com/en/stocks/quote/detail-quote.aspx?symbol=";
 
 	private final String code;
 	
