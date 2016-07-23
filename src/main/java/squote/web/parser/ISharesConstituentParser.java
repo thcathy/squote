@@ -20,7 +20,7 @@ public class ISharesConstituentParser {
 	@SuppressWarnings("unchecked")	
 	public static List<String> parseMSCIChina() {		
 		String URL = "https://www.blackrock.com/hk/en/terms-and-conditions?targetUrl=%2Fhk%2Fen%2Fproducts%2F251576%2Fishares-msci-china-index-etf%2F1440663547017.ajax%3Ftab%3Dall%26fileType%3Djson&action=ACCEPT";
-		
+
 		try {
 			Map<String, ?> value = jsonReader.readValue(new HttpClientImpl(UTF_8).newInstance().makeGetRequest(URL));
 			List<Map<String,Object>> data = (List<Map<String, Object>>) value.get("aaData");
@@ -36,8 +36,8 @@ public class ISharesConstituentParser {
 	}
   	
 	@SuppressWarnings("unchecked")
-	public static List<String> parseMSCIHK() {		
-		String URL = "https://www.ishares.com/us/products/239657/ishares-msci-hong-kong-etf/1449138789749.ajax?tab=all&fileType=json";
+	public static List<String> parseMSCIHK() {
+		String URL = "https://www.ishares.com/us/products/239657/ishares-msci-hong-kong-etf/1467271812596.ajax?tab=all&fileType=json";
 
 		try {
 			Map<String, ?> value = jsonReader.readValue(new HttpClientImpl(UTF_8).newInstance().makeGetRequest(URL));
