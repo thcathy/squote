@@ -44,7 +44,7 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	@Value("${centralWebQuery.pool.size}")			int poolSize;
 	@Value("${http.max_connection:20}") 			int httpMaxConnection;
 	@Value("${http.max_connection_per_route:20}") 	int getHttpMaxConnectionPerRoute;
-	@Value("${apiserver.host}")						String APIServerHost;
+	@Value("${APISERVER_HOST}")						String APIServerHost;
 	
 	// repository interface
 	@Autowired private HoldingStockRepository holdingStockRepo;

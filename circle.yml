@@ -1,0 +1,21 @@
+general:
+  artifacts:
+    - "target/squote.jar"
+    
+machine:
+  services:
+    - docker
+    
+test:
+  post:
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    - find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+    - mvn package -DskipTests
+
+#deployment:
+#  hub:
+#    branch: master
+#    commands:
+#      - docker build -t thcathy/squote .
+#      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+#      - docker push thcathy/squote
