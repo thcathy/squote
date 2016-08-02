@@ -28,6 +28,9 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<finalName>squote</finalName>
+				</configuration>
 			</plugin>
 
 			<plugin>
