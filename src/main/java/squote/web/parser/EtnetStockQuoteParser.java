@@ -1,14 +1,13 @@
 package squote.web.parser;
 
-import java.util.Optional;
-
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import squote.domain.StockQuote;
 import thc.util.HttpClientImpl;
 import thc.util.StringUtils;
+
+import java.util.Optional;
 
 public class EtnetStockQuoteParser {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -26,8 +25,8 @@ public class EtnetStockQuoteParser {
 			q.setChangeAmount(changes[0]);
 			q.setChange(changes[1].replace("(", "").replace(")",""));
 
-			q.setHigh(doc.select("div[id^=StkDetailMainBox] tr:eq(0) td:eq(1) span.Number").text());
-			q.setLow(doc.select("div[id^=StkDetailMainBox] tr:eq(1) td:eq(0) span.Number").text());
+			q.setHigh(doc.select("div[id^=StkDetailMainBox] tr:eq(0) td:eq(1) span.Number").text().trim());
+			q.setLow(doc.select("div[id^=StkDetailMainBox] tr:eq(1) td:eq(0) span.Number").text().trim());
 
 			Optional<String> updateTime = StringUtils.extractText(doc.select("div[id^=StkDetailTime]").text(), "[0-9]*/[0-9]*/[0-9]* [0-9]*:[0-9]*");
 			updateTime.ifPresent(s -> q.setLastUpdate(s));

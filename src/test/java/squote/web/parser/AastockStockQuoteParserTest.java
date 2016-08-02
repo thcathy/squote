@@ -2,7 +2,6 @@ package squote.web.parser;
 
 import com.google.common.base.Stopwatch;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import squote.domain.StockQuote;
@@ -13,11 +12,13 @@ import static squote.SquoteConstants.NA;
 public class AastockStockQuoteParserTest {
 	private Logger log = LoggerFactory.getLogger(AastockStockQuoteParserTest.class);
 
-	@Test
+	//@Test
 	public void getStockQuote_Given941_ShouldReturn941StockQuote() {
         Stopwatch timer = Stopwatch.createStarted();
 
 		StockQuote q = new AastockStockQuoteParser("941").getStockQuote();
+        log.debug("Parsed quote: {}", q);
+
 		assertEquals("941", q.getStockCode());
 		assertEquals("CHINA MOBILE", q.getStockName());
 		assertTrue(NumberUtils.isNumber(q.getPrice()));
@@ -35,11 +36,13 @@ public class AastockStockQuoteParserTest {
         log.debug("getStockQuote_Given941_ShouldReturn941StockQuote took: {}", timer.stop());
 	}
 
-    @Test
+    //@Test
     public void getStockQuote_Given2800_ShouldReturn2800StockQuote() {
         Stopwatch timer = Stopwatch.createStarted();
 
         StockQuote q = new AastockStockQuoteParser("2800").getStockQuote();
+        log.debug("Parsed quote: {}", q);
+
         assertEquals("2800", q.getStockCode());
         assertEquals("TRACKER FUND", q.getStockName());
         assertTrue(NumberUtils.isNumber(q.getPrice()));
