@@ -1,5 +1,6 @@
 package squote;
 
+import com.mashape.unirest.http.Unirest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -16,11 +17,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
-import squote.service.CentralWebQueryService;
-import squote.service.MarketReportService;
-import squote.service.StockPerformanceService;
-import squote.service.UpdateFundByHoldingService;
+import squote.service.*;
+import squote.unirest.UnirestSetup;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.Filter;
 
 @Configuration
@@ -39,30 +39,42 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	static class Dev {}
 
 	// application properties	
-	@Value("${adminstrator.email}") 		private String adminEmail;
-	@Value("${application.email}")			private String appEmail;
-	@Value("${centralWebQuery.pool.size}")	private int poolSize;
+	@Value("${adminstrator.email}") 				String adminEmail;
+	@Value("${application.email}")					String appEmail;
+	@Value("${centralWebQuery.pool.size}")			int poolSize;
+	@Value("${http.max_connection:20}") 			int httpMaxConnection;
+	@Value("${http.max_connection_per_route:20}") 	int getHttpMaxConnectionPerRoute;
+	@Value("${apiserver.host}")						String APIServerHost;
 	
 	// repository interface
 	@Autowired private HoldingStockRepository holdingStockRepo;
 	@Autowired private MarketDailyReportRepository marketDailyReportRepo;
 	@Autowired private FundRepository fundRepo;
 
+	@PostConstruct
+	public void configure() {
+		UnirestSetup.setupAll();
+		Unirest.setConcurrency(httpMaxConnection,getHttpMaxConnectionPerRoute);
+	}
+
 	// Serivce Beans
 	@Bean
-	public CentralWebQueryService centrolWebQueryService() {
+	public CentralWebQueryService centralWebQueryService() {
 		return new CentralWebQueryService(poolSize);
 	}
 
 	@Bean
+	public WebParserRestService webParserRestService() { return new WebParserRestService(APIServerHost); }
+
+	@Bean
 	public MarketReportService marketReportService() {
 		return new MarketReportService(marketDailyReportRepo,
-				centrolWebQueryService());
+				centralWebQueryService());
 	}
 
 	@Bean
 	public StockPerformanceService stockPerformanceService() {
-		return new StockPerformanceService(centrolWebQueryService().getExecutor());
+		return new StockPerformanceService(centralWebQueryService().getExecutor());
 	}
 			
 	@Bean
