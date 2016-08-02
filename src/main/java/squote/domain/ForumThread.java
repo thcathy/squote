@@ -1,24 +1,26 @@
 package squote.domain;
-import java.math.BigInteger;
-import java.util.Date;
-
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Id;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import java.math.BigInteger;
+import java.util.Date;
+
 public class ForumThread {
 	@Id
     private BigInteger id;
 	
-    private final String url;
-    private final String title;
-    private final String source;
+    private String url;
+    private String title;
+    private String source;
     private boolean isVisited = false;
     private boolean isWished = false;
 
 	@DateTimeFormat(pattern = "yyyy-MM-dd")
-    public final Date createdDate;
+    public Date createdDate;
+
+	public ForumThread() {}
 
     public ForumThread(String url, String title, String source, Date createdDate) {
 		this.url = url;
