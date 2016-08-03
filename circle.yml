@@ -5,6 +5,9 @@ general:
 machine:
   services:
     - docker
+  java:
+    version:
+      oraclejdk8
     
 test:
   post:
