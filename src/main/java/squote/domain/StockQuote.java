@@ -1,17 +1,15 @@
 package squote.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+import thc.util.NumberUtils;
+
+import javax.xml.bind.annotation.XmlRootElement;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.xml.bind.annotation.XmlRootElement;
-
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-
-import squote.SquoteConstants;
-import thc.util.NumberUtils;
 
 import static squote.SquoteConstants.NA;
 
@@ -109,7 +107,8 @@ public class StockQuote {
 		}
 		return last3YearPercentage;
 	}
-	
+
+	@JsonIgnore
 	public Double getPriceDoubleValue() { return NumberUtils.extractDouble(price); }
 
 	@Override

@@ -2,8 +2,8 @@ package squote.controller;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.mashape.unirest.http.HttpResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,7 @@ import squote.domain.repository.StockQueryRepository;
 import squote.service.CentralWebQueryService;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
-import squote.web.parser.*;
+import squote.service.WebParserRestService;
 import thc.util.ConcurrentUtils;
 
 import javax.servlet.http.Cookie;
@@ -27,10 +27,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import static squote.SquoteConstants.IndexCode.HSCEI;
 import static squote.service.MarketReportService.pre;
 
 @RequestMapping("/quote")
@@ -48,57 +48,23 @@ public class QuoteController extends AbstractController {
 	@Autowired CentralWebQueryService webQueryService;
 	@Autowired HoldingStockRepository holdingStockRepo;
 	@Autowired FundRepository fundRepo;
+	@Autowired WebParserRestService webParserService;
 	
 	public QuoteController() {
 		super("quote");
 	}
 	
-	@RequestMapping(value = "/single/{code}", produces="application/xml")	
-	public @ResponseBody StockQuote single(@PathVariable String code) {
+	@RequestMapping(value = "/single/{code}")
+	public @ResponseBody StockQuote single(@PathVariable String code) throws Exception {
 		log.debug("single: reqCode [{}]", code);
-
-        CompletableFuture<StockQuote> quote = webQueryService.submit(() -> new EtnetStockQuoteParser().parse(code).get());
-        CompletableFuture<StockQuote> quote2 = webQueryService.submit(() -> new AastockStockQuoteParser(code).getStockQuote());
-        CompletableFuture<StockQuote> quote3 = webQueryService.submit(() -> new SinaStockQuoteParser(code).getStockQuote());
-
-		return StringUtils.isBlank(code)? new StockQuote() : (StockQuote)CompletableFuture.anyOf(quote, quote2, quote3).join();
-	}
-	
-	private String enrichHscei(String hscei, Date date) {
-		if ("0".equals(hscei)) {
-			try {
-				return parseHsceiFromWeb(date);
-			} catch (Exception e) {
-				return "0";
-			}			
-		}
-		return hscei;
-	}
-		
-	private String parseHsceiFromWeb(Date date) throws Exception {
-		String hscei;
-		if (DateUtils.isSameDay(new Date(), date)) {
-			hscei = parseHSCEIFromEtnet();
-		} else {				
-			hscei = parseHSCEIFromHSINet(date);
-		}
-		return hscei.replaceAll(",", "");
+		return webParserService.getFullQuote("2").get().getBody();
 	}
 
-	private String parseHSCEIFromEtnet() {
-		return webQueryService.parse(new EtnetIndexQuoteParser()).get().stream()
-					.filter(a -> IndexCode.HSCEI.name.equals(a.getStockCode())).findFirst().get().getPrice();
-	}
-
-	private String parseHSCEIFromHSINet(Date date) {
-		return webQueryService.parse(new HSINetParser(HSCEI, date)).get().getPrice();
-	}
-	
 	@RequestMapping(value="/list", method = RequestMethod.GET)
 	public String list(@RequestParam(value="codes", required=false, defaultValue="") String reqCodes,
 			@RequestParam(value="action", required=false, defaultValue="") String action,
 			@CookieValue(value=CODES_COOKIE_KEY, required=false) String cookieCodes,
-			HttpServletRequest request, HttpServletResponse response, ModelMap modelMap) {
+			HttpServletRequest request, HttpServletResponse response, ModelMap modelMap) throws ExecutionException, InterruptedException {
 		
 		log.debug("list: reqCodes [{}], action [{}]", reqCodes, action);
 			
@@ -108,20 +74,19 @@ public class QuoteController extends AbstractController {
 			
 		List<HoldingStock> holdingStocks = Lists.newArrayList(holdingStockRepo.findAll(new Sort("date")));
 		List<Fund> funds = Lists.newArrayList(fundRepo.findAll());
-		Set<String> codeSet = uniqueStockCodes(codes, holdingStocks, funds); 
-				
-		// Submit web queries
-		Future<Optional<List<StockQuote>>> indexeFutures = webQueryService.submit(new EtnetIndexQuoteParser());
-		List<CompletableFuture<StockQuote>> stockQuoteFutures = submitStockQuoteRequests(codeSet);		
+		Set<String> codeSet = uniqueStockCodes(codes, holdingStocks, funds);
+		Future<HttpResponse<StockQuote[]>> stockQuotesFuture = webParserService.getRealTimeQuotes(codeSet);		
+		
+		Future<HttpResponse<StockQuote[]>> indexFutures = webParserService.getIndexQuotes();
 		List<CompletableFuture<MarketDailyReport>> mktReports = submitMarketDailyReportRequests();
 	
 		// After all concurrent jobs submitted
-		List<StockQuote> indexes = ConcurrentUtils.collect(indexeFutures).get();
-		Map<String, StockQuote> allQuotes = collectAllStockQuotes(stockQuoteFutures);
+		List<StockQuote> indexes = Arrays.asList(indexFutures.get().getBody());
+		Map<String, StockQuote> allQuotes = collectAllStockQuotes(stockQuotesFuture.get().getBody());
 		funds.forEach( f -> f.calculateNetProfit(allQuotes) );
 			
 		modelMap.put("codes", codes);
-		modelMap.put("quotes", 
+		modelMap.put("quotes",
 				Arrays.stream(codes.split(CODE_SEPARATOR))
 					.map(code->allQuotes.get(code))
 					.collect(Collectors.toList())				
@@ -130,7 +95,7 @@ public class QuoteController extends AbstractController {
 		modelMap.put("tbase", ConcurrentUtils.collect(mktReports.get(0)));
 		modelMap.put("tHistory", collectMktReportHistories(mktReports));		
 		modelMap.put("holdingMap", collectHoldingStockWithQuotesAsMap(holdingStocks, allQuotes));
-		modelMap.put("hsce", indexes.stream().filter(a -> IndexCode.HSCEI.name.equals(a.getStockCode())).findFirst().get());
+		modelMap.put("hsce", indexes.stream().filter(a -> IndexCode.HSCEI.toString().equals(a.getStockCode())).findFirst().get());
 		modelMap.put("funds", funds);
 		
 		return page("/list");
@@ -166,20 +131,11 @@ public class QuoteController extends AbstractController {
 	}
 
 	private Map<String, StockQuote> collectAllStockQuotes(
-			List<CompletableFuture<StockQuote>> stockQuoteFutures) {
-		return stockQuoteFutures.stream()
-				.map(f -> f.join())
+			StockQuote[] quotes) {
+		return Arrays.stream(quotes)
 				.collect(Collectors.toMap(StockQuote::getStockCode, quote->quote));
 	}
 
-	private List<CompletableFuture<StockQuote>> submitStockQuoteRequests(Set<String> codeSet) {
-		return codeSet.stream()
-				.map( code -> 
-					webQueryService.submit(() -> new SinaStockQuoteParser(code).getStockQuote())
-				)
-				.collect(Collectors.toList());
-	}
-	
 	private Set<String> uniqueStockCodes(String codes, List<HoldingStock> holdingStocks, List<Fund> funds) {
 		Set<String> codeSet = Sets.newHashSet(codes.split(CODE_SEPARATOR));		
 		holdingStocks.forEach(x->codeSet.add(x.getCode()));

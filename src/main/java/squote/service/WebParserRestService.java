@@ -4,9 +4,12 @@ import com.google.common.base.Strings;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import org.apache.commons.lang3.StringUtils;
 import squote.domain.ForumThread;
+import squote.domain.StockQuote;
 import squote.unirest.UnirestSetup;
 
+import java.util.Collection;
 import java.util.concurrent.Future;
 
 /**
@@ -34,4 +37,20 @@ public class WebParserRestService {
                 .asObjectAsync(ForumThread[].class);
     }
 
+    public Future<HttpResponse<StockQuote[]>> getIndexQuotes() {
+        return Unirest.get(host + "rest/quote/indexes")
+                .asObjectAsync(StockQuote[].class);
+    }
+
+    public Future<HttpResponse<StockQuote>> getFullQuote(String code) {
+        return Unirest.get(host + "rest/quote/full/{code}")
+                .routeParam("code", code)
+                .asObjectAsync(StockQuote.class);
+    }
+
+    public Future<HttpResponse<StockQuote[]>> getRealTimeQuotes(Collection<String> codes) {
+        return Unirest.get(host + "rest/quote/realtime/list/{codes}")
+                .routeParam("codes", StringUtils.join(codes, ","))
+                .asObjectAsync(StockQuote[].class);
+    }
 }

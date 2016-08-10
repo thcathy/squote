@@ -101,11 +101,11 @@ public class QuoteControllerIntegrationTest {
 		assertTrue(!"NA".equals(quote2.getPrice()));
 		assertEquals("2828",quote2.getStockCode());
 				
-		assertEquals(IndexCode.HSCEI.name, hscei.getStockCode());
+		assertEquals(IndexCode.HSCEI.toString(), hscei.getStockCode());
 		
 		assertNotNull(modelMap.get("funds"));
 		
-		assertEquals(2, indexes.size());
+		assertEquals(6, indexes.size());
 	}
 	
 }
