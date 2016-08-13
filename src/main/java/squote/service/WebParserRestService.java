@@ -6,6 +6,7 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.commons.lang3.StringUtils;
 import squote.domain.ForumThread;
+import squote.domain.MonetaryBase;
 import squote.domain.StockQuote;
 import squote.unirest.UnirestSetup;
 
@@ -52,5 +53,17 @@ public class WebParserRestService {
         return Unirest.get(host + "rest/quote/realtime/list/{codes}")
                 .routeParam("codes", StringUtils.join(codes, ","))
                 .asObjectAsync(StockQuote[].class);
+    }
+
+    public Future<HttpResponse<StockQuote[]>> getHSINetReports(String yyyymmdd) {
+        return Unirest.get(host + "rest/index/report/hsinet/{yyyymmdd}")
+                .routeParam("yyyymmdd", yyyymmdd)
+                .asObjectAsync(StockQuote[].class);
+    }
+
+    public Future<HttpResponse<MonetaryBase>> getHKMAReport(String yyyymmdd) {
+        return Unirest.get(host + "rest/hkma/report/{yyyymmdd}")
+                .routeParam("yyyymmdd", yyyymmdd)
+                .asObjectAsync(MonetaryBase.class);
     }
 }

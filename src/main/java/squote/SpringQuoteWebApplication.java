@@ -69,7 +69,7 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	@Bean
 	public MarketReportService marketReportService() {
 		return new MarketReportService(marketDailyReportRepo,
-				centralWebQueryService());
+				webParserRestService());
 	}
 
 	@Bean

@@ -13,6 +13,8 @@ public final class DateUtils {
 	public static boolean isWeekEnd(Calendar c) {
 		return (c.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY || c.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY);
 	}
+
+	public static boolean notWeekEnd(Calendar c) { return !isWeekEnd(c); }
 	
 	public static boolean isOverMonth(Date d1, Date d2, int numOfMonth) {
 		return Math.abs(d1.getTime() - d2.getTime()) > (long)86400000 * 31 * numOfMonth;

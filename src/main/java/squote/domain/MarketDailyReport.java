@@ -1,14 +1,13 @@
 package squote.domain;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import javax.validation.constraints.Min;
-
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Id;
 
-public class MarketDailyReport {	
+import javax.validation.constraints.Min;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class MarketDailyReport {
 	@Id
 	@Min(20120000)
 	private int date;
@@ -20,14 +19,21 @@ public class MarketDailyReport {
 	public static MarketDailyReport EMPTY_REPORT = new MarketDailyReport();
 	
 	public MarketDailyReport() {}
-	public MarketDailyReport(int date) { this.date = date; }
+
 	public MarketDailyReport(Date date) { this.date = formatDate(date); }
 	public MarketDailyReport(Date date, MonetaryBase moneyBase, StockQuote hsiQuote, StockQuote hsceQuote) {
 		this(date);
 		this.moneyBase = moneyBase;
 		this.hsi = hsiQuote;
 		this.hscei = hsceQuote;
-	}		
+	}
+	public MarketDailyReport(String yyyymmdd, MonetaryBase moneyBase, StockQuote hsiQuote, StockQuote hsceQuote) {
+		this.date = Integer.valueOf(yyyymmdd);
+		this.moneyBase = moneyBase;
+		this.hsi = hsiQuote;
+		this.hscei = hsceQuote;
+	}
+
 	public static int formatDate(Date date) { return Integer.valueOf(new SimpleDateFormat("yyyyMMdd").format(date)); }
 
 	@Override

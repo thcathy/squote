@@ -20,7 +20,6 @@ import squote.service.CentralWebQueryService;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
 import squote.service.WebParserRestService;
-import thc.util.ConcurrentUtils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -92,7 +91,7 @@ public class QuoteController extends AbstractController {
 					.collect(Collectors.toList())				
 				);
 		modelMap.put("indexes", indexes);
-		modelMap.put("tbase", ConcurrentUtils.collect(mktReports.get(0)));
+		modelMap.put("tbase", mktReports.get(0).join());
 		modelMap.put("tHistory", collectMktReportHistories(mktReports));		
 		modelMap.put("holdingMap", collectHoldingStockWithQuotesAsMap(holdingStocks, allQuotes));
 		modelMap.put("hsce", indexes.stream().filter(a -> IndexCode.HSCEI.toString().equals(a.getStockCode())).findFirst().get());
