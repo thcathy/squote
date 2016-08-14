@@ -38,7 +38,7 @@ public class StockQuote {
 	public StockQuote() {}
 
 	public StockQuote(String code) {
-		this.stockCode = code;
+		this.stockCode = code.replaceFirst("^0+(?!$)", "");
 	}
 	
 	public void setPrice(String price) {
@@ -121,7 +121,7 @@ public class StockQuote {
     }
 
 	public void setStockCode(String stockCode) {
-        this.stockCode = stockCode;
+        this.stockCode = stockCode.replaceFirst("^0+(?!$)", "");
     }
 
 	public String getLastUpdate() {

@@ -41,7 +41,7 @@ public class EtnetStockQuoteParser {
 			
 			return Optional.of(q);
 		} catch (Exception e) {
-			log.warn("Cannot get quote from Etnet for code :" + code, e);
+			log.warn("Cannot getHistoryPrice quote from Etnet for code :" + code, e);
 			return Optional.empty();
 		}	
 	}	

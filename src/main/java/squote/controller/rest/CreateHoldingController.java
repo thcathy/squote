@@ -1,11 +1,5 @@
 package squote.controller.rest;
 
-import static squote.SquoteConstants.IndexCode.HSCEI;
-
-import java.math.BigDecimal;
-import java.util.Date;
-import java.util.Optional;
-
 import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,16 +7,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import squote.SquoteConstants.IndexCode;
 import squote.domain.Fund;
 import squote.domain.HoldingStock;
 import squote.domain.StockExecutionMessage;
 import squote.domain.repository.HoldingStockRepository;
 import squote.service.CentralWebQueryService;
 import squote.service.UpdateFundByHoldingService;
-import squote.web.parser.EtnetIndexQuoteParser;
-import squote.web.parser.HSINetParser;
+import squote.service.WebParserRestService;
+
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+
+import static squote.SquoteConstants.IndexCode.HSCEI;
 
 @RequestMapping("/rest/createholding")
 @RestController
@@ -32,6 +32,7 @@ public class CreateHoldingController {
 	@Autowired CentralWebQueryService webQueryService;
 	@Autowired HoldingStockRepository holdingRepo;
 	@Autowired UpdateFundByHoldingService updateFundService;
+	@Autowired WebParserRestService webService;
 	
 	@RequestMapping(value="/create")
 	public HoldingStock createHoldingFromExecution(@RequestParam(value="message", required=false, defaultValue="") String exeMsg,
@@ -62,7 +63,7 @@ public class CreateHoldingController {
 			try {
 				return parseHsceiFromWeb(date);
 			} catch (Exception e) {
-				throw new RuntimeException("Cannot get hcei", e);
+				throw new RuntimeException("Cannot getHistoryPrice hcei", e);
 			}			
 		}
 		return hscei;
@@ -78,12 +79,21 @@ public class CreateHoldingController {
 		return hscei.replaceAll(",", "");
 	}
 
-	private String parseHSCEIFromEtnet() {
-		return webQueryService.parse(new EtnetIndexQuoteParser()).get().stream()
-					.filter(a -> IndexCode.HSCEI.name.equals(a.getStockCode())).findFirst().get().getPrice();
+	private String parseHSCEIFromEtnet() throws ExecutionException, InterruptedException {
+		return Arrays.stream(webService.getIndexQuotes().get().getBody())
+				.filter(a -> HSCEI.toString().equals(a.getStockCode()))
+				.findFirst()
+				.get()
+				.getPrice();
 	}
 
-	private String parseHSCEIFromHSINet(Date date) {
-		return webQueryService.parse(new HSINetParser(HSCEI, date)).get().getPrice();
+	private String parseHSCEIFromHSINet(Date date) throws ExecutionException, InterruptedException {
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+
+		return Arrays.stream(webService.getHSINetReports(dateFormat.format(date)).get().getBody())
+				.filter(a -> HSCEI.toString().equals(a.getStockCode()))
+				.findFirst()
+				.get()
+				.getPrice();
 	}
 }

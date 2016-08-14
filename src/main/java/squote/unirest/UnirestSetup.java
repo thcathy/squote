@@ -16,6 +16,7 @@ public class UnirestSetup {
 
     public static void setupAll() {
         Unirest.setConcurrency(20, 20);
+        Unirest.setTimeouts(300000, 300000);
         setDefaultHeaders();
         setupProxy();
         setupJackson();

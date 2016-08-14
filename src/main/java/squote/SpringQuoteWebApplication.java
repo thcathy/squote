@@ -74,7 +74,7 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 
 	@Bean
 	public StockPerformanceService stockPerformanceService() {
-		return new StockPerformanceService(centralWebQueryService().getExecutor());
+		return new StockPerformanceService(webParserRestService());
 	}
 			
 	@Bean

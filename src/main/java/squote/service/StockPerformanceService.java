@@ -1,72 +1,97 @@
 package squote.service;
 
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import squote.SquoteConstants.IndexCode;
+import com.mashape.unirest.http.HttpResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import squote.SquoteConstants;
 import squote.domain.StockQuote;
-import squote.web.parser.EtnetStockQuoteParser;
-import squote.web.parser.HistoryQuoteParser;
+
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class StockPerformanceService {
-	
-	public static String QUOTES_KEY = "quotes";
-	
+	protected final Logger log = LoggerFactory.getLogger(getClass());
+
 	private static int expireAfterHour = 1;
 	private volatile List<StockQuote> stockPerformanceQuotes;
 	private Calendar expireOn = Calendar.getInstance();
+	private Optional<List<String>> constituents = Optional.empty();
+
+	private final WebParserRestService webService;
 	
-	private final ExecutorService executor;
-	
-	public StockPerformanceService(ExecutorService executor) {
+	public StockPerformanceService(WebParserRestService webService) {
 		super();
-		this.executor = executor;
+		this.webService = webService;
 	}
 
-	public synchronized List<StockQuote> getStockPerformanceQuotes() {
-		// return result in cache before expire
-		if (stockPerformanceQuotes != null && expireOn.getTime().compareTo(new Date()) > 0)
-			return stockPerformanceQuotes;
-		
-		// get the result and store in cache		
-		List<String> codes = Arrays.asList(IndexCode.values()).stream()
-				.flatMap(l->l.constituents.stream())
-				.distinct()
-				.collect(Collectors.toList());
-			
+	public synchronized List<StockQuote> getStockPerformanceQuotes() throws ExecutionException, InterruptedException {
+		if (cached()) return stockPerformanceQuotes;
+
+		constituents = Optional.of(constituents.orElseGet(this::getConstituents));
+		log.debug("Total constituents: {}", constituents.get().size());
+
+		List<String> codes = constituents.get();
 		codes.add("2828");
-		stockPerformanceQuotes = codes.parallelStream()
-				.map(c -> CompletableFuture.supplyAsync(() -> getDetailStockQuoteWith3PreviousYearPrice(c), executor))
-				.map(f -> f.join())
-				.filter(o -> o.isPresent())
-				.map(o -> o.get())
-				.sorted((x,y)->Double.compare(x.getLastYearPercentage(),y.getLastYearPercentage()))
-				.collect(Collectors.toList());				
-		
-		expireOn = Calendar.getInstance();
-		expireOn.add(Calendar.HOUR, expireAfterHour);
+
+		List<Future<HttpResponse<StockQuote>>> quoteFutures = submitFullQuotesRequest(codes);
+		stockPerformanceQuotes = collectStockQuotes(quoteFutures);
+		log.debug("Total quotes returned: {}", stockPerformanceQuotes.size());
+
+		updateExpireTime();
 		return stockPerformanceQuotes;
 	}
-	
-	public Optional<StockQuote> getDetailStockQuoteWith3PreviousYearPrice(String code) {
-		try {
-			StockQuote quote = new EtnetStockQuoteParser().parse(code).get();		
-			IntStream.rangeClosed(1, 3).forEach(i->
-				new HistoryQuoteParser().getPreviousYearQuote(code, i).ifPresent(p->quote.setPreviousPrice(i, p.doubleValue()))
-			);
-			return Optional.of(quote);
-		} catch (NoSuchElementException e) {
-			return Optional.empty();
-		}
+
+	private List<StockQuote> collectStockQuotes(List<Future<HttpResponse<StockQuote>>> quoteFutures) {
+		return quoteFutures.stream()
+									.flatMap(this::collectResponse)
+									.map(HttpResponse::getBody)
+									.sorted((x,y)->Double.compare(x.getLastYearPercentage(),y.getLastYearPercentage()))
+									.collect(Collectors.toList());
 	}
-		
+
+	private void updateExpireTime() {
+		expireOn = Calendar.getInstance();
+		expireOn.add(Calendar.HOUR, expireAfterHour);
+	}
+
+	private List<Future<HttpResponse<StockQuote>>> submitFullQuotesRequest(List<String> codes) throws InterruptedException, ExecutionException {
+		log.debug("Start getting full stock quotes: total {}", codes.size());
+
+		return codes.stream()
+				.map(webService::getFullQuote)
+				.collect(Collectors.toList());
+	}
+
+	private Stream<HttpResponse<StockQuote>> collectResponse(Future<HttpResponse<StockQuote>> future) {
+		try {
+			return Stream.of(future.get());
+		} catch (Exception e) {
+			log.debug("Cannot process http respsonse", e);
+		}
+		return Stream.empty();
+	}
+
+	private List<String> getConstituents() {
+		log.debug("Start getting all index constituents");
+
+		List<Future<HttpResponse<String[]>>> futures = Arrays.stream(SquoteConstants.IndexCode.values())
+				.map(i -> webService.getConstituents(i.toString()))
+				.collect(Collectors.toList());
+
+		return futures.stream()
+				.map(f -> thc.util.ConcurrentUtils.collect(f).getBody())
+				.flatMap(Arrays::stream)
+				.distinct()
+				.collect(Collectors.toList());
+	}
+
+	private boolean cached() {
+		return stockPerformanceQuotes != null && expireOn.getTime().compareTo(new Date()) > 0;
+	}
+
+
 }
 

@@ -1,13 +1,5 @@
 package squote.controller.rest;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Optional;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -24,7 +16,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
 import squote.SpringQuoteWebApplication;
 import squote.SquoteConstants;
 import squote.SquoteConstants.IndexCode;
@@ -35,9 +26,16 @@ import squote.domain.StockQuote;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.service.CentralWebQueryService;
-import squote.web.parser.EtnetIndexQuoteParser;
 import squote.web.parser.HSINetParser;
 import thc.util.DateUtils;
+
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.Optional;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -45,6 +43,7 @@ import thc.util.DateUtils;
 @ActiveProfiles("dev")
 public class CreateHoldingControllerIntegrationTest {
 	@Mock CentralWebQueryService mockWebQueryService;
+
 	@Autowired CreateHoldingController controller;
 	@Autowired FundRepository fundRepo;
 	@Autowired HoldingStockRepository holdingRepo;
@@ -74,6 +73,7 @@ public class CreateHoldingControllerIntegrationTest {
 		fundRepo.save(testFund);
 		MockitoAnnotations.initMocks(this);
     	controller.webQueryService = mockWebQueryService;
+
 		this.mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 		
 		hsiQuote = new StockQuote(IndexCode.HSI.name);
@@ -129,16 +129,14 @@ public class CreateHoldingControllerIntegrationTest {
 		scbSellMsg += "平均價HKD7.99\n";
 		scbSellMsg += "O1512110016740"; 
 		expectedException.expect(RuntimeException.class);
-		expectedException.expectMessage("Cannot get hcei");
+		expectedException.expectMessage("Cannot getHistoryPrice hcei");
 		
 		controller.createHoldingFromExecution(scbSellMsg, "0");
 	}
 	
 	@Test	
 	public void postCreateHoldingStock_GivenTodayExeMsg_ShouldCreateHoldingStockUseIndexFromRealtimeQuote() throws Exception {
-		// Given
-        Mockito.when(mockWebQueryService.parse(Mockito.any(EtnetIndexQuoteParser.class))).thenReturn(Optional.of(Arrays.asList(hsiQuote, hsceiQuote)));
-        String scbSellMsg = "渣打:買入6000股883.HK 中國海洋石油\n";
+		String scbSellMsg = "渣打:買入6000股883.HK 中國海洋石油\n";
 		scbSellMsg += "已完成\n";
 		scbSellMsg += "平均價HKD7.99\n";
 		scbSellMsg += "O" + DateUtils.toString(new Date(), "yyMMdd") + "00013235";
@@ -151,7 +149,7 @@ public class CreateHoldingControllerIntegrationTest {
 		assertEquals(6000, holding.getQuantity());
 		assertEquals(new BigDecimal("47940.00"), holding.getGross());
 		assertEquals(SquoteConstants.Side.BUY, holding.getSide());
-		assertEquals(HSCEI_PRICE, holding.getHsce().toString());
+		assertTrue(holding.getHsce().doubleValue() > 6000);
 		assertEquals(totalHoldings+1, holdingRepo.count());
 	}
 	

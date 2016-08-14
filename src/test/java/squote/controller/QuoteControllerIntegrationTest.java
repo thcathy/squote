@@ -24,6 +24,7 @@ import squote.domain.repository.HoldingStockRepository;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -107,5 +108,30 @@ public class QuoteControllerIntegrationTest {
 		
 		assertEquals(6, indexes.size());
 	}
-	
+
+	@Test
+	public void listStocksPerformance_ShouldReturnOne2828QuoteAndAllQuoteSortedByLastYearPercentageChg() throws ExecutionException, InterruptedException {
+		Stopwatch timer = Stopwatch.createStarted();
+
+		List<StockQuote> quotes = quoteController.listStocksPerformance();
+		assertTrue(quotes.size() > 50);
+
+		StockQuote quotes2828 = quotes.stream().filter(q -> "2828".equals(q.getStockCode())).findFirst().get();
+		assertEquals("2828", quotes2828.getStockCode());
+		assertNotEquals(0.0, quotes2828.getLastYearPercentage());
+		assertNotEquals(0.0, quotes2828.getLast2YearPercentage());
+		assertNotEquals(0.0, quotes2828.getLast3YearPercentage());
+
+		for (int i=0; i < quotes.size()-1; i++) {
+			assertTrue("Quotes are sort by last year percentage" , Double.compare(quotes.get(i).getLastYearPercentage(), quotes.get(i+1).getLastYearPercentage()) <=0);
+		}
+
+		log.debug("getStockPerformanceQuotes_ShouldReturnOne2828QuoteAndAllQuoteSortedByLastYearPercentageChg took: {}", timer.stop());
+	}
+
+	@Test
+	public void listStocksPerformance_givenDoubleCall_shouldReturnSameObj() throws ExecutionException, InterruptedException {
+		List<StockQuote> quotes = quoteController.listStocksPerformance();
+		assertEquals(quotes, quoteController.listStocksPerformance());
+	}
 }

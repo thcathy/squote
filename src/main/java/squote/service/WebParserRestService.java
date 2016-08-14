@@ -66,4 +66,17 @@ public class WebParserRestService {
                 .routeParam("yyyymmdd", yyyymmdd)
                 .asObjectAsync(MonetaryBase.class);
     }
+
+    public Future<HttpResponse<String[]>> getConstituents(String index) {
+        return Unirest.get(host + "rest/index/constituents/{index}")
+                .routeParam("index", index)
+                .asObjectAsync(String[].class);
+    }
+
+    public Future<HttpResponse<String>> getHistoryPrice(String code, String preYear) {
+        return Unirest.get(host + "/rest/quote/{code}/price/pre/{preYear}")
+                .routeParam("code", code)
+                .routeParam("preYear", preYear)
+                .asObjectAsync(String.class);
+    }
 }

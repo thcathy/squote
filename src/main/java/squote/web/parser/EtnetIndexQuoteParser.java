@@ -34,7 +34,7 @@ public class EtnetIndexQuoteParser extends WebParser<List<StockQuote>> {
 			indexes.add(retrieveIndexQuote(doc.select("a[href=indexes_detail.php?subtype=HSI]").first()));
 			indexes.add(retrieveIndexQuote(doc.select("a[href=indexes_detail.php?subtype=CEI]").first()));			
 		} catch (Exception e) {
-			log.warn("Cannot get index quote from Etnet", e);
+			log.warn("Cannot getHistoryPrice index quote from Etnet", e);
 		}						
 		return Optional.of(indexes);
 	}	

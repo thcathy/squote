@@ -146,7 +146,7 @@ public class QuoteController extends AbstractController {
 	public String stocksPerfPage() {return page("/stocksperf");}
 	
 	@RequestMapping(method = RequestMethod.GET, value = "/liststocksperf")	
-	public @ResponseBody List<StockQuote> listStocksPerformance() {		
+	public @ResponseBody List<StockQuote> listStocksPerformance() throws ExecutionException, InterruptedException {
 		return stockPerformanceService.getStockPerformanceQuotes();
 	}
 		
