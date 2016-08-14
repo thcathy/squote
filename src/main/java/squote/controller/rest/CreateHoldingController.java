@@ -11,7 +11,6 @@ import squote.domain.Fund;
 import squote.domain.HoldingStock;
 import squote.domain.StockExecutionMessage;
 import squote.domain.repository.HoldingStockRepository;
-import squote.service.CentralWebQueryService;
 import squote.service.UpdateFundByHoldingService;
 import squote.service.WebParserRestService;
 
@@ -28,8 +27,7 @@ import static squote.SquoteConstants.IndexCode.HSCEI;
 @RestController
 public class CreateHoldingController {
 	private static Logger log = LoggerFactory.getLogger(CreateHoldingController.class);
-	
-	@Autowired CentralWebQueryService webQueryService;
+
 	@Autowired HoldingStockRepository holdingRepo;
 	@Autowired UpdateFundByHoldingService updateFundService;
 	@Autowired WebParserRestService webService;

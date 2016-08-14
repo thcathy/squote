@@ -16,16 +16,10 @@ public class SquoteConstants {
 	}
 
 	public enum IndexCode {
-		HSI("Hang Seng Index"),
-		HSCEI("HS China Enterprises Index"),
-		HCCI("HS China Corp Index"),
-		MSCIChina("MSCI China Index"),
-		MSCIHK("MSCI HK Index");
-
-		final public String name;
-
-		IndexCode(String name) {
-			this.name = name;
-		}
+		HSI,
+		HSCEI,
+		HCCI,
+		MSCIChina,
+		MSCIHK;
 	}	
 }

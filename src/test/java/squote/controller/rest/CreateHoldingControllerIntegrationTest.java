@@ -6,8 +6,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
@@ -18,32 +16,23 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import squote.SpringQuoteWebApplication;
 import squote.SquoteConstants;
-import squote.SquoteConstants.IndexCode;
 import squote.SquoteConstants.Side;
 import squote.domain.Fund;
 import squote.domain.HoldingStock;
-import squote.domain.StockQuote;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
-import squote.service.CentralWebQueryService;
-import squote.web.parser.HSINetParser;
 import thc.util.DateUtils;
 
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = SpringQuoteWebApplication.class)
 @ActiveProfiles("dev")
 public class CreateHoldingControllerIntegrationTest {
-	@Mock CentralWebQueryService mockWebQueryService;
-
 	@Autowired CreateHoldingController controller;
 	@Autowired FundRepository fundRepo;
 	@Autowired HoldingStockRepository holdingRepo;
@@ -52,10 +41,6 @@ public class CreateHoldingControllerIntegrationTest {
 	public ExpectedException expectedException = ExpectedException.none();
 	private MockMvc mockMvc;
 	private Fund testFund = createSimpleFund();
-	private StockQuote hsceiQuote;
-	private StockQuote hsiQuote;
-	private static String HSI_PRICE = "25000";
-	private static String HSCEI_PRICE = "12500";
 
 	private Fund createSimpleFund() {
 		Fund f = new Fund("testfund");
@@ -72,15 +57,8 @@ public class CreateHoldingControllerIntegrationTest {
 	public void setup() {
 		fundRepo.save(testFund);
 		MockitoAnnotations.initMocks(this);
-    	controller.webQueryService = mockWebQueryService;
 
 		this.mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
-		
-		hsiQuote = new StockQuote(IndexCode.HSI.name);
-        hsiQuote.setPrice(HSI_PRICE);
-        
-        hsceiQuote = new StockQuote(IndexCode.HSCEI.name);
-        hsceiQuote.setPrice(HSCEI_PRICE);
 	}
 
 	@After
@@ -123,7 +101,6 @@ public class CreateHoldingControllerIntegrationTest {
 	
 	@Test
 	public void createHolding_whenCannotGetHcei_shouldThrowException() {
-		Mockito.when(mockWebQueryService.parse(Mockito.any(HSINetParser.class))).thenReturn(Optional.empty()); 
 		String scbSellMsg = "渣打:買入6000股883.HK 中國海洋石油\n";
 		scbSellMsg += "已完成\n";
 		scbSellMsg += "平均價HKD7.99\n";

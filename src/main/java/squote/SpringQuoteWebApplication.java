@@ -38,10 +38,7 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	@PropertySource({"classpath:application.properties", "classpath:application-dev.properties"})
 	static class Dev {}
 
-	// application properties	
-	@Value("${adminstrator.email}") 				String adminEmail;
-	@Value("${application.email}")					String appEmail;
-	@Value("${centralWebQuery.pool.size}")			int poolSize;
+	// application properties
 	@Value("${http.max_connection:20}") 			int httpMaxConnection;
 	@Value("${http.max_connection_per_route:20}") 	int getHttpMaxConnectionPerRoute;
 	@Value("${APISERVER_HOST}")						String APIServerHost;
@@ -58,10 +55,6 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	}
 
 	// Serivce Beans
-	@Bean
-	public CentralWebQueryService centralWebQueryService() {
-		return new CentralWebQueryService(poolSize);
-	}
 
 	@Bean
 	public WebParserRestService webParserRestService() { return new WebParserRestService(APIServerHost); }

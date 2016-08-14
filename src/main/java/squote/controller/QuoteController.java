@@ -16,7 +16,6 @@ import squote.domain.*;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.StockQueryRepository;
-import squote.service.CentralWebQueryService;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
 import squote.service.WebParserRestService;
@@ -44,7 +43,6 @@ public class QuoteController extends AbstractController {
 	@Autowired StockQueryRepository stockQueryRepo;	
 	@Autowired MarketReportService mktReportService;
 	@Autowired StockPerformanceService stockPerformanceService;
-	@Autowired CentralWebQueryService webQueryService;
 	@Autowired HoldingStockRepository holdingStockRepo;
 	@Autowired FundRepository fundRepo;
 	@Autowired WebParserRestService webParserService;
