@@ -47,7 +47,7 @@
 		<appender-ref ref="restrequest" />
 	</logger>
 
-	<root level="info">
+	<root level="debug">
 		<appender-ref ref="async" />
 		<appender-ref ref="stdout" />
 	</root>
