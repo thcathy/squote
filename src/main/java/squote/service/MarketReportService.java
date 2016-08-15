@@ -74,7 +74,7 @@ public class MarketReportService {
 
 			if (monetaryBase.getTotal() > 0.1 
 				&& !"NA".equals(hsiReports[0].getStockCode())
-				&& !"NA".equals(hsiReports[1].getStockCode()) 
+				&& !"NA".equals(hsiReports[1].getStockCode())) 
 			{
 				report = new MarketDailyReport(yyyymmdd, monetaryBase, hsiReports[0], hsiReports[1]);
 			}
