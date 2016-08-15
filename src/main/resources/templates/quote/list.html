@@ -86,10 +86,10 @@
 			<td th:text="${h.value.moneyBase?.total}"></td>
 			<td th:text="${h.value.moneyBase} ? ${tbase.moneyBase.total - h.value.moneyBase.total}"></td>			
 			<td th:text="${h.value.moneyBase} ? ${#numbers.formatDecimal((tbase.moneyBase.total - h.value.moneyBase.total)/tbase.moneyBase.total*100, 1, 2)}"></td>
-			<td th:text="${h.value.moneyBase} ? ${#numbers.formatDecimal(h.value.hsi.price, 1, 2)}"></td>
+			<td th:text="${h.value.hsi} ? ${#numbers.formatDecimal(h.value.hsi.price, 1, 2)}"></td>
 			<td th:text="${h.value.hsi?.pe}"></td>
 			<td th:text="${h.value.hsi?.yield}"></td>			
-			<td th:text="${h.value.moneyBase} ? ${#numbers.formatDecimal(h.value.hscei.price, 1, 2)}"></td>
+			<td th:text="${h.value.hscei} ? ${#numbers.formatDecimal(h.value.hscei.price, 1, 2)}"></td>
 			<td th:text="${h.value.hscei?.pe}"></td>
 			<td th:text="${h.value.hscei?.yield}"></td>
 		</tr>		
