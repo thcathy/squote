@@ -69,10 +69,13 @@ public class MarketReportService {
 	private MarketDailyReport getMarketDailyReportFromWebAndPersist(String yyyymmdd) {
 		MarketDailyReport report = MarketDailyReport.EMPTY_REPORT;
 		try {
+			StockQuote[] hsiReports = webService.getHSINetReports(yyyymmdd).get().getBody();
 			MonetaryBase monetaryBase = webService.getHKMAReport(yyyymmdd).get().getBody();
 
-			if (monetaryBase.getTotal() > 0.1) {
-				StockQuote[] hsiReports = webService.getHSINetReports(yyyymmdd).get().getBody();
+			if (monetaryBase.getTotal() > 0.1 
+				&& !"NA".equals(hsiReports[0].getStockCode())
+				&& !"NA".equals(hsiReports[1].getStockCode()) 
+			{
 				report = new MarketDailyReport(yyyymmdd, monetaryBase, hsiReports[0], hsiReports[1]);
 			}
 		} catch (Exception e) {
