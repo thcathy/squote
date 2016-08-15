@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.Assert.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static squote.SquoteConstants.NA;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -85,14 +86,12 @@ public class QuoteControllerIntegrationTest {
 				
 		assertTrue(modelMap.get("codes").equals(inputCodes));
 		assertNotNull(modelMap.get("tbase"));
+
 		Map<String, MarketDailyReport> tHistory = (Map<String, MarketDailyReport>) modelMap.get("tHistory");
-		assertTrue(tHistory.containsKey("T-1"));
-		assertTrue(tHistory.containsKey("T-7"));
-		assertTrue(tHistory.containsKey("T-30"));
+		marketDailyReportContainIndexes(tHistory.get("T-1"));
+		marketDailyReportContainIndexes(tHistory.get("T-7"));
+		marketDailyReportContainIndexes(tHistory.get("T-30"));
 		assertTrue(tHistory.containsKey("T-60"));
-		assertNotNull(tHistory.get("T-1"));
-		assertNotNull(tHistory.get("T-7"));
-		assertNotNull(tHistory.get("T-30"));
 		assertNotNull(tHistory.get("T-60"));
 				
 		StockQuote quote1 = quotes.get(0);
@@ -107,6 +106,12 @@ public class QuoteControllerIntegrationTest {
 		assertNotNull(modelMap.get("funds"));
 		
 		assertEquals(6, indexes.size());
+	}
+
+	private void marketDailyReportContainIndexes(MarketDailyReport report) {
+		assertTrue(report.getMoneyBase().getTotal() > 0);
+		assertNotEquals(NA, report.getHsi().getStockCode());
+		assertNotEquals(NA, report.getHscei().getStockCode());
 	}
 
 	@Test
