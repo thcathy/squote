@@ -43,6 +43,7 @@
 
 	<logger name="org.apache" level="info" />
 	<logger name="org.springframework" level="info" />
+	<logger name="org.thymeleaf" level="info" />
 	<logger name="squote.controller.rest.FundController" level="debug">
 		<appender-ref ref="restrequest" />
 	</logger>
