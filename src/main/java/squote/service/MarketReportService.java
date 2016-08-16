@@ -43,7 +43,7 @@ public class MarketReportService {
 					tenPreviousDayStreamFrom(calendar)
 						.filter(DateUtils::notWeekEnd)
 						.map(this::convertToyyyymmdd)
-						.map(c -> getMarketDailyReportFromDb(c).orElse(() -> getMarketDailyReportFromWebAndPersist(c)))
+						.map(c -> getMarketDailyReportFromDb(c).orElseGet(() -> getMarketDailyReportFromWebAndPersist(c)))
 						.filter(x->!x.isEmpty()).findFirst();
 		
 		return reportOption.orElse(new MarketDailyReport(calendar.getTime()));		
