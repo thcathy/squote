@@ -1,6 +1,5 @@
 package squote;
 
-import com.mashape.unirest.http.Unirest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -17,7 +16,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
-import squote.service.*;
+import squote.service.MarketReportService;
+import squote.service.StockPerformanceService;
+import squote.service.UpdateFundByHoldingService;
+import squote.service.WebParserRestService;
 import squote.unirest.UnirestSetup;
 
 import javax.annotation.PostConstruct;
@@ -40,7 +42,8 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 
 	// application properties
 	@Value("${http.max_connection:20}") 			int httpMaxConnection;
-	@Value("${http.max_connection_per_route:20}") 	int getHttpMaxConnectionPerRoute;
+	@Value("${http.max_connection_per_route:20}") 	int httpMaxConnectionPerRoute;
+	@Value("${http.timeout:300000}")				int httpTimeout;
 	@Value("${APISERVER_HOST}")						String APIServerHost;
 	
 	// repository interface
@@ -50,8 +53,10 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 
 	@PostConstruct
 	public void configure() {
+		UnirestSetup.MAX_TOTAL_HTTP_CONNECTION = httpMaxConnection;
+		UnirestSetup.MAX_HTTP_CONNECTION_PER_ROUTE = httpMaxConnectionPerRoute;
+		UnirestSetup.HTTP_TIMEOUT = httpTimeout;
 		UnirestSetup.setupAll();
-		Unirest.setConcurrency(httpMaxConnection,getHttpMaxConnectionPerRoute);
 	}
 
 	// Serivce Beans
