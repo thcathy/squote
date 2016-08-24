@@ -1,4 +1,5 @@
-<html ng-app="list" ng-controller="ListController" xmlns:th="http://www.thymeleaf.org">
+<!DOCTYPE html>
+<html layout:decorator="fragments/layout" ng-app="list" ng-controller="ListController" xmlns:th="http://www.thymeleaf.org">
 <head>
 	<title>forum</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
@@ -24,25 +25,21 @@
 		}
 	</style>
 </head>
-<body>	
-	<div>
-		<table>
-			<tr>
-				<td><a th:href="@{/forum/list/MUSIC/1}">Music</a></td>
-				<td>&nbsp;</td>
-				<td><a th:href="@{/forum/list/MOVIE/1}">Movie</a></td>
-			</tr>
-		</table>
+<body>
+	<div layout:fragment="content">
+		<div>
+			<a class="w3-btn w3-light-grey w3-border" th:href="@{/forum/list/MUSIC/1}">Music</a>
+			<a class="w3-btn w3-light-grey w3-border" th:href="@{/forum/list/MOVIE/1}">Movie</a>
+		</div>
 
-		<table style="font-size: 10px;">
+		<table class="w3-table">
 			<tr th:each="c : ${contents}" th:class="${c.visited}?'visited'" th:classappend="${c.wished}?'wished'">
-				<td><a target="_blank" th:attr="ng-click='visited($event, \''+${c.url}+'\')'" th:href="'http://'+${c.url}"
+				<td class="w3-padding-4"><a target="_blank" th:attr="ng-click='visited($event, \''+${c.url}+'\')'" th:href="'http://'+${c.url}"
 					th:text="${c.title}">title</a></td>
-				<td th:text="${#dates.format(c.createdDate, 'dd-MM-yyyy')}">date</td>
-				<td th:text="${c.source}">source</td>
+				<td class="w3-padding-4" th:text="${#dates.format(c.createdDate, 'dd-MM-yyyy')}">date</td>
+				<td class="w3-padding-4" th:text="${c.source}">source</td>
 			</tr>
 		</table>
 	</div>
-	<footer th:include="fragments/layout :: footer"></footer>
 </body>
 </html>

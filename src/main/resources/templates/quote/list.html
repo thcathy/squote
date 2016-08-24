@@ -1,97 +1,123 @@
-<div id="content" style="font-family: 'Lucida Grande', Verdana, Arial, Sans-Serif; font-size: 10px;">
-	<form>
-		<input type="text"  style="width: 40px;" name="action" /><input type="submit" /><input type="text" style="width: 500px" name="codes" th:value="${codes}" />
-	</form>			
-	<table style="font-size: 10px;">
-		<tr th:each="q : ${indexes}">
-			<td th:text="${q.stockCode}">stock code</td>
-			<td th:text="${q.price}">price</td>
-			<td th:text="${q.change}">change</td>
-			<td th:text="${q.low}+'-'+${q.high}">low - high</td>
-		</tr>	
-	</table>
-	<table style="font-size: 10px;">
-		<tr th:each="q : ${quotes}">			
-			<td th:text="${q.stockCode}">stock code</td>
-			<td th:text="${q.price}" style="text-align: right;">price</td>
-			<td th:text="${q.changeAmount}" style="text-align: right;">change amt</td>
-			<td th:text="${q.change}" style="text-align: right;">change</td>
-			<td th:text="${q.low}+'-'+${q.high}">low - high</td>
-			<td th:text="${q.lastUpdate}">last update</td>		
-		</tr>				
-	</table>	
-	<br/>
-	<table style="font-size: 10px;">
-		<tr th:each="entry : ${holdingMap}">
-			<td th:text="${entry.key.code}">code</td>			
-			<td style="text-align: right;" th:text="${#numbers.formatDecimal(entry.key.relativePerformance(entry.value.priceDoubleValue,hsce.priceDoubleValue), 1, 2)}">price</td>
-			<td style="text-align: right;"><span th:if="${entry.key.side.toString() =='BUY'}" th:text="${#numbers.formatDecimal(entry.key.performance(entry.value.priceDoubleValue), 1, 2)}+'%'"></span></td>
-			<td th:text="${entry.key.side}"></td>
-			<td style="text-align: right;" th:text="${#numbers.formatDecimal(entry.key.gross,1,2)}"></td>
-			<td style="text-align: right;" th:text="${entry.key.quantity}"></td>
-			<td style="text-align: right;" th:text="${#numbers.formatDecimal(entry.key.price, 1, 2)}"></td>
-			<td th:text="${#dates.format(entry.key.date, 'yyyy-MM-dd')}"></td>	
-		</tr>
-		<tr>
-			<td colspan="5"><a th:href="@{/holdingstock/}">Manage holding stock</a></td>
-		</tr>
-	</table>
-	<br/>	
-	<div th:each="f : ${funds}" style="vertical-align: top; display: inline-block;"><div th:replace="fragments/fund :: fundsummary (fund=${f})" >Single fund summary</div></div>
-	<br/>
-	<table cellspacing="4" style="font-size: 10px;">
-		<thead>
-			<tr>
-				<td>day before</td>
-				<td>date</td>
-				<td>indebtedness</td>
-				<td>notes</td>
-				<td>closingBalance</td>
-				<td>exchangeFund</td>
-				<td>total</td>
-				<td>change</td>
-				<td>%</td>
-				<td>HSI</td>
-				<td>pe</td>
-				<td>yield</td>
-				<td>HSCE</td>
-				<td>PE</td>
-				<td>yield</td>
-			</tr>
-		</thead>
-		<tr>
-			<td>Today</td>
-			<td th:text="${tbase.date}"></td>
-			<td th:text="${tbase.moneyBase.indebtedness}"></td>
-			<td th:text="${tbase.moneyBase.notes}"></td>
-			<td th:text="${tbase.moneyBase.closingBalance}"></td>
-			<td th:text="${tbase.moneyBase.exchangeFund}"></td>
-			<td th:text="${tbase.moneyBase.total}"></td>
-			<td></td>
-			<td></td>			
-			<td th:text="${#numbers.formatDecimal(tbase.hsi.price, 1, 2)}"></td>
-			<td th:text="${tbase.hsi.pe}"></td>
-			<td th:text="${tbase.hsi.yield}"></td>			
-			<td th:text="${#numbers.formatDecimal(tbase.hscei.price, 1, 2)}"></td>
-			<td th:text="${tbase.hscei.pe}"></td>
-			<td th:text="${tbase.hscei.yield}"></td>
-		</tr>
-		<tr th:each="h : ${tHistory}">		
-			<td th:text="${h.key}"></td>
-			<td th:text="${h.value.date}"></td>
-			<td th:text="${h.value.moneyBase?.indebtedness}"></td>
-			<td th:text="${h.value.moneyBase?.notes}"></td>
-			<td th:text="${h.value.moneyBase?.closingBalance}"></td>
-			<td th:text="${h.value.moneyBase?.exchangeFund}"></td>
-			<td th:text="${h.value.moneyBase?.total}"></td>
-			<td th:text="${h.value.moneyBase} ? ${tbase.moneyBase.total - h.value.moneyBase.total}"></td>			
-			<td th:text="${h.value.moneyBase} ? ${#numbers.formatDecimal((tbase.moneyBase.total - h.value.moneyBase.total)/tbase.moneyBase.total*100, 1, 2)}"></td>
-			<td th:text="${h.value.hsi} ? ${#numbers.formatDecimal(h.value.hsi.price, 1, 2)}"></td>
-			<td th:text="${h.value.hsi?.pe}"></td>
-			<td th:text="${h.value.hsi?.yield}"></td>			
-			<td th:text="${h.value.hscei} ? ${#numbers.formatDecimal(h.value.hscei.price, 1, 2)}"></td>
-			<td th:text="${h.value.hscei?.pe}"></td>
-			<td th:text="${h.value.hscei?.yield}"></td>
-		</tr>		
-	</table>
+<!DOCTYPE html>
+<html layout:decorator="fragments/layout">
+<head>
+	<title>squote</title>
+</head>
+<body class="w3-small">
+<div layout:fragment="content">
+	<div id="content" style="font-family: 'Lucida Grande', Verdana, Arial, Sans-Serif; font-size: 10px;">
+		<form>
+			<input type="text"  style="width: 40px;" name="action" /><input type="submit" /><input type="text" style="width: 500px" name="codes" th:value="${codes}" />
+		</form>
+		<div class="w3-row">
+			<div class="w3-col m6 l4 w3-padding-12">
+				<table style="font-size: 10px;">
+					<tr th:each="q : ${indexes}">
+						<td th:text="${q.stockCode}">stock code</td>
+						<td th:text="${q.price}">price</td>
+						<td th:text="${q.change}">change</td>
+						<td th:text="${q.low}+'-'+${q.high}">low - high</td>
+					</tr>
+				</table>
+			</div>
+
+			<div class="w3-col m6 l4 w3-padding-12">
+				<table style="font-size: 10px;">
+					<tr th:each="q : ${quotes}">
+						<td th:text="${q.stockCode}">stock code</td>
+						<td th:text="${q.price}">price</td>
+						<td th:text="${q.changeAmount}">change amt</td>
+						<td th:text="${q.change}">change</td>
+						<td th:text="${q.low}+'-'+${q.high}">low - high</td>
+						<td th:text="${q.lastUpdate}">last update</td>
+					</tr>
+				</table>
+			</div>
+
+			<div class="w3-col m6 l4 w3-padding-12">
+				<table style="font-size: 10px;">
+					<tr th:each="entry : ${holdingMap}">
+						<td th:text="${entry.key.code}">code</td>
+						<td th:text="${#numbers.formatDecimal(entry.key.relativePerformance(entry.value.priceDoubleValue,hsce.priceDoubleValue), 1, 2)}">price</td>
+						<td><span th:if="${entry.key.side.toString() =='BUY'}" th:text="${#numbers.formatDecimal(entry.key.performance(entry.value.priceDoubleValue), 1, 2)}+'%'"></span></td>
+						<td th:text="${entry.key.side}"></td>
+						<td th:text="${#numbers.formatDecimal(entry.key.gross,1,2)}"></td>
+						<td th:text="${entry.key.quantity}"></td>
+						<td th:text="${#numbers.formatDecimal(entry.key.price, 1, 2)}"></td>
+						<td th:text="${#dates.format(entry.key.date, 'yyyy-MM-dd')}"></td>
+					</tr>
+					<tr>
+						<td colspan="5"><a th:href="@{/holdingstock/}">Manage holding stock</a></td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		<hr/>
+		<div class="w3-row">
+			<div class="w3-col m4 l3" th:each="f : ${funds}" style="vertical-align: top; display: inline-block;">
+				<div th:replace="fragments/fund :: fundsummary (fund=${f})" >Single fund summary</div>
+			</div>
+		</div>
+		<hr/>
+		<div class="w3-responsive">
+			<table cellspacing="4" style="font-size: 10px;">
+				<thead>
+				<tr>
+					<td>day before</td>
+					<td>date</td>
+					<td>indebtedness</td>
+					<td>notes</td>
+					<td>closingBalance</td>
+					<td>exchangeFund</td>
+					<td>total</td>
+					<td>change</td>
+					<td>%</td>
+					<td>HSI</td>
+					<td>pe</td>
+					<td>yield</td>
+					<td>HSCE</td>
+					<td>PE</td>
+					<td>yield</td>
+				</tr>
+				</thead>
+				<tr>
+					<td>Today</td>
+					<td th:text="${tbase.date}"></td>
+					<td th:text="${tbase.moneyBase.indebtedness}"></td>
+					<td th:text="${tbase.moneyBase.notes}"></td>
+					<td th:text="${tbase.moneyBase.closingBalance}"></td>
+					<td th:text="${tbase.moneyBase.exchangeFund}"></td>
+					<td th:text="${tbase.moneyBase.total}"></td>
+					<td></td>
+					<td></td>
+					<td th:text="${#numbers.formatDecimal(tbase.hsi.price, 1, 2)}"></td>
+					<td th:text="${tbase.hsi.pe}"></td>
+					<td th:text="${tbase.hsi.yield}"></td>
+					<td th:text="${#numbers.formatDecimal(tbase.hscei.price, 1, 2)}"></td>
+					<td th:text="${tbase.hscei.pe}"></td>
+					<td th:text="${tbase.hscei.yield}"></td>
+				</tr>
+				<tr th:each="h : ${tHistory}">
+					<td th:text="${h.key}"></td>
+					<td th:text="${h.value.date}"></td>
+					<td th:text="${h.value.moneyBase?.indebtedness}"></td>
+					<td th:text="${h.value.moneyBase?.notes}"></td>
+					<td th:text="${h.value.moneyBase?.closingBalance}"></td>
+					<td th:text="${h.value.moneyBase?.exchangeFund}"></td>
+					<td th:text="${h.value.moneyBase?.total}"></td>
+					<td th:text="${h.value.moneyBase} ? ${tbase.moneyBase.total - h.value.moneyBase.total}"></td>
+					<td th:text="${h.value.moneyBase} ? ${#numbers.formatDecimal((tbase.moneyBase.total - h.value.moneyBase.total)/tbase.moneyBase.total*100, 1, 2)}"></td>
+					<td th:text="${h.value.hsi} ? ${#numbers.formatDecimal(h.value.hsi.price, 1, 2)}"></td>
+					<td th:text="${h.value.hsi?.pe}"></td>
+					<td th:text="${h.value.hsi?.yield}"></td>
+					<td th:text="${h.value.hscei} ? ${#numbers.formatDecimal(h.value.hscei.price, 1, 2)}"></td>
+					<td th:text="${h.value.hscei?.pe}"></td>
+					<td th:text="${h.value.hscei?.yield}"></td>
+				</tr>
+			</table>
+		</div>
+		<hr/>
+	</div>
 </div>
+</body>
+</html>
