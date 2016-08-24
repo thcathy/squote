@@ -1,13 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html layout:decorator="fragments/layout">
 <head>
-<title>squote</title>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css" />
+	<title>squote</title>
 </head>
 <body class="w3-small">
-	<p th:utext="${@environment.getProperty('build.timestamp')}" class="w3-container"></p>
-	<footer th:include="fragments/layout :: footer"></footer>
+	<div layout:fragment="content">
+		<p th:utext="${@environment.getProperty('build.timestamp')}"></p>
+	</div>
 </body>
 </html>

@@ -1,31 +1,13 @@
 <!DOCTYPE html>
 <html>
-  <body>  
-  	<div th:fragment="footer" class="w3-row">
-		<div class="w3-col w3-third">
-			<ul class="w3-navbar w3-light-grey">
-				<li style="width:100%" class="w3-grey">Forum</li>
-				<li style="width:100%"><a th:href="@{/forum/list/MUSIC/1}">Music</a></li>
-				<li style="width:100%"><a th:href="@{/forum/list/MOVIE/1}">Movie</a></li>
-				<li style="width:100%"><a th:href="@{/forum/wishlist/}">Wish List</a></li>
-			</ul>
-		</div>
-		<div class="w3-col w3-third">
-			<ul class="w3-navbar w3-light-grey">
-				<li style="width:100%" class="w3-grey">Quote</li>
-				<li style="width:100%"><a th:href="@{/quote/list}">Quotes</a></li>
-				<li style="width:100%"><a th:href="@{/quote/single/2828}">Single</a></li>
-				<li style="width:100%"><a th:href="@{/quote/stocksperf}">Stock perf</a></li>
-			</ul>
-		</div>
-		<div class="w3-col w3-third">
-			<ul class="w3-navbar w3-light-grey">
-				<li style="width:100%" class="w3-grey">Entity Mgmt</li>
-				<li style="width:100%"><a th:href="@{/holdingstock/}">List holdings</a></li>
-				<li style="width:100%"><a th:href="@{/fund}">Fund Restful</a></li>
-				<li style="width:100%"><a href="http://squote-web.funfunspell.com">Create holding (Angular 2)</a></li>
-			</ul>
-		</div>
-	</div>
-  </body>
+    <head>
+        <title>squote</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css" />
+    </head>
+    <body class="w3-small">
+        <div layout:fragment="content"></div>
+        <footer th:replace="fragments/footer :: footer"></footer>
+    </body>
 </html>
