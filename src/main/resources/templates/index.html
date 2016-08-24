@@ -1,10 +1,13 @@
+<!DOCTYPE html>
 <html>
 <head>
 <title>squote</title>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css" />
 </head>
-<body style="font-size: 16px;">
-	<p th:utext="${@environment.getProperty('build.timestamp')}"></p>
-	<footer th:include="fragments/layout :: footer"></footer>		
+<body class="w3-small">
+	<p th:utext="${@environment.getProperty('build.timestamp')}" class="w3-container"></p>
+	<footer th:include="fragments/layout :: footer"></footer>
 </body>
 </html>
