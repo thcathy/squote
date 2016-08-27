@@ -54,7 +54,7 @@
 		</div>
 		<hr/>
 		<div class="w3-row">
-			<div class="w3-col m4 l3" th:each="f : ${funds}" style="vertical-align: top; display: inline-block;">
+			<div class="w3-col m6 l4 w3-padding-12" th:each="f : ${funds}" style="vertical-align: top; display: inline-block;">
 				<div th:replace="fragments/fund :: fundsummary (fund=${f})" >Single fund summary</div>
 			</div>
 		</div>
