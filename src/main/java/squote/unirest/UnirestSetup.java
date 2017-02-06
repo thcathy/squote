@@ -5,8 +5,14 @@ import com.mashape.unirest.http.ObjectMapper;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.utils.Base64Coder;
 import org.apache.http.HttpHost;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.HttpAsyncClients;
+import org.apache.http.ssl.SSLContexts;
 import thc.util.ProxySetting;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 
 /**
@@ -20,6 +26,8 @@ public class UnirestSetup {
     public static void setupAll() {
         Unirest.setConcurrency(MAX_TOTAL_HTTP_CONNECTION, MAX_HTTP_CONNECTION_PER_ROUTE);
         Unirest.setTimeouts(HTTP_TIMEOUT, HTTP_TIMEOUT);
+
+
         setDefaultHeaders();
         setupProxy();
         setupJackson();
@@ -65,6 +73,22 @@ public class UnirestSetup {
             Unirest.setProxy(new HttpHost(proxySetting.host, Integer.valueOf(proxySetting.port)));
             Unirest.setDefaultHeader("Authorization", "Basic " + Base64Coder.encodeString(proxySetting.username + ":" + proxySetting.password));
         }
+    }
+
+    private static CloseableHttpAsyncClient createSSLClient() {
+        TrustStrategy acceptingTrustStrategy = (arg0, arg1) -> true;
+
+        SSLContext sslContext = null;
+        try {
+            sslContext = SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return HttpAsyncClients.custom()
+                .setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER)
+                .setSSLContext(sslContext).build();
+
     }
 }
 
