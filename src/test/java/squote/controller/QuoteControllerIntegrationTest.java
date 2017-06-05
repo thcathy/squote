@@ -105,7 +105,7 @@ public class QuoteControllerIntegrationTest {
 		
 		assertNotNull(modelMap.get("funds"));
 		
-		assertEquals(6, indexes.size());
+		assertEquals(11, indexes.size());
 	}
 
 	private void marketDailyReportContainIndexes(MarketDailyReport report) {
