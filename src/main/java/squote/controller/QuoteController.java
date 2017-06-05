@@ -54,7 +54,7 @@ public class QuoteController extends AbstractController {
 	@RequestMapping(value = "/single/{code}")
 	public @ResponseBody StockQuote single(@PathVariable String code) throws Exception {
 		log.debug("single: reqCode [{}]", code);
-		return webParserService.getFullQuote("2").get().getBody();
+		return webParserService.getFullQuote(code).get().getBody();
 	}
 
 	@RequestMapping(value="/list", method = RequestMethod.GET)
