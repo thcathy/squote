@@ -23,15 +23,15 @@ import java.util.concurrent.Future;
 
 @RequestMapping("/rest/forum")
 @RestController
-public class ForumController extends AbstractController {
-	private static Logger log = LoggerFactory.getLogger(ForumController.class);
+public class RestForumController extends AbstractController {
+	private static Logger log = LoggerFactory.getLogger(RestForumController.class);
 
 	@Autowired public WebParserRestService restService;
 	@Autowired public VisitedForumThreadRepository visitedThreadRepo;
 	@Autowired public WishListRepository wishListRepo;
 	
 	@Autowired
-	public ForumController(WebParserRestService restService, VisitedForumThreadRepository visitedThreadRepo, WishListRepository wishListRepo) {
+	public RestForumController(WebParserRestService restService, VisitedForumThreadRepository visitedThreadRepo, WishListRepository wishListRepo) {
 		super("forum");
 		this.restService = restService;
 		this.visitedThreadRepo = visitedThreadRepo;
@@ -60,8 +60,29 @@ public class ForumController extends AbstractController {
     	
     	visitedThreadRepo.save(new VisitedForumThread(url, new Date()));
     }
-    
-    private void isVisited(ForumThread f) {
+
+	@RequestMapping(value = "/wishlist/list")
+	public Iterable<WishList> wishlist()
+	{
+		log.info("get all wishlist");
+		return wishListRepo.findAll();
+	}
+
+	@RequestMapping(value = "/wishlist/add/{text}")
+	public WishList addWishList(@PathVariable String text) {
+		log.info("add {} to wish list", text);
+		return wishListRepo.save(new WishList(text));
+	}
+
+	@RequestMapping(value = "/wishlist/delete/{text}")
+	public Iterable<WishList> delete(@PathVariable String text) {
+		log.info("delete {} from wishlist", text);
+
+		wishListRepo.delete(text);
+		return wishListRepo.findAll();
+	}
+
+	private void isVisited(ForumThread f) {
     	if (visitedThreadRepo.exists(f.getUrl()))
     		f.setVisited(true);
     }
