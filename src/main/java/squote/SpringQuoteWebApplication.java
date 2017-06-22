@@ -10,9 +10,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.filter.CharacterEncodingFilter;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
@@ -91,17 +88,7 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
 		return application.sources(SpringQuoteWebApplication.class);
-	}	
-	
-	@Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurerAdapter() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/rest/**");
-            }
-        };
-    }
+	}
 	
 	/**
 	 * Main function for the whole application
