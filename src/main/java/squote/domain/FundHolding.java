@@ -1,12 +1,12 @@
 package squote.domain;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.Date;
-
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Transient;
 import org.springframework.format.annotation.DateTimeFormat;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Date;
 
 public class FundHolding {	
 	private final String code;
@@ -16,6 +16,7 @@ public class FundHolding {
 	
 	@Transient
 	private BigDecimal spotPrice;
+	@Transient
 	private BigDecimal netProfit;
 		
 	public FundHolding(String code, int quantity, BigDecimal gross, Date date) {
@@ -49,6 +50,9 @@ public class FundHolding {
 	public BigDecimal netProfit() {
 		if (netProfit == null) throw new IllegalStateException("Net Profit hadn't calculated");
 		return this.netProfit; 
+	}
+	public BigDecimal getNetProfit() {
+		return this.netProfit;
 	}
 	public BigDecimal spotPrice() {
 		if (spotPrice == null) throw new IllegalStateException("Spot Price hadn't calculated");

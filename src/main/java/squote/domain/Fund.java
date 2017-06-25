@@ -1,14 +1,14 @@
 package squote.domain;
-import java.math.BigDecimal;
-import java.util.Date;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.format.annotation.DateTimeFormat;
+
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Fund {
 	@Id
@@ -17,6 +17,7 @@ public class Fund {
 	private final @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
 	private final Map<String, FundHolding> holdings = new ConcurrentHashMap<>();
 	private BigDecimal profit = new BigDecimal("0");
+	private BigDecimal netProfit = new BigDecimal("0");
 		
 	public Fund(String name) {
 		this.name = name;
@@ -72,16 +73,18 @@ public class Fund {
 		holdings.forEach((key, value) -> {
 			value.calculateNetProfit(new BigDecimal(quoteMap.get(key).getPrice()));
 		});
+
+		netProfit = holdings.values().stream()
+				.map(v -> v.netProfit())
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
 		
 		return this;
 	}
 
 	public BigDecimal netProfit() {
-		return holdings.values().stream()
-			.map(v -> v.netProfit())			
-	        .reduce(BigDecimal.ZERO, BigDecimal::add);
+		return netProfit;
 	}
-	
+
 	@Transient
 	public BigDecimal gross() {
 		return holdings.values().stream()
@@ -92,8 +95,10 @@ public class Fund {
 	public void setProfit(BigDecimal profit) {
 		this.profit = profit;
 	}
-	
 	public BigDecimal getProfit() {
 		return profit;
 	}
+
+	public BigDecimal getNetProfit() {return netProfit;}
+	public void setNetProfit(BigDecimal netProfit) {this.netProfit = netProfit;}
 }
