@@ -1,19 +1,18 @@
 package squote.controller.rest;
 
-import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.function.BinaryOperator;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import squote.domain.Fund;
 import squote.domain.FundHolding;
 import squote.domain.repository.FundRepository;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.function.BinaryOperator;
 
 @RequestMapping("/rest/fund")
 @RestController
@@ -62,7 +61,7 @@ public class FundController {
 	public String delete(@PathVariable String fundName) {
 		log.debug("Delete fund: {}", fundName);
 		fundRepo.delete(fundName);
-		return "Done";
+		return "{  \"response\" : \"Done\" }";
 	}
 	
 	
