@@ -12,7 +12,8 @@ jobs:
       - save_cache:
           paths:
             - ~/.m2
-          key: maven-{{ checksum "pom.xml" }}      
+          key: maven-{{ checksum "pom.xml" }}     
+      - run: docker run -d -p 27017:27017 mongo
       - run: mvn resources:resources package      
       - store_test_results:
           path: target/surefire-reports      
