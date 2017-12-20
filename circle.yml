@@ -2,8 +2,7 @@ version: 2
 jobs:
   build:    
     working_directory: ~/code
-    docker:
-      - image: circleci/openjdk:8-jdk
+    machine: true
     steps:
       - checkout
       - restore_cache:
@@ -12,8 +11,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.m2
-          key: maven-{{ checksum "pom.xml" }}     
-      - setup_remote_docker
+          key: maven-{{ checksum "pom.xml" }}    
       - run: docker run -d -p 27017:27017 mongo
       - run: mvn resources:resources package      
       - store_test_results:
@@ -26,8 +24,7 @@ jobs:
             - code
   deploy:
     working_directory: ~/code
-    docker:
-      - image: circleci/openjdk:8-jdk
+    machine: true
     steps:      
       - attach_workspace:
           at: ~/
