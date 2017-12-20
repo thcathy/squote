@@ -13,6 +13,7 @@ jobs:
           paths:
             - ~/.m2
           key: maven-{{ checksum "pom.xml" }}     
+      - setup_remote_docker
       - run: docker run -d -p 27017:27017 mongo
       - run: mvn resources:resources package      
       - store_test_results:
