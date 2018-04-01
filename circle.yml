@@ -30,8 +30,9 @@ jobs:
           at: ~/      
       - run: |
           TAG=1.0.$CIRCLE_BUILD_NUM         
-          docker build -t thcathy/squote:$TAG .
+          docker build -t thcathy/squote:latest -t thcathy/squote:$TAG .
           docker login -u $DOCKER_USER -p $DOCKER_PASS
+          docker push thcathy/squote:latest
           docker push thcathy/squote:$TAG
 workflows:
   version: 2
