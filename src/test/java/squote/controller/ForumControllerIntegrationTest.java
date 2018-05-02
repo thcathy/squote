@@ -63,7 +63,7 @@ public class ForumControllerIntegrationTest {
 		assertTrue("Contents are decending ordered by created date", descSortedByDate);
 		contents.forEach(x -> {
 			assert StringUtils.isNotBlank(x.getUrl());			
-			assert StringUtils.isNotBlank(x.getTitle());
+			//assert StringUtils.isNotBlank(x.getTitle()); // title can be blank in a forum
 		});
 
 	}
