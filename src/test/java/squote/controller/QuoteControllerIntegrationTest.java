@@ -123,9 +123,6 @@ public class QuoteControllerIntegrationTest {
 
 		StockQuote quotes2828 = quotes.stream().filter(q -> "2828".equals(q.getStockCode())).findFirst().get();
 		assertEquals("2828", quotes2828.getStockCode());
-		assertNotEquals(0.0, quotes2828.getLastYearPercentage());
-		assertNotEquals(0.0, quotes2828.getLast2YearPercentage());
-		assertNotEquals(0.0, quotes2828.getLast3YearPercentage());
 
 		for (int i=0; i < quotes.size()-1; i++) {
 			assertTrue("Quotes are sort by last year percentage" , Double.compare(quotes.get(i).getLastYearPercentage(), quotes.get(i+1).getLastYearPercentage()) <=0);
