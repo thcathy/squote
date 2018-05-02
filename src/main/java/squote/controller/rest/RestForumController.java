@@ -71,8 +71,9 @@ public class RestForumController extends AbstractController {
 		return wishListRepo.findAll();
 	}
 
-	@RequestMapping(value = "/wishlist/add/{text}")
-	public WishList addWishList(@PathVariable String text) {
+	@RequestMapping(value = "/wishlist/add", method = RequestMethod.POST)
+	@ResponseBody
+	public WishList addWishList(@RequestBody String text) {
 		log.info("add {} to wish list", text);
 		return wishListRepo.save(new WishList(text));
 	}
