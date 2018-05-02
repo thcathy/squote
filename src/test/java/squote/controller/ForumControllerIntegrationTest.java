@@ -71,9 +71,22 @@ public class ForumControllerIntegrationTest {
 	@Test
 	public void visited_GivenUrl_ShouldCreateEntityVisitedForumThread() {
 		String url = "http://www.uwants.com/viewthread.php?tid=18017060&extra=page%3D1";
-		controller.visited(url);
+		String title = "content title";
+		controller.visited(url, title);
 		VisitedForumThread t = visitedRepo.findOne(url);
-		assertEquals(t.getUrl(),url);		
+		assertEquals(t.getUrl(), url);
+		assertEquals(t.getTitle(), title);
+		visitedRepo.delete(t);
+	}
+
+	@Test
+	public void visited_GivenTitle_ShouldCreateEntityVisitedForumThread() {
+		String url = "old url";
+		String title = "content title";
+		controller.visited(url, title);
+		VisitedForumThread t = visitedRepo.findByTitle(title).get(0);
+		assertEquals(t.getUrl(), url);
+		assertEquals(t.getTitle(), title);
 		visitedRepo.delete(t);
 	}
 	

@@ -54,11 +54,11 @@ public class RestForumController extends AbstractController {
     
 	@RequestMapping(value = "/visited", method = RequestMethod.POST)
     @ResponseBody
-    public void visited(@RequestBody String url) {
-    	log.debug("visited: url [{}]", url);
-    	if (StringUtils.isBlank(url)) throw new IllegalArgumentException("input url is blank");
+    public void visited(@RequestBody String url, @RequestBody String title) {
+		log.debug("visited: url [{}], title [{}]", url, title);
+		if (StringUtils.isBlank(url) && StringUtils.isBlank(title)) throw new IllegalArgumentException("input is blank");
     	
-    	visitedThreadRepo.save(new VisitedForumThread(url, new Date()));
+    	visitedThreadRepo.save(new VisitedForumThread(url, title, new Date()));
     }
 
 	@RequestMapping(value = "/wishlist/list")
@@ -84,6 +84,8 @@ public class RestForumController extends AbstractController {
 
 	private void isVisited(ForumThread f) {
     	if (visitedThreadRepo.exists(f.getUrl()))
+    		f.setVisited(true);
+    	else if (visitedThreadRepo.findByTitle(f.getTitle()).size() > 0)
     		f.setVisited(true);
     }
 
