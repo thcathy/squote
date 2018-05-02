@@ -19,6 +19,7 @@ import squote.service.WebParserRestService;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 
 @RequestMapping("/rest/forum")
@@ -54,7 +55,9 @@ public class RestForumController extends AbstractController {
     
 	@RequestMapping(value = "/visited", method = RequestMethod.POST)
     @ResponseBody
-    public void visited(@RequestBody String url, @RequestBody String title) {
+    public void visited(@RequestBody Map<String, String> json) {
+		String url = json.get("url");
+		String title = json.get("title");
 		log.debug("visited: url [{}], title [{}]", url, title);
 		if (StringUtils.isBlank(url) && StringUtils.isBlank(title)) throw new IllegalArgumentException("input is blank");
     	
