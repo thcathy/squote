@@ -78,8 +78,9 @@ public class RestForumController extends AbstractController {
 		return wishListRepo.save(new WishList(text));
 	}
 
-	@RequestMapping(value = "/wishlist/delete/{text}")
-	public Iterable<WishList> delete(@PathVariable String text) {
+	@RequestMapping(value = "/wishlist/delete", method = RequestMethod.POST)
+	@ResponseBody
+	public Iterable<WishList> delete(@RequestBody String text) {
 		log.info("delete {} from wishlist", text);
 
 		wishListRepo.delete(text);
