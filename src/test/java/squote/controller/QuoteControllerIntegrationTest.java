@@ -3,6 +3,7 @@ package squote.controller;
 import com.google.common.base.Stopwatch;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -52,18 +53,6 @@ public class QuoteControllerIntegrationTest {
     public void clearup() {
     	holdingStockRepo.deleteAll();
     }
-    
-    @Test
-	public void getSingleQuote_Given2800_ShouldReturnXmlMessageWithPrice() throws Exception {
-		Stopwatch timer = Stopwatch.createStarted();
-
-		mockMvc.perform(get("/quote/single/2800").characterEncoding(WebConstants.RESPONSE_ENCODING))
-			.andExpect(status().isOk())
-			.andExpect(content().contentType("application/xml"))
-			.andExpect(xpath("/stockQuote[price=NA]").doesNotExist());
-
-		log.debug("getSingleQuote_Given2800_ShouldReturnXmlMessageWithPrice took: {}", timer.stop());
-	}	
 	
 	@SuppressWarnings("unchecked")
 	@Test
@@ -115,6 +104,8 @@ public class QuoteControllerIntegrationTest {
 	}
 
 	@Test
+	@Ignore
+	@Deprecated
 	public void listStocksPerformance_ShouldReturnOne2828QuoteAndAllQuoteSortedByLastYearPercentageChg() throws ExecutionException, InterruptedException {
 		Stopwatch timer = Stopwatch.createStarted();
 
@@ -131,9 +122,4 @@ public class QuoteControllerIntegrationTest {
 		log.debug("getStockPerformanceQuotes_ShouldReturnOne2828QuoteAndAllQuoteSortedByLastYearPercentageChg took: {}", timer.stop());
 	}
 
-	@Test
-	public void listStocksPerformance_givenDoubleCall_shouldReturnSameObj() throws ExecutionException, InterruptedException {
-		List<StockQuote> quotes = quoteController.listStocksPerformance();
-		assertEquals(quotes, quoteController.listStocksPerformance());
-	}
 }

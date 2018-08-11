@@ -52,6 +52,7 @@ public class QuoteController extends AbstractController {
 	}
 	
 	@RequestMapping(value = "/single/{code}")
+	@Deprecated
 	public @ResponseBody StockQuote single(@PathVariable String code) throws Exception {
 		log.debug("single: reqCode [{}]", code);
 		return webParserService.getFullQuote(code).get().getBody();
@@ -143,7 +144,8 @@ public class QuoteController extends AbstractController {
 	@RequestMapping(value = "/stocksperf")	
 	public String stocksPerfPage() {return page("/stocksperf");}
 	
-	@RequestMapping(method = RequestMethod.GET, value = "/liststocksperf")	
+	@RequestMapping(method = RequestMethod.GET, value = "/liststocksperf")
+	@Deprecated
 	public @ResponseBody List<StockQuote> listStocksPerformance() throws ExecutionException, InterruptedException {
 		return stockPerformanceService.getStockPerformanceQuotes();
 	}

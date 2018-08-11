@@ -27,6 +27,7 @@ public class StockPerformanceService {
 		this.webService = webService;
 	}
 
+	@Deprecated
 	public synchronized List<StockQuote> getStockPerformanceQuotes() throws ExecutionException, InterruptedException {
 		if (cached()) return stockPerformanceQuotes;
 
