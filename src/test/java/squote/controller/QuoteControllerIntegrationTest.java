@@ -1,10 +1,7 @@
 package squote.controller;
  
 import com.google.common.base.Stopwatch;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,8 +90,8 @@ public class QuoteControllerIntegrationTest {
 		assertEquals(IndexCode.HSCEI.toString(), hscei.getStockCode());
 		
 		assertNotNull(modelMap.get("funds"));
-		
-		assertEquals(11, indexes.size());
+
+		assertTrue(indexes.size() > 8);
 	}
 
 	private void marketDailyReportContainIndexes(MarketDailyReport report) {
