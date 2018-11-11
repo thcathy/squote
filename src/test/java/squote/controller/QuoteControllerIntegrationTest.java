@@ -53,6 +53,8 @@ public class QuoteControllerIntegrationTest {
 	
 	@SuppressWarnings("unchecked")
 	@Test
+	@Ignore
+	@Deprecated
 	public void list_GivenStockCodes_ShouldReturnQuotesWithStocksAndIndexesAndMarketDailyReportHistories() throws Exception {
 		// Given
 		final String inputCodes = "753,2828,2800,3046,2822,1138,1088,883,2883,489,2333,916,2318,5";
