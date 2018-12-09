@@ -50,7 +50,7 @@ public class WebParserRestService {
     }
 
     public Future<HttpResponse<StockQuote[]>> getRealTimeQuotes(Collection<String> codes) {
-        return Unirest.get(host + "rest/quote/realtime/list/{codes}?source=aastocks")
+        return Unirest.get(host + "rest/quote/realtime/list/{codes}")
                 .routeParam("codes", StringUtils.join(codes, ","))
                 .asObjectAsync(StockQuote[].class);
     }
