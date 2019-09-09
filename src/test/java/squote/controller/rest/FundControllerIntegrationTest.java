@@ -1,4 +1,4 @@
-package squote.controller;
+package squote.controller.rest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

@@ -1,49 +1,23 @@
 <configuration>
 
-	<appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>log/squote.log</file>
-		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<!-- daily rollover -->
-			<fileNamePattern>log/squote.%d{yyyy-MM-dd}.log</fileNamePattern>
-			<maxHistory>30</maxHistory>
-		</rollingPolicy>
-
-		<encoder>
-			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-		</encoder>
-	</appender>
-	
-	<appender name="restrequest" class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>log/rest.log</file>
-		
-		<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-      		<fileNamePattern>rest.%i.log</fileNamePattern>
-      		<minIndex>1</minIndex>
-      		<maxIndex>3</maxIndex>
-    	</rollingPolicy>
-
-	    <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-	      <maxFileSize>10MB</maxFileSize>
-	    </triggeringPolicy>
-		
-		<encoder>
-			<pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
-		</encoder>
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<Pattern>
+				%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n
+			</Pattern>
+		</layout>
 	</appender>
 
-	<appender name="async" class="ch.qos.logback.classic.AsyncAppender">
-		<appender-ref ref="file" />
-	</appender>
-
+	<logger name="me.thc" level="debug" additivity="false">
+		<appender-ref ref="CONSOLE"/>
+	</logger>
 	<logger name="org.apache" level="info" />
 	<logger name="org.springframework" level="info" />
-	<logger name="org.thymeleaf" level="info" />
-	<logger name="org.mongodb" level="info" />
-	<logger name="squote.controller.rest.FundController" level="debug">
-		<appender-ref ref="restrequest" />
-	</logger>
+	<logger name="org.asynchttpclient" level="info" />
+	<logger name="thc" level="debug" />
 
-	<root level="debug">
-		<appender-ref ref="async" />
+	<root level="info">
+		<appender-ref ref="CONSOLE"/>
 	</root>
+
 </configuration>

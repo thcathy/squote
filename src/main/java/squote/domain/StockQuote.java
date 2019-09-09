@@ -5,7 +5,6 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import thc.util.NumberUtils;
 
-import javax.xml.bind.annotation.XmlRootElement;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
@@ -13,7 +12,6 @@ import java.util.Map;
 
 import static squote.SquoteConstants.NA;
 
-@XmlRootElement
 public class StockQuote {
 	private String stockCode = "";
 	private String stockName = "";

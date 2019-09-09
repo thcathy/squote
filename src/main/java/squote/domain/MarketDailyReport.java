@@ -3,13 +3,11 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Id;
 
-import javax.validation.constraints.Min;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class MarketDailyReport {
 	@Id
-	@Min(20120000)
 	private int date;
 		
 	private MonetaryBase moneyBase;

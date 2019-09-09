@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
-import squote.controller.AbstractController;
 import squote.domain.ForumThread;
 import squote.domain.VisitedForumThread;
 import squote.domain.WishList;
@@ -24,7 +23,7 @@ import java.util.concurrent.Future;
 
 @RequestMapping("/rest/forum")
 @RestController
-public class RestForumController extends AbstractController {
+public class RestForumController {
 	private static Logger log = LoggerFactory.getLogger(RestForumController.class);
 
 	@Autowired public WebParserRestService restService;
@@ -33,7 +32,6 @@ public class RestForumController extends AbstractController {
 	
 	@Autowired
 	public RestForumController(WebParserRestService restService, VisitedForumThreadRepository visitedThreadRepo, WishListRepository wishListRepo) {
-		super("forum");
 		this.restService = restService;
 		this.visitedThreadRepo = visitedThreadRepo;
 		this.wishListRepo = wishListRepo;

@@ -3,12 +3,12 @@ package squote;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.web.support.SpringBootServletInitializer;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.*;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.filter.CharacterEncodingFilter;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
@@ -19,14 +19,10 @@ import squote.service.UpdateFundByHoldingService;
 import squote.service.WebParserRestService;
 import squote.unirest.UnirestSetup;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.Filter;
 
-@Configuration
-@EnableAutoConfiguration
-@ComponentScan
-@EnableScheduling
-public class SpringQuoteWebApplication extends SpringBootServletInitializer {
+@SpringBootApplication
+public class SpringQuoteWebApplication {
 
 	@Configuration
 	@PropertySource("classpath:application.properties")
@@ -48,8 +44,7 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	@Autowired private MarketDailyReportRepository marketDailyReportRepo;
 	@Autowired private FundRepository fundRepo;
 
-	@PostConstruct
-	public void configure() {
+	public void init() {
 		UnirestSetup.MAX_TOTAL_HTTP_CONNECTION = httpMaxConnection;
 		UnirestSetup.MAX_HTTP_CONNECTION_PER_ROUTE = httpMaxConnectionPerRoute;
 		UnirestSetup.HTTP_TIMEOUT = httpTimeout;
@@ -84,17 +79,13 @@ public class SpringQuoteWebApplication extends SpringBootServletInitializer {
 	public UpdateFundByHoldingService updateFundByHoldingService() {
 		return new UpdateFundByHoldingService(fundRepo, holdingStockRepo);
 	}
-
-	@Override
-	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-		return application.sources(SpringQuoteWebApplication.class);
-	}
 	
 	/**
 	 * Main function for the whole application
 	 */
 	public static void main(String[] args) throws Exception {
 		ConfigurableApplicationContext c = SpringApplication.run(SpringQuoteWebApplication.class, args);
+		c.getBean(SpringQuoteWebApplication.class).init();
 	}
 
 }

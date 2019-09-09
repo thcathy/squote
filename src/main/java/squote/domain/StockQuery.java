@@ -1,8 +1,6 @@
 package squote.domain;
 import java.math.BigInteger;
 
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Id;
@@ -12,8 +10,7 @@ public class StockQuery {
     private BigInteger id;
 	
 	private int key;
-	
-	@NotNull
+
 	private String delimitedStocks;
 	
 	public StockQuery(String delimitedStocks) { this.delimitedStocks = delimitedStocks; }
