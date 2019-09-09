@@ -2,7 +2,12 @@ version: 2
 jobs:
   build:    
     working_directory: ~/code
-    machine: true
+    docker:
+      - image: circleci/openjdk:10-jdk-node-browsers
+        environment:
+          TERM: dumb
+    environment:
+        JVM_OPTS: -Xmx3200m
     steps:
       - checkout
       - restore_cache:
@@ -24,7 +29,12 @@ jobs:
             - code
   deploy:
     working_directory: ~/code
-    machine: true
+    docker:
+      - image: circleci/openjdk:11-jdk-node-browsers
+        environment:
+          TERM: dumb
+      environment:
+        JVM_OPTS: -Xmx3200m
     steps:      
       - attach_workspace:
           at: ~/      
