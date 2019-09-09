@@ -131,17 +131,24 @@ public class RestStockController {
 		return resultMap;
 	}
 
-	private Map<String, StockQuote> collectAllStockQuotes(
+	Map<String, StockQuote> collectAllStockQuotes(
 			StockQuote[] quotes) {
 		return Arrays.stream(quotes)
-				.collect(Collectors.toMap(StockQuote::getStockCode, quote->quote));
+				.collect(Collectors.toMap(
+						StockQuote::getStockCode,
+						quote->quote,
+						(quote1, quote2) -> {
+							log.warn("duplicate quote found: {}", quote2);
+							return quote1;
+						}
+				));
 	}
 
 	private Map<HoldingStock, StockQuote> collectHoldingStockWithQuotesAsMap(
 			List<HoldingStock> holdingStocks, Map<String, StockQuote> allQuotes) {
 		Map<HoldingStock, StockQuote> resultMap = new LinkedHashMap<>();
 		holdingStocks.stream()
-				.sorted( (s1, s2) -> s1.getDate().compareTo(s2.getDate()) )
+				.sorted(Comparator.comparing(HoldingStock::getDate))
 				.forEach( s -> resultMap.put(s, allQuotes.get(s.getCode())) );
 
 		return resultMap;
