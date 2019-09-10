@@ -28,7 +28,7 @@ jobs:
   deploy:
     working_directory: ~/code
     docker:
-      - image: circleci/openjdk:11-jdk-node-browsers
+      - image: circleci/openjdk:10-jdk-node-browsers
     steps:      
       - attach_workspace:
           at: ~/
