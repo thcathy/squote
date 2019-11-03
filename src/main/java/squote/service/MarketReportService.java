@@ -3,7 +3,6 @@ package squote.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import squote.domain.MarketDailyReport;
-import squote.domain.MonetaryBase;
 import squote.domain.StockQuote;
 import squote.domain.repository.MarketDailyReportRepository;
 import thc.util.DateUtils;
@@ -70,13 +69,10 @@ public class MarketReportService {
 		MarketDailyReport report = MarketDailyReport.EMPTY_REPORT;
 		try {
 			StockQuote[] hsiReports = webService.getHSINetReports(yyyymmdd).get().getBody();
-			MonetaryBase monetaryBase = webService.getHKMAReport(yyyymmdd).get().getBody();
 
-			if (monetaryBase.getTotal() > 0.1 
-				&& !"NA".equals(hsiReports[0].getStockCode())
-				&& !"NA".equals(hsiReports[1].getStockCode())) 
+			if (!"NA".equals(hsiReports[0].getStockCode()) && !"NA".equals(hsiReports[1].getStockCode()))
 			{
-				report = new MarketDailyReport(yyyymmdd, monetaryBase, hsiReports[0], hsiReports[1]);
+				report = new MarketDailyReport(Integer.valueOf(yyyymmdd), hsiReports[0], hsiReports[1]);
 			}
 		} catch (Exception e) {
 			log.debug("Exception when getting market daily report from web", e);

@@ -9,8 +9,7 @@ import java.util.Date;
 public class MarketDailyReport {
 	@Id
 	private int date;
-		
-	private MonetaryBase moneyBase;
+
 	private StockQuote hsi;
 	private StockQuote hscei;
 	
@@ -19,17 +18,11 @@ public class MarketDailyReport {
 	public MarketDailyReport() {}
 
 	public MarketDailyReport(Date date) { this.date = formatDate(date); }
-	public MarketDailyReport(Date date, MonetaryBase moneyBase, StockQuote hsiQuote, StockQuote hsceQuote) {
-		this(date);
-		this.moneyBase = moneyBase;
-		this.hsi = hsiQuote;
-		this.hscei = hsceQuote;
-	}
-	public MarketDailyReport(String yyyymmdd, MonetaryBase moneyBase, StockQuote hsiQuote, StockQuote hsceQuote) {
-		this.date = Integer.valueOf(yyyymmdd);
-		this.moneyBase = moneyBase;
-		this.hsi = hsiQuote;
-		this.hscei = hsceQuote;
+
+	public MarketDailyReport(int yyyymmdd, StockQuote hsi, StockQuote hscei) {
+		this.date = yyyymmdd;
+		this.hsi = hsi;
+		this.hscei = hscei;
 	}
 
 	public static int formatDate(Date date) { return Integer.valueOf(new SimpleDateFormat("yyyyMMdd").format(date)); }
@@ -49,14 +42,6 @@ public class MarketDailyReport {
 
 	public void setDate(int date) {
         this.date = date;
-    }
-
-	public MonetaryBase getMoneyBase() {
-        return this.moneyBase;
-    }
-
-	public void setMoneyBase(MonetaryBase moneyBase) {
-        this.moneyBase = moneyBase;
     }
 
 	public StockQuote getHsi() {
