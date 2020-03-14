@@ -39,10 +39,6 @@ jobs:
           docker login -u $DOCKER_USER -p $DOCKER_PASS
           docker push thcathy/squote:latest
           docker push thcathy/squote:$TAG
-      - run:
-          name: Deploy Over SSH
-          command: |
-            scp target/squote.jar $SCP_PATH
 workflows:
   version: 2
   commit-workflow:
