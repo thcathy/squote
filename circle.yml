@@ -29,7 +29,10 @@ jobs:
     working_directory: ~/code
     docker:
       - image: circleci/openjdk:8-jdk
-    steps:      
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "c0:7e:7f:67:80:6d:79:34:e6:19:4a:3e:fe:8c:2f:69"
       - attach_workspace:
           at: ~/
       - setup_remote_docker
@@ -39,6 +42,10 @@ jobs:
           docker login -u $DOCKER_USER -p $DOCKER_PASS
           docker push thcathy/squote:latest
           docker push thcathy/squote:$TAG
+      - run:
+          name: Deploy Over SSH
+          command: |
+            scp target/squote.jar $SSH_USER@$SSH_HOST:$SSH_PATH
 workflows:
   version: 2
   commit-workflow:
