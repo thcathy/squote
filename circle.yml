@@ -35,7 +35,7 @@ jobs:
       - setup_remote_docker
       - run: |
           TAG=1.0.$CIRCLE_BUILD_NUM
-          docker build -t thcathy/squote:latest -t thcathy/squote:$TAG -f ./Dockerfile
+          docker build -t thcathy/squote:latest -t thcathy/squote:$TAG -f ./Dockerfile .
           docker login -u $DOCKER_USER -p $DOCKER_PASS
           docker push thcathy/squote:latest
           docker push thcathy/squote:$TAG
@@ -43,7 +43,7 @@ jobs:
           IMAGE_NAME=squote-arm64
           TAG=1.0.$CIRCLE_BUILD_NUM
           docker run --rm --privileged multiarch/qemu-user-static:register --reset
-          docker build -t thcathy/$IMAGE_NAME:latest -t thcathy/$IMAGE_NAME:$TAG -f ./Dockerfile-arm64
+          docker build -t thcathy/$IMAGE_NAME:latest -t thcathy/$IMAGE_NAME:$TAG -f ./Dockerfile-arm64 .
           docker push thcathy/$IMAGE_NAME:latest
           docker push thcathy/$IMAGE_NAME:$TAG
 workflows:
