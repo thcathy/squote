@@ -1,3 +1,4 @@
+FROM multiarch/qemu-user-static:x86_64-aarch64
 FROM arm64v8/openjdk:11-jdk
 ADD target/squote.jar /app.jar
 ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-Xmx1g","-jar","/app.jar"]
