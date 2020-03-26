@@ -23,6 +23,9 @@ matrix:
        - DOCKER_FILE=./Dockerfile-arm64
        - IMAGE_NAME=squote-arm64
 
+before_install:
+  - chmod +x mvnw
+
 before_script:
   - docker run -d -p 27017:27017 mongo
 
