@@ -3,9 +3,6 @@ os: linux
 jdk: openjdk8
 services:
   - docker
-arch:
-  - amd64
-  - arm64
 matrix:
   include:
    - os: linux
@@ -16,7 +13,7 @@ matrix:
    - os: linux
      arch: arm64
      env:
-       - DOCKER_FILE=./Dockerfile.arm64
+       - DOCKER_FILE=./Dockerfile-arm64
        - IMAGE_NAME=squote-arm64
 cache:
   directories:
