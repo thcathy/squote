@@ -32,6 +32,7 @@ script:
   - ./mvnw resources:resources package
 
 deploy:
+  skip_cleanup: true
   provider: script
   script:
     - docker build -t thcathy/${IMAGE_NAME}:latest -t thcathy/${IMAGE_NAME}:$TRAVIS_BUILD_NUMBER -f ${DOCKER_FILE} .
