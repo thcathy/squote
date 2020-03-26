@@ -13,12 +13,12 @@ matrix:
    - os: linux
      arch: amd64
      env:
-       - DOCKER_FILE=./Dockerfile
+       - DOCKER_FILE=./docker/Dockerfile
        - IMAGE_NAME=squote
    - os: linux
      arch: arm64
      env:
-       - DOCKER_FILE=./Dockerfile-arm64
+       - DOCKER_FILE=./docker/Dockerfile-arm64
        - IMAGE_NAME=squote-arm64
 
 before_install:
@@ -32,12 +32,8 @@ script:
   - ./mvnw resources:resources package
 
 deploy:
-  skip_cleanup: true
+  cleanup: false
   provider: script
-  script:
-    - docker build -t thcathy/${IMAGE_NAME}:latest -t thcathy/${IMAGE_NAME}:$TRAVIS_BUILD_NUMBER -f ${DOCKER_FILE} .
-    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-    - docker push thcathy/${IMAGE_NAME}:latest
-    - docker push thcathy/${IMAGE_NAME}:$TRAVIS_BUILD_NUMBER
+  script: docker/docker_build_push.sh
   on:
     branch: travisci-arm64
