@@ -3,6 +3,13 @@ os: linux
 jdk: openjdk8
 services:
   - docker
+
+cache:
+  directories:
+    - "$HOME/.m2"
+env:
+  - MONGO_HOST=localhost:27017
+
 matrix:
   include:
    - os: linux
@@ -15,19 +22,13 @@ matrix:
      env:
        - DOCKER_FILE=./Dockerfile-arm64
        - IMAGE_NAME=squote-arm64
-cache:
-  directories:
-    - "$HOME/.m2"
-
-env:
-  - MONGO_HOST=localhost:27017
 
 before_script:
   - docker run -d -p 27017:27017 mongo
 
 script:
-  - mvn resources:resources package
-  
+  - ./mvnw resources:resources package
+
 deploy:
   provider: script
   script:
