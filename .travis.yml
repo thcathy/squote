@@ -1,20 +1,30 @@
 language: java
+os: linux
+jdk: openjdk8
+services:
+  - docker
 
 cache:
   directories:
     - "$HOME/.m2"
-    
-jdk: openjdk8
-
-services:
-  - docker
 
 env:
   - MONGO_HOST=localhost:27017
-  
+
 before_script:
   - docker run -d -p 27017:27017 mongo
 
+script:
+  - mvn resources:resources package
+
+before_deploy:
+  - docker build -t thcathy/squote:latest -t thcathy/squote:$TAG -f ./Dockerfile
+  - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+
 deploy:
+  provider: script
+  script:
+    - docker push thcathy/squote:latest
+    - docker push thcathy/squote:$TAG
   on:
     branch: master
