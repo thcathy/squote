@@ -7,8 +7,6 @@ services:
 cache:
   directories:
     - "$HOME/.m2"
-env:
-  - MONGO_HOST=localhost:27017
 
 matrix:
   include:
@@ -30,6 +28,7 @@ before_script:
   - docker run -d -p 27017:27017 mongo
 
 script:
+  - export MONGO_HOST=localhost:27017
   - ./mvnw resources:resources package
 
 deploy:
