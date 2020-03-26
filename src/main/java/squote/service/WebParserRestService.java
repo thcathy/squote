@@ -21,7 +21,7 @@ public class WebParserRestService {
     public WebParserRestService(String apiHost) {
         if (Strings.isNullOrEmpty(apiHost)) throw new IllegalArgumentException("Cannot create WebParserRestService without API server's host");
 
-        if (!apiHost.startsWith("http://") || !apiHost.startsWith("https://")) apiHost = "http://" + apiHost;
+        if (!(apiHost.startsWith("http://") || apiHost.startsWith("https://"))) apiHost = "http://" + apiHost;
         if (!apiHost.endsWith("/")) apiHost = apiHost + "/";
         this.host = apiHost;
     }
