@@ -32,8 +32,8 @@ script:
   - ./mvnw resources:resources package
 
 deploy:
-  cleanup: false
+  skip_cleanup: true
   provider: script
-  script: bash docker/docker_build_push
+  script: bash docker/docker_build_push.sh
   on:
     branch: travisci-arm64
