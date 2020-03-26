@@ -36,4 +36,4 @@ deploy:
   provider: script
   script: bash docker/docker_build_push.sh
   on:
-    branch: travisci-arm64
+    branch: master
