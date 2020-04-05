@@ -13,7 +13,7 @@ docker run thcathy/squote
 
 ##### Developed with support from Jetbrains
 
-![Jetbrains](https://thcathy.github.com/squote/assets/images/jetbrains-variant-4.png)
+![Jetbrains](https://github.com/thcathy/squote/blob/master/assets/image/jetbrains-variant-4.png)
 
 [JetBrains]( https://www.jetbrains.com/?from=esl-ionic )
 
