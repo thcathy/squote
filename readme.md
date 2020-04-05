@@ -1,8 +1,3 @@
-How to test in eclipse
-
-Start SpringQuoteWebApplication.java with VM args:
--Dserver.port=8090 -Dhttp.proxyHost= -Dhttp.proxyPort= -Dhttp.proxyUsername= -Dhttp.proxyPassword= -javaagent:C:\dev\app\springloaded\springloaded-1.2.1.RELEASE.jar -noverify -Dspring.thymeleaf.cache=false -Dspring.profiles.active=dev
-
 ### Squote
 A personal java web application running on JRE 8.
 
@@ -15,3 +10,10 @@ docker run thcathy/squote
   -p <host's port>:8090 \
   --link <mongodb container name> \
 ```
+
+##### Developed with support from Jetbrains
+
+![Jetbrains](https://thcathy.github.com/squote/assets/images/jetbrains-variant-4.png)
+
+[JetBrains]( https://www.jetbrains.com/?from=esl-ionic )
+
