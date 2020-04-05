@@ -1,8 +1,11 @@
 package squote.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.lang.Collections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -26,6 +29,8 @@ import java.util.stream.Collectors;
 public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
     public static final String CLAIM_ROLE_KEY = "https://squote.funfunspell.com/roles";
 
+    private static Logger log = LoggerFactory.getLogger(JWTAuthorizationFilter.class);
+
     private PublicKey key;
 
     public JWTAuthorizationFilter(AuthenticationManager authManager, String certificatePath) {
@@ -38,7 +43,7 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
             X509Certificate cer = (X509Certificate) fact.generateCertificate(is);
             this.key = cer.getPublicKey();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("error in reading certificate: ", e);
         }
     }
 
@@ -76,8 +81,10 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
                 }
                 return null;
             }
+        } catch (ExpiredJwtException e) {
+            log.info(e.toString());
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error in processing JWT:", e);
         }
         return null;
     }
