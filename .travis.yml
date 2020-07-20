@@ -15,11 +15,6 @@ matrix:
      env:
        - DOCKER_FILE=./docker/Dockerfile
        - IMAGE_NAME=squote
-   - os: linux
-     arch: arm64
-     env:
-       - DOCKER_FILE=./docker/Dockerfile-arm64
-       - IMAGE_NAME=squote-arm64
 
 before_install:
   - chmod +x mvnw
