@@ -19,7 +19,6 @@ public class SquoteConstants {
 		HSI,
 		HSCEI,
 		HCCI,
-		MSCIChina,
-		MSCIHK;
-	}	
+		MSCIHK
+	}
 }
