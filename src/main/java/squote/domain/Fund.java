@@ -18,12 +18,18 @@ public class Fund {
 	private final Map<String, FundHolding> holdings = new ConcurrentHashMap<>();
 	private BigDecimal profit = new BigDecimal("0");
 	private BigDecimal netProfit = new BigDecimal("0");
+	private BigDecimal cashoutAmount = new BigDecimal("0");
 		
 	public Fund(String name) {
 		this.name = name;
 		this.date = new Date();
 	}
-		
+
+	public Fund cashout(BigDecimal value) {
+		cashoutAmount = cashoutAmount.add(value);
+		return this;
+	}
+
 	public void buyStock(String code, int qty, BigDecimal gross) {		
 		if (holdings.containsKey(code)) {
 			holdings.put(code, increaseHolding(holdings.get(code), qty, gross));
@@ -101,4 +107,10 @@ public class Fund {
 
 	public BigDecimal getNetProfit() {return netProfit;}
 	public void setNetProfit(BigDecimal netProfit) {this.netProfit = netProfit;}
+
+	public BigDecimal getCashoutAmount() { return cashoutAmount; }
+	public Fund setCashoutAmount(BigDecimal cashoutAmount) {
+		this.cashoutAmount = cashoutAmount;
+		return this;
+	}
 }

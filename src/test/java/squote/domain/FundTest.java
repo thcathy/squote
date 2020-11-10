@@ -1,12 +1,12 @@
 package squote.domain;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 public class FundTest {
 	public static String FUND_NAME = "Winner";
@@ -48,5 +48,12 @@ public class FundTest {
 		
 		assertEquals(new BigDecimal("24.9195"), selectedHolding.getPrice());
 		assertEquals(new BigDecimal("24.9195"), returnHolding.getPrice());		
+	}
+
+	@Test
+	public void cashOut_givenValue_ShouldAddToAmount() {
+		Fund f = createSimpleFund();
+		f.cashout(new BigDecimal("234.1"));
+		assertEquals(new BigDecimal("234.1"), f.getCashoutAmount());
 	}
 }

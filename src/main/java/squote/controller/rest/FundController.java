@@ -107,6 +107,16 @@ public class FundController {
 		log.debug("Updated Fund: {}", fund);
 		return newProfit;
 	}
+
+	@RequestMapping(value = "/{fundName}/cashout/{amount}")
+	public Fund addProfit(@PathVariable String fundName, @PathVariable String amount) {
+		log.debug("cashout {} from fund {}", amount, fundName);
+		Fund fund = fundRepo.findOne(fundName);
+		fund.cashout(new BigDecimal(amount));
+		fundRepo.save(fund);
+		log.debug("Updated Fund: {}", fund);
+		return fund;
+	}
 	
 	@RequestMapping(value = "/getall")
 	public Iterable<Fund> getAll() {

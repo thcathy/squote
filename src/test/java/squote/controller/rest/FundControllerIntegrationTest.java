@@ -1,12 +1,5 @@
 package squote.controller.rest;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.math.BigDecimal;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,12 +11,17 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
 import squote.SpringQuoteWebApplication;
-import squote.controller.rest.FundController;
 import squote.domain.Fund;
 import squote.domain.FundHolding;
 import squote.domain.repository.FundRepository;
+
+import java.math.BigDecimal;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -155,5 +153,14 @@ public class FundControllerIntegrationTest {
 		
 		assertTrue(result.contains("newfund"));
 		assertTrue(result.contains("testfund"));
+	}
+
+	@Test
+	public void cashout_shouldAddToAmount() throws Exception {
+		mockMvc.perform(get("/rest/fund/testfund/cashout/123.456/"))
+				.andExpect(status().isOk());
+
+		Fund fund = fundRepo.findOne("testfund");
+		assertEquals(new BigDecimal("123.456"), fund.getCashoutAmount());
 	}
 }
