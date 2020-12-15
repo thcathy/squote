@@ -15,8 +15,9 @@
 	<logger name="org.springframework" level="info" />
 	<logger name="org.asynchttpclient" level="info" />
 	<logger name="thc" level="debug" />
+	<logger name="squote" level="debug" />
 
-	<root level="debug">
+	<root level="info">
 		<appender-ref ref="CONSOLE"/>
 	</root>
 
