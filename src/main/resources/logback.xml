@@ -16,7 +16,7 @@
 	<logger name="org.asynchttpclient" level="info" />
 	<logger name="thc" level="debug" />
 
-	<root level="info">
+	<root level="debug">
 		<appender-ref ref="CONSOLE"/>
 	</root>
 
