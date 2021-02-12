@@ -23,7 +23,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@Value(value = "${auth0.cert}")
 	private String certificatePath;
 
-	@Value(value = "${auth0.audience}")
+	@Value(value = "${AUTH0_AUDIENCE}")
 	private String jwtAudience;
 
 	@Override

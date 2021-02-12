@@ -7,7 +7,7 @@ jobs:
       - image: circleci/mongo
     environment:
       JVM_OPTS: -Xmx3200m
-      auth0.audience: "dummy"
+      AUTH0_AUDIENCE: "dummy"
     steps:
       - checkout
       - restore_cache:
