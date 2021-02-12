@@ -7,12 +7,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 import squote.domain.*;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.StockQueryRepository;
+import squote.security.AuthenticationService;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
 import squote.service.WebParserRestService;
@@ -30,29 +30,28 @@ import static squote.service.MarketReportService.pre;
 public class RestStockController {
 	private static final String DEFAULT_CODES = "2828";
 	public static final String CODE_SEPARATOR = ",";
-	private static final int STOCK_QUERY_KEY = 1;
 
 	private static Logger log = LoggerFactory.getLogger(RestStockController.class);
 
-	@Autowired HoldingStockRepository holdingStockRepository;
 	@Autowired StockPerformanceService stockPerformanceService;
 	@Autowired MarketReportService marketReportService;
 	@Autowired WebParserRestService webParserService;
 	@Autowired StockQueryRepository stockQueryRepo;
 	@Autowired HoldingStockRepository holdingStockRepo;
 	@Autowired FundRepository fundRepo;
+	@Autowired AuthenticationService authenticationService;
 
 	@RequestMapping("/holding/list")
 	public Iterable<HoldingStock> listHolding() {
 		log.info("list holding");
-		return holdingStockRepository.findAll(new Sort("date"));
+		return holdingStockRepo.findByUserIdOrderByDate(authenticationService.getUserId().get());
 	}
 	
 	@RequestMapping("/holding/delete/{id}")
 	public Iterable<HoldingStock> delete(@PathVariable String id) {
 		log.warn("delete: id [{}]", id);
-		holdingStockRepository.delete(id);
-		return holdingStockRepository.findAll(new Sort("date"));
+		holdingStockRepo.deleteById(id);
+		return holdingStockRepo.findByUserIdOrderByDate(authenticationService.getUserId().get());
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = "/liststocksperf")
@@ -80,33 +79,35 @@ public class RestStockController {
 
 	@RequestMapping(method = RequestMethod.GET, value = "/save/query")
 	public String saveQuery(@RequestParam(value="codes", required=false, defaultValue="") String codes) {
-		log.info("save codes {} to key {}", codes, STOCK_QUERY_KEY);
+		Optional<String> userId = authenticationService.getUserId();
+		log.info("save codes {} to userId {}", codes, userId);
 
-		StockQuery q = Optional.ofNullable(stockQueryRepo.findByKey(STOCK_QUERY_KEY))
-				.orElse(new StockQuery(codes));
+		StockQuery q = stockQueryRepo.findByUserId(userId.get())
+						.orElse(new StockQuery(userId.get(), codes));
 		q.setDelimitedStocks(codes);
-		q.setKey(STOCK_QUERY_KEY);
 		stockQueryRepo.save(q);
-		return stockQueryRepo.findByKey(STOCK_QUERY_KEY).getDelimitedStocks();
+		return stockQueryRepo.findByUserId(userId.get()).get().getDelimitedStocks();
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = "/load/query")
 	public String loadQuery() {
-		log.info("save codes from key {}", STOCK_QUERY_KEY);
+		Optional<String> userId = authenticationService.getUserId();
+		log.info("save codes from userId {}", userId);
 
-		return Optional.ofNullable(stockQueryRepo.findByKey(STOCK_QUERY_KEY))
-				.map(StockQuery::getDelimitedStocks)
+		return userId.flatMap(v -> stockQueryRepo.findByUserId(v))
+				.flatMap(q -> Optional.ofNullable(q.getDelimitedStocks()))
 				.orElse("");
 	}
 
 	@RequestMapping("/fullquote")
 	public Map<String, Object> quote(@RequestParam(value="codes", required=false, defaultValue="") String codes) throws ExecutionException, InterruptedException {
-		log.info("quote: codes [{}]", codes);
+		String userId = authenticationService.getUserId().get();
+		log.info("quote: codes [{}] for userId [{}]", codes, userId);
 		Map<String, Object> resultMap = new HashMap<>();
 		codes = retrieveCodes(codes);
 
-		List<HoldingStock> holdingStocks = Lists.newArrayList(holdingStockRepo.findAll(new Sort("date")));
-		List<Fund> funds = Lists.newArrayList(fundRepo.findAll());
+		List<HoldingStock> holdingStocks = Lists.newArrayList(holdingStockRepo.findByUserIdOrderByDate(userId));
+		List<Fund> funds = Lists.newArrayList(fundRepo.findByUserId(userId));
 		Set<String> codeSet = uniqueStockCodes(codes, holdingStocks, funds);
 		Future<HttpResponse<StockQuote[]>> stockQuotesFuture = webParserService.getRealTimeQuotes(codeSet);
 

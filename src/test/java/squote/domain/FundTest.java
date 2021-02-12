@@ -1,18 +1,19 @@
 package squote.domain;
 
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FundTest {
 	public static String FUND_NAME = "Winner";
 		
 	private Fund createSimpleFund() {
-		Fund f = new Fund(FUND_NAME);
+		Fund f = new Fund("tester", FUND_NAME);
 		f.buyStock("2828", 500, new BigDecimal(50000));
 		f.buyStock("2800", 1000, new BigDecimal(25000));
 		return f;

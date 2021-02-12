@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import squote.domain.Fund;
 import squote.domain.FundHolding;
 import squote.domain.repository.FundRepository;
+import squote.security.AuthenticationService;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -18,7 +19,7 @@ import java.util.function.BinaryOperator;
 @RestController
 public class FundController {
 	private static Logger log = LoggerFactory.getLogger(FundController.class);
-	
+
 	public enum ValueAction {
 		add((x,y) -> x.add(y)),
 		subtract((x,y) -> x.subtract(y));
@@ -28,11 +29,13 @@ public class FundController {
 	}
 		
 	@Autowired FundRepository fundRepo;
+	@Autowired AuthenticationService authenticationService;
 			
 	@RequestMapping(value = "/{fundName}/buy/{code}/{qty}/{price}")	
 	public Fund buy(@PathVariable String fundName, @PathVariable String code, @PathVariable int qty, @PathVariable String price) {
-		log.debug("buy {} {} with price {} for fund {}", qty, code, price, fundName);
-		Fund fund = fundRepo.findOne(fundName);
+		String userId = authenticationService.getUserId().get();
+		log.debug("buy {} {} with price {} for fund {}:{}", qty, code, price, userId, fundName);
+		Fund fund = fundRepo.findByUserIdAndName(userId, fundName).get();
 		fund.buyStock(code, qty, new BigDecimal(qty).multiply(new BigDecimal(price)));
 		fundRepo.save(fund);
 		log.debug("Updated Fund: {}", fund);
@@ -41,8 +44,9 @@ public class FundController {
 	
 	@RequestMapping(value = "/{fundName}/sell/{code}/{qty}/{price}")	
 	public Fund sell(@PathVariable String fundName, @PathVariable String code, @PathVariable int qty, @PathVariable String price) {
-		log.debug("sell {} {} with price {} for fund {}", qty, code, price, fundName);
-		Fund fund = fundRepo.findOne(fundName);
+		String userId = authenticationService.getUserId().get();
+		log.debug("sell {} {} with price {} for fund {}:{}", qty, code, price, userId, fundName);
+		Fund fund = fundRepo.findByUserIdAndName(userId, fundName).get();
 		fund.sellStock(code, qty, new BigDecimal(qty).multiply(new BigDecimal(price)));
 		fundRepo.save(fund);
 		log.debug("Updated Fund: {}", fund);
@@ -51,24 +55,29 @@ public class FundController {
 	
 	@RequestMapping(value = "/create/{fundName}")
 	public Fund create(@PathVariable String fundName) {
-		log.debug("Create new fund: {}", fundName);
-		Fund f = new Fund(fundName);
+		String userId = authenticationService.getUserId().get();
+		log.debug("Create new fund: {}:{}", userId, fundName);
+		Fund f = new Fund(userId, fundName);
 		f.setProfit(new BigDecimal("0"));
 		return fundRepo.save(f);
 	}
 	
 	@RequestMapping(value = "/delete/{fundName}")
 	public String delete(@PathVariable String fundName) {
-		log.debug("Delete fund: {}", fundName);
-		fundRepo.delete(fundName);
+		String userId = authenticationService.getUserId().get();
+		log.debug("Delete fund: {}:{}", userId, fundName);
+		fundRepo.findByUserIdAndName(userId, fundName)
+			.ifPresent(f -> fundRepo.delete(f));
+
 		return "{  \"response\" : \"Done\" }";
 	}
 	
 	
 	@RequestMapping(value = "/{fundName}/remove/{code}")
 	public Fund removeStock(@PathVariable String fundName, @PathVariable String code) {
-		log.debug("remove stock {} from fund {}", code, fundName);
-		Fund fund = fundRepo.findOne(fundName);
+		String userId = authenticationService.getUserId().get();
+		log.debug("remove stock {} from fund {}:{}", code, userId, fundName);
+		Fund fund = fundRepo.findByUserIdAndName(userId, fundName).get();
 		fund.getHoldings().remove(code);
 		fundRepo.save(fund);
 		log.debug("Updated Fund: {}", fund);
@@ -77,8 +86,9 @@ public class FundController {
 	
 	@RequestMapping(value ="/{fundName}/payinterest/{code}/{amount}")
 	public FundHolding payInterest(@PathVariable String fundName, @PathVariable String code, @PathVariable String amount) {
-		log.debug("Interest ${} is paid by code {} to fund {}", amount, code, fundName);
-		Fund fund = fundRepo.findOne(fundName);
+		String userId = authenticationService.getUserId().get();
+		log.debug("Interest ${} is paid by code {} to fund {}:{}", amount, code, userId, fundName);
+		Fund fund = fundRepo.findByUserIdAndName(userId, fundName).get();
 		FundHolding newHolding = fund.payInterest(code, new BigDecimal(amount));
 		fundRepo.save(fund);
 		log.debug("Updated Fund: {}", fund);
@@ -87,8 +97,9 @@ public class FundController {
 	
 	@RequestMapping(value = "/{fundName}/set/profit/{amount}")
 	public BigDecimal setProfit(@PathVariable String fundName, @PathVariable String amount) {
-		log.debug("Set profit of {} to ${}", fundName, amount);
-		Fund fund = fundRepo.findOne(fundName);
+		String userId = authenticationService.getUserId().get();
+		log.debug("Set profit of {}:{} to ${}", userId, fundName, amount);
+		Fund fund = fundRepo.findByUserIdAndName(userId, fundName).get();
 		fund.setProfit(new BigDecimal(amount));
 		fundRepo.save(fund);
 		log.debug("Updated Fund: {}", fund);
@@ -97,8 +108,9 @@ public class FundController {
 	
 	@RequestMapping(value = "/{fundName}/{action}/profit/{amounts}")
 	public BigDecimal addProfit(@PathVariable String fundName, @PathVariable ValueAction action, @PathVariable String amounts) {
-		log.debug("{} profit '{}' to fund {}", action, amounts, fundName);
-		Fund fund = fundRepo.findOne(fundName);
+		String userId = authenticationService.getUserId().get();
+		log.debug("{} profit '{}' to fund {}:{}", action, amounts, userId, fundName);
+		Fund fund = fundRepo.findByUserIdAndName(userId, fundName).get();
 		BigDecimal newProfit = Arrays.stream(amounts.split(","))
 			.map(v -> new BigDecimal(v))
 			.reduce(fund.getProfit(), action.accumulator);
@@ -109,9 +121,10 @@ public class FundController {
 	}
 
 	@RequestMapping(value = "/{fundName}/cashout/{amount}")
-	public Fund addProfit(@PathVariable String fundName, @PathVariable String amount) {
-		log.debug("cashout {} from fund {}", amount, fundName);
-		Fund fund = fundRepo.findOne(fundName);
+	public Fund cashOut(@PathVariable String fundName, @PathVariable String amount) {
+		String userId = authenticationService.getUserId().get();
+		log.debug("cashout {} from fund {}:{}", amount, userId, fundName);
+		Fund fund = fundRepo.findByUserIdAndName(userId, fundName).get();
 		fund.cashout(new BigDecimal(amount));
 		fundRepo.save(fund);
 		log.debug("Updated Fund: {}", fund);
@@ -120,6 +133,6 @@ public class FundController {
 	
 	@RequestMapping(value = "/getall")
 	public Iterable<Fund> getAll() {
-		return fundRepo.findAll();
+		return fundRepo.findByUserId(authenticationService.getUserId().get());
 	}
 }

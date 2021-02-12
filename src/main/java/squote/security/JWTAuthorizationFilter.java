@@ -23,6 +23,7 @@ import java.security.PublicKey;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,8 +33,9 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
     private static Logger log = LoggerFactory.getLogger(JWTAuthorizationFilter.class);
 
     private PublicKey key;
+    private String expectedAudiance;
 
-    public JWTAuthorizationFilter(AuthenticationManager authManager, String certificatePath) {
+    public JWTAuthorizationFilter(AuthenticationManager authManager, String certificatePath, String expectedAudiance) {
         super(authManager);
 
         try {
@@ -42,6 +44,7 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
             InputStream is =  this.getClass().getResourceAsStream(certificatePath);
             X509Certificate cer = (X509Certificate) fact.generateCertificate(is);
             this.key = cer.getPublicKey();
+            this.expectedAudiance = expectedAudiance;
         } catch (Exception e) {
             log.error("error in reading certificate: ", e);
         }
@@ -73,12 +76,15 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
                         .parseClaimsJws(token.replace("Bearer", "").replaceAll("\"",""))
                         .getBody();
 
+                if (isNotValidAudience(claims.getAudience())) return null;
+                if (claims.getExpiration().getTime() < new Date().getTime()) return null;
+
                 String user = claims.getSubject();
                 List<GrantedAuthority> roles = extractRoles((List<String>) claims.get(CLAIM_ROLE_KEY));
-
                 if (user != null) {
                     return new UsernamePasswordAuthenticationToken(user, null, roles);
                 }
+
                 return null;
             }
         } catch (ExpiredJwtException e) {
@@ -87,6 +93,10 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
             log.error("Error in processing JWT:", e);
         }
         return null;
+    }
+
+    private boolean isNotValidAudience(String audience) {
+        return !expectedAudiance.equals(audience);
     }
 
     private List<GrantedAuthority> extractRoles(List<String> claims) {

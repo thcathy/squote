@@ -1,38 +1,45 @@
 package squote.domain;
-import java.math.BigInteger;
-
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+
+import java.math.BigInteger;
 
 public class StockQuery {
 	@Id
     private BigInteger id;
-	
-	private int key;
+
+	@Indexed
+	private String userId;
 
 	private String delimitedStocks;
 	
-	public StockQuery(String delimitedStocks) { this.delimitedStocks = delimitedStocks; }
+	public StockQuery(String userId, String delimitedStocks) {
+	    this.userId = userId;
+	    this.delimitedStocks = delimitedStocks;
+	}
 
 	@Override
 	public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
-	public int getKey() {
-        return this.key;
+    public String getUserId() {
+        return userId;
     }
 
-	public void setKey(int key) {
-        this.key = key;
+    public StockQuery setUserId(String userId) {
+        this.userId = userId;
+        return this;
     }
 
-	public String getDelimitedStocks() {
-        return this.delimitedStocks;
+    public String getDelimitedStocks() {
+        return delimitedStocks;
     }
 
-	public void setDelimitedStocks(String delimitedStocks) {
+    public StockQuery setDelimitedStocks(String delimitedStocks) {
         this.delimitedStocks = delimitedStocks;
+        return this;
     }
 }

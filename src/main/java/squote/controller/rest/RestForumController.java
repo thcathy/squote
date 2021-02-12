@@ -81,12 +81,12 @@ public class RestForumController {
 	public Iterable<WishList> delete(@RequestBody String text) {
 		log.info("delete {} from wishlist", text);
 
-		wishListRepo.delete(text);
+		wishListRepo.deleteById(text);
 		return wishListRepo.findAll();
 	}
 
 	private void isVisited(ForumThread f) {
-    	if (visitedThreadRepo.exists(f.getUrl()))
+    	if (visitedThreadRepo.existsById(f.getUrl()))
     		f.setVisited(true);
     	else if (visitedThreadRepo.findByTitle(f.getTitle()).size() > 0)
     		f.setVisited(true);

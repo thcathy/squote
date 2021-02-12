@@ -3,6 +3,7 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
@@ -12,15 +13,20 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Fund {
 	@Id
+	private String id;
+
     public final String name;
-			
-	private final @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
-	private final Map<String, FundHolding> holdings = new ConcurrentHashMap<>();
+
+	@Indexed
+	public String userId;
+	private @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
+	private Map<String, FundHolding> holdings = new ConcurrentHashMap<>();
 	private BigDecimal profit = new BigDecimal("0");
 	private BigDecimal netProfit = new BigDecimal("0");
 	private BigDecimal cashoutAmount = new BigDecimal("0");
 		
-	public Fund(String name) {
+	public Fund(String userId, String name) {
+		this.userId = userId;
 		this.name = name;
 		this.date = new Date();
 	}

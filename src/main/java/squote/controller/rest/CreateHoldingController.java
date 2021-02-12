@@ -11,6 +11,7 @@ import squote.domain.Fund;
 import squote.domain.HoldingStock;
 import squote.domain.StockExecutionMessage;
 import squote.domain.repository.HoldingStockRepository;
+import squote.security.AuthenticationService;
 import squote.service.UpdateFundByHoldingService;
 import squote.service.WebParserRestService;
 
@@ -31,6 +32,7 @@ public class CreateHoldingController {
 	@Autowired HoldingStockRepository holdingRepo;
 	@Autowired UpdateFundByHoldingService updateFundService;
 	@Autowired WebParserRestService webService;
+	@Autowired AuthenticationService authenticationService;
 	
 	@RequestMapping(value="/create")
 	public HoldingStock createHoldingFromExecution(@RequestParam(value="message", required=false, defaultValue="") String exeMsg,
@@ -41,7 +43,7 @@ public class CreateHoldingController {
 		if (!executionMessage.isPresent()) throw new IllegalArgumentException("Cannot create holding"); 
 			
 		hcei = enrichHscei(hcei, executionMessage.get().getDate());
-		HoldingStock holding = HoldingStock.from(executionMessage.get(), new BigDecimal(hcei));
+		HoldingStock holding = HoldingStock.from(executionMessage.get(), authenticationService.getUserId().get(), new BigDecimal(hcei));
 		holdingRepo.save(holding);
 	
 		return holding;
@@ -51,9 +53,10 @@ public class CreateHoldingController {
 	public Fund updateFundByHolding(
 			@RequestParam(value="fundName", required=true) String fundName,
 			@RequestParam(value="holdingId", required=true) String holdingId) {
-		log.info("updateFundByHolding: add holding {} to fund {}", holdingId, fundName);
+		String userId = authenticationService.getUserId().get();
+		log.info("updateFundByHolding: add holding {} to fund {}:{}", holdingId, userId, fundName);
 		
-		return updateFundService.updateFundByHoldingAndPersist(fundName, holdingId);
+		return updateFundService.updateFundByHoldingAndPersist(userId, fundName, holdingId);
 	}
 	
 	private String enrichHscei(String hscei, Date date) {

@@ -1,17 +1,16 @@
 package squote.service;
 
-import java.math.BigDecimal;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
 import squote.SquoteConstants.Side;
 import squote.domain.Fund;
 import squote.domain.FundHolding;
 import squote.domain.HoldingStock;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
+
+import java.math.BigDecimal;
 
 public class UpdateFundByHoldingService {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -25,15 +24,15 @@ public class UpdateFundByHoldingService {
 		this.holdingRepo = holdingRepo;
 	}
 	
-	public Fund updateFundByHoldingAndPersist(String fundName, String holdingId) {
-		Fund f = updateFundByHolding(fundName, holdingId);
+	public Fund updateFundByHoldingAndPersist(String userId, String fundName, String holdingId) {
+		Fund f = updateFundByHolding(userId, fundName, holdingId);
 		fundRepo.save(f);
 		return f;
 	}
 
-	public Fund updateFundByHolding(String fundName, String holdingId) {
-		Fund f = fundRepo.findOne(fundName);
-		HoldingStock holding = holdingRepo.findOne(holdingId);
+	public Fund updateFundByHolding(String userId, String fundName, String holdingId) {
+		Fund f = fundRepo.findByUserIdAndName(userId, fundName).get();
+		HoldingStock holding = holdingRepo.findById(holdingId).get();
 		
 		if (Side.BUY.equals(holding.getSide()))
 			f.buyStock(holding.getCode(), holding.getQuantity(), holding.getGross());

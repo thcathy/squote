@@ -1,29 +1,25 @@
 package squote.domain;
 
-import java.math.BigDecimal;
-import java.util.Date;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import squote.SpringQuoteWebApplication;
+import squote.IntegrationTest;
 import squote.SquoteConstants.Side;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = SpringQuoteWebApplication.class)
-@ActiveProfiles("dev")
-public class SquoteDataTest {
+import java.math.BigDecimal;
+import java.util.Date;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class SquoteDataTest extends IntegrationTest {
 	@Autowired HoldingStockRepository holdingStockRepo;
 	@Autowired FundRepository fundRepo;
-	
-	@Before
+
+	private String userId = "SquoteDataTestUserId";
+
+	@BeforeEach
 	public void clearCollections() {
 		holdingStockRepo.deleteAll();
 		fundRepo.deleteAll();
@@ -31,13 +27,12 @@ public class SquoteDataTest {
 	
 	@Test
     public void createEntityForIntegrationTest() {
-		
 		holdingStockRepo.save(createHoldingStock1());
 		holdingStockRepo.save(createHoldingStock2());
-		
 		fundRepo.save(createSimpleFund1());
 		fundRepo.save(createSimpleFund2());
-		
+
+		assertEquals(2, holdingStockRepo.findByUserIdOrderByDate(userId).size());
     }
 	
 	private HoldingStock createHoldingStock1() {
@@ -47,15 +42,15 @@ public class SquoteDataTest {
 		scbSellMsg += "O1512110016740"; 
 	
 		StockExecutionMessage msg = StockExecutionMessage.construct(scbSellMsg).get();
-		return HoldingStock.from(msg, new BigDecimal("123"));
+		return HoldingStock.from(msg, userId, new BigDecimal("123"));
 	}
 	
 	private HoldingStock createHoldingStock2() {
-		return new HoldingStock("941", Side.SELL, 2000, new BigDecimal(103872), new Date(), new BigDecimal(11385.23));
+		return new HoldingStock(userId, "941", Side.SELL, 2000, new BigDecimal(103872), new Date(), new BigDecimal(11385.23));
 	}
 	
 	private Fund createSimpleFund1() {
-		Fund f = new Fund("testfund");
+		Fund f = new Fund(userId, "testfund");
 		f.buyStock("2828", 500, new BigDecimal("50000"));
 		f.buyStock("2800", 1000, new BigDecimal("25000"));
 		f.setProfit(new BigDecimal("888"));
@@ -63,7 +58,7 @@ public class SquoteDataTest {
 	}
 	
 	private Fund createSimpleFund2() {
-		Fund f = new Fund("testfund2");
+		Fund f = new Fund(userId, "testfund2");
 		f.buyStock("1138", 54000, new BigDecimal("242466.20"));
 		f.buyStock("2800", 1000, new BigDecimal("25000"));
 		return f;

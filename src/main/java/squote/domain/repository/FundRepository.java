@@ -1,11 +1,14 @@
 package squote.domain.repository;
+
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
-
 import squote.domain.Fund;
-import squote.domain.HoldingStock;
+
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface FundRepository extends PagingAndSortingRepository<Fund, String> {
-	
+	List<Fund> findByUserId(String userId);
+	Optional<Fund> findByUserIdAndName(String userId, String name);
 }

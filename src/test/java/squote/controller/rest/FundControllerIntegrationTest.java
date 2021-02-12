@@ -1,110 +1,106 @@
 package squote.controller.rest;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.google.common.collect.Lists;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import squote.SpringQuoteWebApplication;
+import squote.IntegrationTest;
 import squote.domain.Fund;
 import squote.domain.FundHolding;
 import squote.domain.repository.FundRepository;
+import squote.security.AuthenticationServiceStub;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@WebAppConfiguration
-@ContextConfiguration(classes = SpringQuoteWebApplication.class)
-@ActiveProfiles("dev")
-public class FundControllerIntegrationTest {
+@AutoConfigureMockMvc
+public class FundControllerIntegrationTest extends IntegrationTest {
 	@Autowired FundController fundController;
 	@Autowired FundRepository fundRepo;
+	@Autowired AuthenticationServiceStub authenticationServiceStub;
 
+	String userId = UUID.randomUUID().toString();
+
+	@Autowired
 	private MockMvc mockMvc;
 	private Fund testFund = createSimpleFund();
 
 	private Fund createSimpleFund() {
-		Fund f = new Fund("testfund");
+		Fund f = new Fund(userId, "testfund");
 		f.buyStock("2828", 500, new BigDecimal(50000));
 		f.buyStock("2800", 1000, new BigDecimal(25000));
 		return f;
 	}
 
-	@Before
+	@BeforeEach
 	public void setup() {
-		this.mockMvc = MockMvcBuilders.standaloneSetup(fundController).build();
+		authenticationServiceStub.userId = userId;
 		fundRepo.save(testFund);
 	}
 
-	@After
+	@AfterEach
 	public void revert() {
 		fundRepo.delete(testFund);
 	}
 
 	@Test
 	public void urlbuy_addStockAndSave() throws Exception {
-		mockMvc.perform(get("/rest/fund/testfund/buy/2800/100/100.1/"))
-				.andExpect(status().isOk());
-				
-		Fund result = fundRepo.findOne("testfund");
+		fundController.buy(testFund.name, "2800", 100, "100.1");
+
+		Fund result = fundRepo.findByUserIdAndName(authenticationServiceStub.userId, "testfund").get();
 		assertEquals(1100, result.getHoldings().get("2800").getQuantity());
 		assertEquals(35010, result.getHoldings().get("2800").getGross().intValue());
 	}
 
 	@Test
 	public void urlsell_minusStockAndSave() throws Exception {
-		mockMvc.perform(get("/rest/fund/testfund/sell/2828/100/120")).andExpect(
-				status().isOk());
+		fundController.sell(testFund.name, "2828", 100, "120");
 		
-		Fund result = fundRepo.findOne("testfund");
+		Fund result = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		assertEquals(400, result.getHoldings().get("2828").getQuantity());
 		assertEquals(40000, result.getHoldings().get("2828").getGross().intValue());	// gross is deduce base on original gross price
 	}
 	
 	@Test
 	public void urlcreate_givenNewName_shouldCreateNewFund() throws Exception {
-		mockMvc.perform(get("/rest/fund/create/newfund"))
-				.andExpect(status().isOk());
+		fundController.create("newfund");
 		
-		Fund result = fundRepo.findOne("newfund");
+		Fund result = fundRepo.findByUserIdAndName(userId, "newfund").get();
 		assertEquals("newfund", result.name);
 		assertEquals(0, result.getProfit().intValue());
+
+		assertThat(fundRepo.findByUserId(userId).size()).isEqualTo(2);
 	}
 	
 	@Test
 	public void urlDelete_ShouldRemoveFund() throws Exception {
-		mockMvc.perform(get("/rest/fund/delete/testfund"))
-			.andExpect(status().isOk());
+		fundController.delete("testfund");
 			
-		assertEquals(null, fundRepo.findOne("testfund"));
+		assertFalse(fundRepo.findByUserIdAndName(userId, "testfund").isPresent());
+		assertThat(fundRepo.findByUserId(userId).size()).isEqualTo(0);
 	}
 	
 	@Test
 	public void urlremove_ShouldRemoveAStockFromFund() throws Exception {
-		mockMvc.perform(get("/rest/fund/testfund/remove/2800"))
-				.andExpect(status().isOk());
+		fundController.removeStock(testFund.name, "2800");
 		
-		Fund result = fundRepo.findOne("testfund");
+		Fund result = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		assertEquals(null, result.getHoldings().get("2800"));
 	}
 	
 	@Test
 	public void payInterest_ShouldSaveSubstractedFund() throws Exception {
-		mockMvc.perform(get("/rest/fund/testfund/payinterest/2828/100.5/"))
-			.andExpect(status().isOk());
+		fundController.payInterest(testFund.name, "2828", "100.5");
 		
-		Fund fund = fundRepo.findOne("testfund");
+		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		FundHolding newHolding = fund.getHoldings().get("2828");
 		
 		assertEquals(500, newHolding.getQuantity());		
@@ -114,53 +110,44 @@ public class FundControllerIntegrationTest {
 	
 	@Test
 	public void addProfit_givenListOfValue_shouldAddedToProfit() throws Exception {
-		mockMvc.perform(get("/rest/fund/testfund/add/profit/101,50.5/"))
-			.andExpect(status().isOk());
-		
-		mockMvc.perform(get("/rest/fund/testfund/add/profit/98.2/"))
-		.andExpect(status().isOk());
-		
-		Fund fund = fundRepo.findOne("testfund");
+		fundController.addProfit(testFund.name, FundController.ValueAction.add, "101,50.5");
+		fundController.addProfit(testFund.name, FundController.ValueAction.add, "98.2");
+
+		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		assertEquals(new BigDecimal("249.7"), fund.getProfit());
 	}
 	
 	@Test
 	public void addExpense_givenListOfValue_shouldMinusFromProfit() throws Exception {
-		mockMvc.perform(get("/rest/fund/testfund/subtract/profit/30,2.32,.89/"))
-			.andExpect(status().isOk());
-		
-		mockMvc.perform(get("/rest/fund/testfund/subtract/profit/5/"))
-		.andExpect(status().isOk());
-		
-		Fund fund = fundRepo.findOne("testfund");
+		fundController.addProfit(testFund.name, FundController.ValueAction.subtract, "30,2.32,.89");
+		fundController.addProfit(testFund.name, FundController.ValueAction.subtract, "5");
+
+		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		assertEquals(new BigDecimal("-38.21"), fund.getProfit());
 	}
 	
 	@Test
 	public void setProfit_givenValue_shouldBeTheProfit() throws Exception {
-		mockMvc.perform(get("/rest/fund/testfund/set/profit/123.456/"))
-			.andExpect(status().isOk());
-				
-		Fund fund = fundRepo.findOne("testfund");
+		fundController.setProfit(testFund.name, "123.456");
+
+		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		assertEquals(new BigDecimal("123.456"), fund.getProfit());
 	}
 	
 	@Test
 	public void getAll_shouldReturnAllFunds() throws Exception {
-		String result = mockMvc.perform(get("/rest/fund/getall/"))
-			.andExpect(status().isOk())
-			.andReturn().getResponse().getContentAsString();
-		
-		assertTrue(result.contains("newfund"));
-		assertTrue(result.contains("testfund"));
+		List<Fund> result = Lists.newArrayList(fundController.getAll());
+
+		assertThat(result.size()).isEqualTo(1);
+		assertThat(result.stream().anyMatch(f -> f.name.equals("testfund"))).isTrue();
 	}
 
 	@Test
 	public void cashout_shouldAddToAmount() throws Exception {
-		mockMvc.perform(get("/rest/fund/testfund/cashout/123.456/"))
-				.andExpect(status().isOk());
+		fundController.cashOut(testFund.name, "123");
+		fundController.cashOut(testFund.name, "0.456");
 
-		Fund fund = fundRepo.findOne("testfund");
+		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		assertEquals(new BigDecimal("123.456"), fund.getCashoutAmount());
 	}
 }

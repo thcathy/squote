@@ -1,69 +1,56 @@
 package squote.controller.rest;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.mockito.MockitoAnnotations;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import squote.SpringQuoteWebApplication;
+import squote.IntegrationTest;
 import squote.SquoteConstants;
 import squote.SquoteConstants.Side;
 import squote.domain.Fund;
 import squote.domain.HoldingStock;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
+import squote.security.AuthenticationServiceStub;
 import thc.util.DateUtils;
 
 import java.math.BigDecimal;
 import java.util.Date;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@WebAppConfiguration
-@ContextConfiguration(classes = SpringQuoteWebApplication.class)
-@ActiveProfiles("dev")
-public class CreateHoldingControllerIntegrationTest {
+public class CreateHoldingControllerIntegrationTest extends IntegrationTest {
 	@Autowired CreateHoldingController controller;
 	@Autowired FundRepository fundRepo;
 	@Autowired HoldingStockRepository holdingRepo;
-	
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
-	private MockMvc mockMvc;
+	@Autowired AuthenticationServiceStub authenticationServiceStub;
+
+	private String userId = "tester";
 	private Fund testFund = createSimpleFund();
 
 	private Fund createSimpleFund() {
-		Fund f = new Fund("testfund");
+		Fund f = new Fund(userId, "testfund");
 		f.buyStock("2828", 500, new BigDecimal(50000));
 		f.buyStock("2800", 1000, new BigDecimal(25000));
 		return f;
 	}
 	
 	private HoldingStock createSell2800Holding() {
-		return new HoldingStock("2800", Side.SELL, 300, new BigDecimal("8190"), new Date(), null);
+		return new HoldingStock(userId, "2800", Side.SELL, 300, new BigDecimal("8190"), new Date(), null);
 	}
 
-	@Before
+	@BeforeEach
 	public void setup() {
 		fundRepo.save(testFund);
-		MockitoAnnotations.initMocks(this);
-
-		this.mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+		authenticationServiceStub.userId = userId;
 	}
 
-	@After
+	@AfterEach
 	public void revert() {
 		fundRepo.delete(testFund);
+		authenticationServiceStub.userId = authenticationServiceStub.TESTER_USERID;
 	}
 
 	@Test
@@ -81,22 +68,23 @@ public class CreateHoldingControllerIntegrationTest {
 		assertEquals("883", holding.getCode());
 		assertEquals(new BigDecimal(hscei), holding.getHsce());
 		assertEquals(holdingQty + 1, holdingRepo.count());
+		assertEquals(authenticationServiceStub.userId, holding.getUserId());
 	}
 	
 	@Test
 	public void createHolding_givenEmptyMsg_shouldThrowException() {
-		expectedException.expect(IllegalArgumentException.class);
-		expectedException.expectMessage("Cannot create holding");
-		
-		controller.createHoldingFromExecution("", null);
+		Exception exception = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+			controller.createHoldingFromExecution("", null);
+		});
+		assertEquals("Cannot create holding", exception.getMessage());
 	}
 	
 	@Test
 	public void createHolding_givenWrongMsg_shouldThrowException() {
-		expectedException.expect(IllegalArgumentException.class);
-		expectedException.expectMessage("Cannot create holding");
-		
-		controller.createHoldingFromExecution("渣打 but it is wrong messags", null);
+		Exception exception = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+			controller.createHoldingFromExecution("渣打 but it is wrong messags", null);
+		});
+		assertEquals("Cannot create holding", exception.getMessage());
 	}
 	
 	@Test
@@ -104,11 +92,12 @@ public class CreateHoldingControllerIntegrationTest {
 		String scbSellMsg = "渣打:買入6000股883.HK 中國海洋石油\n";
 		scbSellMsg += "已完成\n";
 		scbSellMsg += "平均價HKD7.99\n";
-		scbSellMsg += "O1512110016740"; 
-		expectedException.expect(RuntimeException.class);
-		expectedException.expectMessage("Cannot getHistoryPrice hcei");
-		
-		controller.createHoldingFromExecution(scbSellMsg, "0");
+		scbSellMsg += "O1512110016740";
+		String finalScbSellMsg = scbSellMsg;
+		Exception exception = Assertions.assertThrows(RuntimeException.class, () -> {
+			controller.createHoldingFromExecution(finalScbSellMsg, "0");
+		});
+		assertEquals("Cannot getHistoryPrice hcei", exception.getMessage());
 	}
 	
 	@Test	
@@ -128,6 +117,7 @@ public class CreateHoldingControllerIntegrationTest {
 		assertEquals(SquoteConstants.Side.BUY, holding.getSide());
 		assertTrue(holding.getHsce().doubleValue() > 6000);
 		assertEquals(totalHoldings+1, holdingRepo.count());
+		assertEquals(authenticationServiceStub.userId, holding.getUserId());
 	}
 	
 	@Test
@@ -135,7 +125,7 @@ public class CreateHoldingControllerIntegrationTest {
 		HoldingStock holding = holdingRepo.save(createSell2800Holding());
 
 		controller.updateFundByHolding(testFund.name, holding.getId());
-		Fund fund = fundRepo.findOne(testFund.name);
+		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		assertNotNull(fund);
 		assertEquals(700, fund.getHoldings().get(holding.getCode()).getQuantity());
 	}

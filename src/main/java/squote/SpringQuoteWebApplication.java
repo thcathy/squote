@@ -9,17 +9,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.web.filter.CharacterEncodingFilter;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
+import squote.security.AuthenticationService;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
 import squote.service.UpdateFundByHoldingService;
 import squote.service.WebParserRestService;
 import squote.unirest.UnirestSetup;
-
-import javax.servlet.Filter;
 
 @SpringBootApplication
 public class SpringQuoteWebApplication {
@@ -67,12 +65,17 @@ public class SpringQuoteWebApplication {
 		return new StockPerformanceService(webParserRestService());
 	}
 			
+//	@Bean
+//	public Filter characterEncodingFilter() {
+//		CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
+//		characterEncodingFilter.setEncoding("UTF-8");
+//		characterEncodingFilter.setForceEncoding(true);
+//		return characterEncodingFilter;
+//	}
+
 	@Bean
-	public Filter characterEncodingFilter() {
-		CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
-		characterEncodingFilter.setEncoding("UTF-8");
-		characterEncodingFilter.setForceEncoding(true);
-		return characterEncodingFilter;
+	public AuthenticationService authenticationService() {
+		return new AuthenticationService();
 	}
 	
 	@Bean

@@ -1,15 +1,16 @@
 package squote.domain;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
+import squote.SquoteConstants.Side;
 
 import java.math.BigDecimal;
 import java.util.Date;
 
-import org.junit.Test;
-
-import squote.SquoteConstants.Side;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class HoldingStockTest {
+	static String userId = "User1";
+
 	@Test
 	public void relativePerformance_GivenLatestStockAndIndexPrice_ShouldCalculateCorrectPerformance() {
 		final String stockCode = "1";
@@ -18,10 +19,10 @@ public class HoldingStockTest {
 		final double stockLatestPrice = 15;
 		final double hsceiLatestPrice = 110;
 		
-		HoldingStock holdingStock = new HoldingStock(stockCode, Side.BUY, 1, stockOriginalPrice, new Date(), hsceiOriginalPrice);
+		HoldingStock holdingStock = new HoldingStock(userId, stockCode, Side.BUY, 1, stockOriginalPrice, new Date(), hsceiOriginalPrice);
 		assertEquals(40, holdingStock.relativePerformance(stockLatestPrice, hsceiLatestPrice), 0.000001);
 		
-		holdingStock = new HoldingStock(stockCode, Side.SELL, 1, stockOriginalPrice, new Date(), hsceiOriginalPrice);
+		holdingStock = new HoldingStock(userId, stockCode, Side.SELL, 1, stockOriginalPrice, new Date(), hsceiOriginalPrice);
 		assertEquals(-40, holdingStock.relativePerformance(stockLatestPrice, hsceiLatestPrice), 0.000001);
 	}
 	
@@ -33,7 +34,7 @@ public class HoldingStockTest {
 		scbSellMsg += "O1512110016740"; 
 		
 		StockExecutionMessage msg = StockExecutionMessage.construct(scbSellMsg).get();
-		HoldingStock holdingStock = HoldingStock.from(msg, new BigDecimal("123"));
+		HoldingStock holdingStock = HoldingStock.from(msg, userId, new BigDecimal("123"));
 		assertEquals(new BigDecimal("738000"), holdingStock.getGross());
 	}
 }

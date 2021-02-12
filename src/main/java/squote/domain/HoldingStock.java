@@ -1,20 +1,25 @@
 package squote.domain;
-import java.math.BigDecimal;
-import java.util.Date;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.format.annotation.DateTimeFormat;
-
 import squote.SquoteConstants;
 import squote.SquoteConstants.Side;
+
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.UUID;
 
 public class HoldingStock {
 	@Id
     private String id;
 	
 	private String code;
+
+	@Indexed
+	private String userId;
 	private int quantity;
 	private BigDecimal gross;
 	private @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
@@ -23,8 +28,10 @@ public class HoldingStock {
 	
 	public HoldingStock() {}
 	
-	public HoldingStock(String code, Side side, int quantity, BigDecimal gross, Date date, BigDecimal hsce) {
+	public HoldingStock(String userId, String code, Side side, int quantity, BigDecimal gross, Date date, BigDecimal hsce) {
 		super();
+		this.id = UUID.randomUUID().toString();
+		this.userId = userId;
 		this.code = code;
 		this.quantity = quantity;
 		this.gross = gross;
@@ -32,14 +39,10 @@ public class HoldingStock {
 		this.hsce = hsce;
 		this.side = side;
 	}
-	
-	public HoldingStock(String id, String code, Side side, int quantity, BigDecimal gross, Date date, BigDecimal hsce) {		
-		this(code, side, quantity, gross, date, hsce);
-		this.id = id;
-	}
 
-	public static HoldingStock from(StockExecutionMessage message, BigDecimal hscei) {
+	public static HoldingStock from(StockExecutionMessage message, String userId, BigDecimal hscei) {
 		return new HoldingStock(
+				userId,
 				message.getCode(), 
 				message.getSide(), 
 				message.getQuantity(), 
@@ -74,6 +77,6 @@ public class HoldingStock {
 	public Date getDate() { return this.date; }
 	public BigDecimal getHsce() { return this.hsce; }
 	public Side getSide() { return this.side; }
-	
+	public String getUserId() { return this.userId; }
 	
 }

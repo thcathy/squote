@@ -1,14 +1,16 @@
 package thc.util;
 
-import static org.junit.Assert.assertTrue;
+
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 
-import org.junit.Test;
+import static org.springframework.test.util.AssertionErrors.assertTrue;
+
 
 public class ConcurrentUtilsTest {
-	@Test	
+	@Test
 	public void getDeclaredConstructors_ShouldBePrivate() {
 		final Constructor<?>[] constructors = ConcurrentUtils.class.getDeclaredConstructors();		
 	    for (Constructor<?> constructor : constructors) {

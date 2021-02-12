@@ -1,42 +1,35 @@
 package squote.domain.repository;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-import java.math.BigDecimal;
-
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import squote.SpringQuoteWebApplication;
+import squote.IntegrationTest;
 import squote.domain.Fund;
 import squote.domain.FundHolding;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = SpringQuoteWebApplication.class)
-@ActiveProfiles("dev")
-public class FundRepositoryTest {
-	private Logger log = LoggerFactory.getLogger(FundRepositoryTest.class);
+import java.math.BigDecimal;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class FundRepositoryTest extends IntegrationTest {
+	private final Logger log = LoggerFactory.getLogger(FundRepositoryTest.class);
 	private final String FUND_NAME = "Winning Fund";
-	
+	private final String USER_ID = "tester";
+
 	@Autowired FundRepository repo;
 		
 	private Fund createSimpleFund() {
-		Fund f1 = new Fund(FUND_NAME);
+		Fund f1 = new Fund("tester", FUND_NAME);
 		f1.buyStock("2828", 400, new BigDecimal("40000"));
 		f1.buyStock("2828", 1000, new BigDecimal("100000"));
 		return f1;
 	}
 	
-	@After
+	@AfterEach
 	public void clearFund() {
 		repo.deleteAll();
 	}
@@ -68,7 +61,7 @@ public class FundRepositoryTest {
 		assertEquals(price2828, f1.getHoldings().get("2828").spotPrice());		
 		
 		try {
-			Fund f2 = repo.findOne("Winning Fund");
+			Fund f2 = repo.findByUserIdAndName(USER_ID, FUND_NAME).get();
 			f2.getHoldings().get("2828").spotPrice();
 		} catch (IllegalStateException e) {
 			return;
@@ -80,7 +73,7 @@ public class FundRepositoryTest {
 	@Test
 	@Rollback(false)
 	public void save_ShouldWorks() {
-		Fund myFund = new Fund("New Fund");
+		Fund myFund = new Fund(USER_ID, "New Fund");
 		myFund.buyStock("1138", 20000, new BigDecimal(70800));
 		myFund.buyStock("288", 20000, new BigDecimal(23450));
 		myFund.buyStock("883", 13000, new BigDecimal(176420));
