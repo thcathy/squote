@@ -4,6 +4,8 @@ jobs:
     working_directory: ~/code
     docker:
       - image: circleci/openjdk:8-jdk
+        environment:
+          auth0.audience: "dummy"
       - image: circleci/mongo
     environment:
       JVM_OPTS: -Xmx3200m
