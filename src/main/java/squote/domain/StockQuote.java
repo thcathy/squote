@@ -31,7 +31,7 @@ public class StockQuote {
 	private Double last2YearPercentage = null;
 	private Double last3YearPercentage = null;
 
-	private final Map<Integer, Double> previousPriceMap = new HashMap<Integer, Double>();
+	private Map<Integer, Double> previousPriceMap = new HashMap<Integer, Double>();
 
 	public StockQuote() {}
 
@@ -221,6 +221,11 @@ public class StockQuote {
 	public Map<Integer, Double> getPreviousPriceMap() {
         return this.previousPriceMap;
     }
+
+	public StockQuote setPreviousPriceMap(Map<Integer, Double> previousPriceMap) {
+		this.previousPriceMap = previousPriceMap;
+		return this;
+	}
 
 	public String getStockName() {
 		return stockName;
