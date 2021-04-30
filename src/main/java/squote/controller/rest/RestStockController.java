@@ -92,7 +92,7 @@ public class RestStockController {
 	@RequestMapping(method = RequestMethod.GET, value = "/load/query")
 	public String loadQuery() {
 		Optional<String> userId = authenticationService.getUserId();
-		log.info("save codes from userId {}", userId);
+		log.info("load codes from userId {}", userId);
 
 		return userId.flatMap(v -> stockQueryRepo.findByUserId(v))
 				.flatMap(q -> Optional.ofNullable(q.getDelimitedStocks()))
