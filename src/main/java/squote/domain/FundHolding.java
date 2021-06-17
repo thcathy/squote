@@ -48,8 +48,7 @@ public class FundHolding {
 	public BigDecimal getGross() { return this.gross; }
 	public Date getDate() { return this.date; }
 	public BigDecimal netProfit() {
-		if (netProfit == null) throw new IllegalStateException("Net Profit hadn't calculated");
-		return this.netProfit; 
+		return netProfit != null ? this.netProfit : BigDecimal.ZERO;
 	}
 	public BigDecimal getNetProfit() {
 		return this.netProfit;

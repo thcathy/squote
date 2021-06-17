@@ -12,6 +12,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Fund {
+	public enum FundType {
+		STOCK, CRYPTO
+	}
+
 	@Id
 	private String id;
 
@@ -24,6 +28,8 @@ public class Fund {
 	private BigDecimal profit = new BigDecimal("0");
 	private BigDecimal netProfit = new BigDecimal("0");
 	private BigDecimal cashoutAmount = new BigDecimal("0");
+	private BigDecimal cashinAmount = new BigDecimal("0");
+	private FundType type;
 		
 	public Fund(String userId, String name) {
 		this.userId = userId;
@@ -33,6 +39,11 @@ public class Fund {
 
 	public Fund cashout(BigDecimal value) {
 		cashoutAmount = cashoutAmount.add(value);
+		return this;
+	}
+
+	public Fund cashin(BigDecimal value) {
+		cashinAmount = cashinAmount.add(value);
 		return this;
 	}
 
@@ -82,9 +93,10 @@ public class Fund {
 	}
 	
 	public Fund calculateNetProfit(Map<String, StockQuote> quoteMap) {
-		holdings.forEach((key, value) -> {
-			value.calculateNetProfit(new BigDecimal(quoteMap.get(key).getPrice()));
-		});
+		holdings
+				.entrySet().stream()
+				.filter(entry -> quoteMap.containsKey(entry.getKey()) && !"NA".equals(quoteMap.get(entry.getKey()).getPrice()))
+				.forEach(entry -> entry.getValue().calculateNetProfit(new BigDecimal(quoteMap.get(entry.getKey()).getPrice())));
 
 		netProfit = holdings.values().stream()
 				.map(v -> v.netProfit())
@@ -117,6 +129,18 @@ public class Fund {
 	public BigDecimal getCashoutAmount() { return cashoutAmount; }
 	public Fund setCashoutAmount(BigDecimal cashoutAmount) {
 		this.cashoutAmount = cashoutAmount;
+		return this;
+	}
+
+	public BigDecimal getCashinAmount() { return cashinAmount;}
+	public Fund setCashinAmount(BigDecimal cashinAmount) {
+		this.cashinAmount = cashinAmount;
+		return this;
+	}
+
+	public FundType getType() { return type; }
+	public Fund setType(FundType type) {
+		this.type = type;
 		return this;
 	}
 }

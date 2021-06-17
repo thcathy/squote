@@ -17,6 +17,7 @@ jobs:
           paths:
             - ~/.m2
           key: maven-{{ checksum "pom.xml" }}
+      - run: mvn install:install-file -Dfile=lib/binance-api-client-1.0.1.jar
       - run: mvn resources:resources package
       - store_test_results:
           path: target/surefire-reports

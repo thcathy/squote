@@ -18,8 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 @AutoConfigureMockMvc
 public class FundControllerIntegrationTest extends IntegrationTest {
@@ -149,5 +148,30 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 
 		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		assertEquals(new BigDecimal("123.456"), fund.getCashoutAmount());
+	}
+
+	@Test
+	public void cashin_shouldAddToAmount() {
+		fundController.cashIn(testFund.name, "123");
+		fundController.cashIn(testFund.name, "0.456");
+
+		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
+		assertEquals(new BigDecimal("123.456"), fund.getCashinAmount());
+	}
+
+	@Test
+	public void buy_givenZeroQuantityAndPrice_shouldSuccess() {
+		fundController.buy(testFund.name, "BTCUSDT", 0, "0");
+
+		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
+		assertNotNull(fund.getHoldings().get("BTCUSDT"));
+	}
+
+	@Test
+	public void setFundType_shouldSuccess() {
+		fundController.setType(testFund.name, Fund.FundType.STOCK);
+
+		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
+		assertEquals(Fund.FundType.STOCK, fund.getType());
 	}
 }

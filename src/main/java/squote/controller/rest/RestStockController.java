@@ -107,7 +107,7 @@ public class RestStockController {
 		codes = retrieveCodes(codes);
 
 		List<HoldingStock> holdingStocks = Lists.newArrayList(holdingStockRepo.findByUserIdOrderByDate(userId));
-		List<Fund> funds = Lists.newArrayList(fundRepo.findByUserId(userId));
+		List<Fund> funds = fundRepo.findByUserId(userId);
 		Set<String> codeSet = uniqueStockCodes(codes, holdingStocks, funds);
 		Future<HttpResponse<StockQuote[]>> stockQuotesFuture = webParserService.getRealTimeQuotes(codeSet);
 

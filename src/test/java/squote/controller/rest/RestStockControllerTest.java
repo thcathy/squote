@@ -6,8 +6,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import squote.IntegrationTest;
 import squote.SquoteConstants;
+import squote.domain.Fund;
 import squote.domain.HoldingStock;
 import squote.domain.StockQuote;
+import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.security.AuthenticationServiceStub;
 
@@ -24,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class RestStockControllerTest extends IntegrationTest {
     @Autowired RestStockController restStockController;
     @Autowired HoldingStockRepository holdingStockRepository;
+    @Autowired FundRepository fundRepository;
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired AuthenticationServiceStub authenticationServiceStub;
@@ -102,10 +105,28 @@ public class RestStockControllerTest extends IntegrationTest {
         resultMap = restStockController.quote("");
         assertThat(((List)resultMap.get("holdings")).size()).isEqualTo(0);
         assertThat(((List)resultMap.get("funds")).size()).isEqualTo(0);
+    }
 
+    @Test
+    public void quote_doNotQueryCryptoHoldings() throws Exception {
+        authenticationServiceStub.userId = UUID.randomUUID().toString();
+        Fund testFund = createCryptoFund(authenticationServiceStub.userId);
+        fundRepository.save(testFund);
+
+        Map<String, Object> resultMap = restStockController.quote("");
+        assertThat(((Map)resultMap.get("allQuotes")).containsKey("BTCUSDT")).isFalse();
+
+        fundRepository.delete(testFund);
     }
 
     private HoldingStock createSell2800Holding(String userId) {
         return new HoldingStock(userId, "2800", SquoteConstants.Side.SELL, 300, new BigDecimal("8190"), new Date(), null);
+    }
+
+    private Fund createCryptoFund(String userId) {
+        Fund fund = new Fund(userId, "test");
+        fund.setType(Fund.FundType.CRYPTO);
+        fund.buyStock("BTCUSDT", 0, BigDecimal.ZERO);
+        return fund;
     }
 }

@@ -130,9 +130,31 @@ public class FundController {
 		log.debug("Updated Fund: {}", fund);
 		return fund;
 	}
+
+	@RequestMapping(value = "/{fundName}/cashin/{amount}")
+	public Fund cashIn(@PathVariable String fundName, @PathVariable String amount) {
+		String userId = authenticationService.getUserId().get();
+		log.debug("cashin {} from fund {}:{}", amount, userId, fundName);
+		Fund fund = fundRepo.findByUserIdAndName(userId, fundName).get();
+		fund.cashin(new BigDecimal(amount));
+		fundRepo.save(fund);
+		log.debug("Updated Fund: {}", fund);
+		return fund;
+	}
 	
 	@RequestMapping(value = "/getall")
 	public Iterable<Fund> getAll() {
 		return fundRepo.findByUserId(authenticationService.getUserId().get());
+	}
+
+	@RequestMapping(value = "/{fundName}/type/{type}")
+	public Fund setType(@PathVariable String fundName, @PathVariable Fund.FundType type) {
+		String userId = authenticationService.getUserId().get();
+		log.debug("set fund {} type = {}", fundName, type);
+		Fund fund = fundRepo.findByUserIdAndName(userId, fundName).get();
+		fund.setType(type);
+		fundRepo.save(fund);
+		log.debug("Updated Fund: {}", fund);
+		return fund;
 	}
 }
