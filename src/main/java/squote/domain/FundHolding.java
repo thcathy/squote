@@ -10,7 +10,7 @@ import java.util.Date;
 
 public class FundHolding {	
 	private final String code;
-	private final int quantity;
+	private final BigDecimal quantity;
 	private final BigDecimal gross;
 	private final @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
 	
@@ -19,7 +19,7 @@ public class FundHolding {
 	@Transient
 	private BigDecimal netProfit;
 		
-	public FundHolding(String code, int quantity, BigDecimal gross, Date date) {
+	public FundHolding(String code, BigDecimal quantity, BigDecimal gross, Date date) {
 		super();
 		this.code = code;
 		this.quantity = quantity;
@@ -27,7 +27,7 @@ public class FundHolding {
 		this.date = date;
 	}
 		
-	public static FundHolding create(String code, int qty, BigDecimal gross) {		
+	public static FundHolding create(String code, BigDecimal qty, BigDecimal gross) {
 		return new FundHolding(code, qty, gross, new Date());
 	}
 					
@@ -39,12 +39,17 @@ public class FundHolding {
 	public void calculateNetProfit(BigDecimal spotPrice) {
 		if (spotPrice == null) throw new IllegalArgumentException("Spot Price cannot null");
 		this.spotPrice = spotPrice;
-		this.netProfit = spotPrice.multiply(new BigDecimal(quantity)).subtract(gross);
+		this.netProfit = spotPrice.multiply(quantity).subtract(gross);
 	}
 
-	public BigDecimal getPrice() { return gross.divide(BigDecimal.valueOf(quantity), 4, RoundingMode.HALF_UP); }
+	public BigDecimal getPrice() {
+		if (quantity.compareTo(BigDecimal.ONE) < 0)
+			return BigDecimal.ZERO;
+		else
+			return gross.divide(quantity, 4, RoundingMode.HALF_UP);
+	}
 	public String getCode() { return this.code; }
-	public int getQuantity() { return this.quantity;}
+	public BigDecimal getQuantity() { return this.quantity;}
 	public BigDecimal getGross() { return this.gross; }
 	public Date getDate() { return this.date; }
 	public BigDecimal netProfit() {

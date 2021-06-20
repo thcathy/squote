@@ -13,10 +13,7 @@ import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
 import squote.security.AuthenticationService;
-import squote.service.MarketReportService;
-import squote.service.StockPerformanceService;
-import squote.service.UpdateFundByHoldingService;
-import squote.service.WebParserRestService;
+import squote.service.*;
 import squote.unirest.UnirestSetup;
 
 @SpringBootApplication
@@ -36,6 +33,8 @@ public class SpringQuoteWebApplication {
 	@Value("${http.max_connection_per_route:20}") 	int httpMaxConnectionPerRoute;
 	@Value("${http.timeout:300000}")				int httpTimeout;
 	@Value("${APISERVER_HOST}")						String APIServerHost;
+	@Value("${BINANCE_APIKEY}")						String binanceAPIKey;
+	@Value("${BINANCE_APISECRET}")					String binanceAPISecret;
 	
 	// repository interface
 	@Autowired private HoldingStockRepository holdingStockRepo;
@@ -77,10 +76,15 @@ public class SpringQuoteWebApplication {
 	public AuthenticationService authenticationService() {
 		return new AuthenticationService();
 	}
+
+	@Bean
+	public BinanceAPIService binanceAPIService() {
+		return new BinanceAPIService(binanceAPIKey, binanceAPISecret);
+	}
 	
 	@Bean
 	public UpdateFundByHoldingService updateFundByHoldingService() {
-		return new UpdateFundByHoldingService(fundRepo, holdingStockRepo);
+		return new UpdateFundByHoldingService(fundRepo, holdingStockRepo, binanceAPIService());
 	}
 	
 	/**

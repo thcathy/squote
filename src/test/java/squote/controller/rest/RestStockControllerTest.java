@@ -126,7 +126,7 @@ public class RestStockControllerTest extends IntegrationTest {
     private Fund createCryptoFund(String userId) {
         Fund fund = new Fund(userId, "test");
         fund.setType(Fund.FundType.CRYPTO);
-        fund.buyStock("BTCUSDT", 0, BigDecimal.ZERO);
+        fund.buyStock("BTCUSDT", BigDecimal.valueOf(0), BigDecimal.ZERO);
         return fund;
     }
 }

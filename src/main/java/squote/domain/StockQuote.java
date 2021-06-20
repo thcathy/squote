@@ -1,6 +1,7 @@
 package squote.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import thc.util.NumberUtils;
@@ -133,6 +134,8 @@ public class StockQuote {
 	public String getPrice() {
         return this.price;
     }
+
+    public boolean hasPrice() { return StringUtils.isNotBlank(price) && !"NA".equals(price); }
 
 	public String getHigh() {
         return this.high;

@@ -34,8 +34,8 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 
 	private Fund createSimpleFund() {
 		Fund f = new Fund(userId, "testfund");
-		f.buyStock("2828", 500, new BigDecimal(50000));
-		f.buyStock("2800", 1000, new BigDecimal(25000));
+		f.buyStock("2828", BigDecimal.valueOf(500), BigDecimal.valueOf(50000));
+		f.buyStock("2800", BigDecimal.valueOf(1000), BigDecimal.valueOf(25000));
 		return f;
 	}
 
@@ -52,25 +52,25 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 
 	@Test
 	public void urlbuy_addStockAndSave() throws Exception {
-		fundController.buy(testFund.name, "2800", 100, "100.1");
+		fundController.buy(testFund.name, "2800", "100", "100.1");
 
 		Fund result = fundRepo.findByUserIdAndName(authenticationServiceStub.userId, "testfund").get();
-		assertEquals(1100, result.getHoldings().get("2800").getQuantity());
+		assertEquals(BigDecimal.valueOf(1100), result.getHoldings().get("2800").getQuantity());
 		assertEquals(35010, result.getHoldings().get("2800").getGross().intValue());
 	}
 
 	@Test
 	public void urlsell_minusStockAndSave() throws Exception {
-		fundController.sell(testFund.name, "2828", 100, "120");
+		fundController.sell(testFund.name, "2828", "100", "120");
 		
 		Fund result = fundRepo.findByUserIdAndName(userId, testFund.name).get();
-		assertEquals(400, result.getHoldings().get("2828").getQuantity());
+		assertEquals(BigDecimal.valueOf(400), result.getHoldings().get("2828").getQuantity());
 		assertEquals(40000, result.getHoldings().get("2828").getGross().intValue());	// gross is deduce base on original gross price
 	}
 	
 	@Test
 	public void urlcreate_givenNewName_shouldCreateNewFund() throws Exception {
-		fundController.create("newfund");
+		fundController.create("newfund", Fund.FundType.STOCK);
 		
 		Fund result = fundRepo.findByUserIdAndName(userId, "newfund").get();
 		assertEquals("newfund", result.name);
@@ -102,7 +102,7 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		FundHolding newHolding = fund.getHoldings().get("2828");
 		
-		assertEquals(500, newHolding.getQuantity());		
+		assertEquals(BigDecimal.valueOf(500), newHolding.getQuantity());
 		assertEquals(new BigDecimal("49899.5"), newHolding.getGross());			
 		assertEquals(new BigDecimal("99.7990"), newHolding.getPrice());
 	}
@@ -161,7 +161,7 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 
 	@Test
 	public void buy_givenZeroQuantityAndPrice_shouldSuccess() {
-		fundController.buy(testFund.name, "BTCUSDT", 0, "0");
+		fundController.buy(testFund.name, "BTCUSDT", "0", "0");
 
 		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		assertNotNull(fund.getHoldings().get("BTCUSDT"));

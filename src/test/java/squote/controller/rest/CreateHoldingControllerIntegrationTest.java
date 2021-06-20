@@ -32,8 +32,8 @@ public class CreateHoldingControllerIntegrationTest extends IntegrationTest {
 
 	private Fund createSimpleFund() {
 		Fund f = new Fund(userId, "testfund");
-		f.buyStock("2828", 500, new BigDecimal(50000));
-		f.buyStock("2800", 1000, new BigDecimal(25000));
+		f.buyStock("2828", BigDecimal.valueOf(500), new BigDecimal(50000));
+		f.buyStock("2800", BigDecimal.valueOf(1000), new BigDecimal(25000));
 		return f;
 	}
 	
@@ -127,6 +127,6 @@ public class CreateHoldingControllerIntegrationTest extends IntegrationTest {
 		controller.updateFundByHolding(testFund.name, holding.getId());
 		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		assertNotNull(fund);
-		assertEquals(700, fund.getHoldings().get(holding.getCode()).getQuantity());
+		assertEquals(BigDecimal.valueOf(700), fund.getHoldings().get(holding.getCode()).getQuantity());
 	}
 }

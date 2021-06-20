@@ -10,6 +10,7 @@ import squote.domain.Fund;
 import squote.domain.FundHolding;
 import squote.domain.repository.FundRepository;
 import squote.security.AuthenticationService;
+import squote.service.UpdateFundByHoldingService;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -30,34 +31,38 @@ public class FundController {
 		
 	@Autowired FundRepository fundRepo;
 	@Autowired AuthenticationService authenticationService;
+	@Autowired UpdateFundByHoldingService updateFundByHoldingService;
 			
-	@RequestMapping(value = "/{fundName}/buy/{code}/{qty}/{price}")	
-	public Fund buy(@PathVariable String fundName, @PathVariable String code, @PathVariable int qty, @PathVariable String price) {
+	@RequestMapping(value = "/{fundName}/buy/{code}/{qty}/{price}")
+	public Fund buy(@PathVariable String fundName, @PathVariable String code, @PathVariable String qty, @PathVariable String price) {
 		String userId = authenticationService.getUserId().get();
 		log.debug("buy {} {} with price {} for fund {}:{}", qty, code, price, userId, fundName);
 		Fund fund = fundRepo.findByUserIdAndName(userId, fundName).get();
-		fund.buyStock(code, qty, new BigDecimal(qty).multiply(new BigDecimal(price)));
+		BigDecimal qtyValue = new BigDecimal(qty);
+		fund.buyStock(code, qtyValue, qtyValue.multiply(new BigDecimal(price)));
 		fundRepo.save(fund);
 		log.debug("Updated Fund: {}", fund);
 		return fund;				
 	}	
 	
-	@RequestMapping(value = "/{fundName}/sell/{code}/{qty}/{price}")	
-	public Fund sell(@PathVariable String fundName, @PathVariable String code, @PathVariable int qty, @PathVariable String price) {
+	@RequestMapping(value = "/{fundName}/sell/{code}/{qty}/{price}")
+	public Fund sell(@PathVariable String fundName, @PathVariable String code, @PathVariable String qty, @PathVariable String price) {
 		String userId = authenticationService.getUserId().get();
 		log.debug("sell {} {} with price {} for fund {}:{}", qty, code, price, userId, fundName);
 		Fund fund = fundRepo.findByUserIdAndName(userId, fundName).get();
-		fund.sellStock(code, qty, new BigDecimal(qty).multiply(new BigDecimal(price)));
+		BigDecimal qtyValue = new BigDecimal(qty);
+		fund.sellStock(code, qtyValue, qtyValue.multiply(new BigDecimal(price)));
 		fundRepo.save(fund);
 		log.debug("Updated Fund: {}", fund);
 		return fund;				
 	}
 	
-	@RequestMapping(value = "/create/{fundName}")
-	public Fund create(@PathVariable String fundName) {
+	@RequestMapping(value = "/create/{fundName}/{type}")
+	public Fund create(@PathVariable String fundName, @PathVariable Fund.FundType type) {
 		String userId = authenticationService.getUserId().get();
-		log.debug("Create new fund: {}:{}", userId, fundName);
+		log.debug("Create new fund: {}:{} ({})", userId, fundName, type);
 		Fund f = new Fund(userId, fundName);
+		f.setType(type);
 		f.setProfit(new BigDecimal("0"));
 		return fundRepo.save(f);
 	}
@@ -156,5 +161,12 @@ public class FundController {
 		fundRepo.save(fund);
 		log.debug("Updated Fund: {}", fund);
 		return fund;
+	}
+
+	@RequestMapping(value = "/{fundName}/get-trades/from/{source}")
+	public Fund getTrades(@PathVariable String fundName, @PathVariable String source) {
+		String userId = authenticationService.getUserId().get();
+		log.debug("get trades from {} from fund {}", source, fundName);
+		return updateFundByHoldingService.getTradesAndUpdateFund(userId, fundName, source);
 	}
 }

@@ -158,7 +158,9 @@ public class RestStockController {
 	private Set<String> uniqueStockCodes(String codes, List<HoldingStock> holdingStocks, List<Fund> funds) {
 		Set<String> codeSet = Sets.newHashSet(codes.split(CODE_SEPARATOR));
 		holdingStocks.forEach(x->codeSet.add(x.getCode()));
-		funds.forEach( f -> codeSet.addAll(f.getHoldings().keySet()) );
+		funds.stream()
+				.filter(f -> Fund.FundType.STOCK == f.getType())
+				.forEach(f -> codeSet.addAll(f.getHoldings().keySet()) );
 		return codeSet;
 	}
 

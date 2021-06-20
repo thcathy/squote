@@ -14,8 +14,8 @@ public class FundTest {
 		
 	private Fund createSimpleFund() {
 		Fund f = new Fund("tester", FUND_NAME);
-		f.buyStock("2828", 500, new BigDecimal(50000));
-		f.buyStock("2800", 1000, new BigDecimal(25000));
+		f.buyStock("2828", BigDecimal.valueOf(500), new BigDecimal(50000));
+		f.buyStock("2800", BigDecimal.valueOf(1000), new BigDecimal(25000));
 		return f;
 	}
 	
@@ -41,8 +41,8 @@ public class FundTest {
 		FundHolding returnHolding = f.payInterest("2800", new BigDecimal("80.5"));
 		FundHolding selectedHolding = f.getHoldings().get("2800");
 		
-		assertEquals(1000, selectedHolding.getQuantity());
-		assertEquals(1000, returnHolding.getQuantity());
+		assertEquals(BigDecimal.valueOf(1000), selectedHolding.getQuantity());
+		assertEquals(BigDecimal.valueOf(1000), returnHolding.getQuantity());
 		
 		assertEquals(new BigDecimal("24919.5"), selectedHolding.getGross());
 		assertEquals(new BigDecimal("24919.5"), returnHolding.getGross());
@@ -56,5 +56,6 @@ public class FundTest {
 		Fund f = createSimpleFund();
 		f.cashout(new BigDecimal("234.1"));
 		assertEquals(new BigDecimal("234.1"), f.getCashoutAmount());
+		assertEquals(Fund.FundType.STOCK, f.getType());
 	}
 }

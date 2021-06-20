@@ -51,16 +51,16 @@ public class SquoteDataTest extends IntegrationTest {
 	
 	private Fund createSimpleFund1() {
 		Fund f = new Fund(userId, "testfund");
-		f.buyStock("2828", 500, new BigDecimal("50000"));
-		f.buyStock("2800", 1000, new BigDecimal("25000"));
+		f.buyStock("2828", BigDecimal.valueOf(500), new BigDecimal("50000"));
+		f.buyStock("2800", BigDecimal.valueOf(1000), new BigDecimal("25000"));
 		f.setProfit(new BigDecimal("888"));
 		return f;
 	}
 	
 	private Fund createSimpleFund2() {
 		Fund f = new Fund(userId, "testfund2");
-		f.buyStock("1138", 54000, new BigDecimal("242466.20"));
-		f.buyStock("2800", 1000, new BigDecimal("25000"));
+		f.buyStock("1138", BigDecimal.valueOf(54000), new BigDecimal("242466.20"));
+		f.buyStock("2800", BigDecimal.valueOf(1000), new BigDecimal("25000"));
 		return f;
 	}
 }

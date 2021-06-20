@@ -24,8 +24,8 @@ public class FundRepositoryTest extends IntegrationTest {
 		
 	private Fund createSimpleFund() {
 		Fund f1 = new Fund("tester", FUND_NAME);
-		f1.buyStock("2828", 400, new BigDecimal("40000"));
-		f1.buyStock("2828", 1000, new BigDecimal("100000"));
+		f1.buyStock("2828", BigDecimal.valueOf(400), new BigDecimal("40000"));
+		f1.buyStock("2828", BigDecimal.valueOf(1000), new BigDecimal("100000"));
 		return f1;
 	}
 	
@@ -37,11 +37,11 @@ public class FundRepositoryTest extends IntegrationTest {
 	@Test
 	public void sellStock_GivenAFund_ShouldDecreaseQtyAndGrossButPriceUnchange() {
 		Fund f = createSimpleFund();
-		int sellQty = 200;
+		BigDecimal sellQty = BigDecimal.valueOf(200);
 		int sellGross = 25000;
 		BigDecimal orgPrice = f.getHoldings().get("2828").getPrice();
-		int expGross = f.getHoldings().get("2828").getGross().intValue() - orgPrice.multiply(new BigDecimal(sellQty)).intValue();
-		int expQty = f.getHoldings().get("2828").getQuantity() - sellQty;
+		int expGross = f.getHoldings().get("2828").getGross().intValue() - orgPrice.multiply(sellQty).intValue();
+		BigDecimal expQty = f.getHoldings().get("2828").getQuantity().subtract(sellQty);
 		
 		f.sellStock("2828", sellQty, new BigDecimal(25000));
 		
@@ -74,10 +74,10 @@ public class FundRepositoryTest extends IntegrationTest {
 	@Rollback(false)
 	public void save_ShouldWorks() {
 		Fund myFund = new Fund(USER_ID, "New Fund");
-		myFund.buyStock("1138", 20000, new BigDecimal(70800));
-		myFund.buyStock("288", 20000, new BigDecimal(23450));
-		myFund.buyStock("883", 13000, new BigDecimal(176420));
-		myFund.buyStock("1138", 10000, new BigDecimal(58800));
+		myFund.buyStock("1138", BigDecimal.valueOf(20000), new BigDecimal(70800));
+		myFund.buyStock("288", BigDecimal.valueOf(20000), new BigDecimal(23450));
+		myFund.buyStock("883", BigDecimal.valueOf(13000), new BigDecimal(176420));
+		myFund.buyStock("1138", BigDecimal.valueOf(10000), new BigDecimal(58800));
 		repo.save(myFund);
 		//repo.delete(myFund);
 	}
