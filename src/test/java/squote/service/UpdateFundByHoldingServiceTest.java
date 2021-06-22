@@ -51,7 +51,7 @@ public class UpdateFundByHoldingServiceTest {
 		
 		FundHolding fundHolding = f.getHoldings().get(buy883.getCode());
 		assertEquals(new BigDecimal("78800"), fundHolding.getGross());
-		assertEquals(6500, fundHolding.getQuantity());
+		assertEquals(BigDecimal.valueOf(6500), fundHolding.getQuantity());
 	}
 	
 	@Test
@@ -61,7 +61,7 @@ public class UpdateFundByHoldingServiceTest {
 		FundHolding fundHolding = f.getHoldings().get(sell2800.getCode());
 		assertEquals(690, f.getProfit().doubleValue(), 0);
 		assertEquals(17500, fundHolding.getGross().doubleValue(), 0);
-		assertEquals(700, fundHolding.getQuantity());
+		assertEquals(700, fundHolding.getQuantity().doubleValue());
 	}	
 	
 	@Test
@@ -75,31 +75,42 @@ public class UpdateFundByHoldingServiceTest {
 	@Test
 	public void getTrades_shouldUpdateToFund() {
 		when(mockBinanceAPIService.getMyTrades("BTCUSDT")).thenReturn(createBTCTrades());
+		when(mockBinanceAPIService.getMyTrades("ETHUSDT")).thenReturn(createETHTrades());
 
 		var f = service.getTradesAndUpdateFund(cryptoFund.userId, cryptoFund.name, "binance");
 		var BTCHolding = f.getHoldings().get("BTCUSDT");
+		var ETHHolding = f.getHoldings().get("ETHUSDT");
 		assertEquals(BigDecimal.valueOf(0.025), BTCHolding.getQuantity());
 		assertEquals(BigDecimal.valueOf(186.05), BTCHolding.getGross());
-		assertEquals(BigDecimal.ZERO, f.getHoldings().get("ETHUSDT").getQuantity());
+		assertEquals(BigDecimal.valueOf(0.05), ETHHolding.getQuantity());
+		assertEquals(BigDecimal.valueOf(60), ETHHolding.getGross().setScale(0));
+		assertEquals(BigDecimal.valueOf(10), f.getProfit().setScale(0));
 	}
 
 	private List<Trade> createBTCTrades() {
 		Trade trade1 = new Trade();
 		trade1.setSymbol("BTCUSDT");
-		trade1.setQty("0.01");
-		trade1.setQuoteQty("63.04");
+		trade1.setQty("0.01");	trade1.setQuoteQty("63.04"); trade1.setBuyer(true);
 		trade1.setTime(1617782100511L);
 		Trade trade2 = new Trade();
 		trade2.setSymbol("BTCUSDT");
-		trade2.setQty("0.015");
-		trade2.setQuoteQty("123.01");
+		trade2.setQty("0.015");	trade2.setQuoteQty("123.01"); trade2.setBuyer(true);
 		trade2.setTime(1617783725934L);
 		Trade trade3 = new Trade();
 		trade3.setSymbol("BTCUSDT");
-		trade3.setQty("0.015");
-		trade3.setQuoteQty("123.01");
+		trade3.setQty("0.015"); trade3.setQuoteQty("123.01"); trade3.setBuyer(true);
 		trade3.setTime(1617700000511L);
 		return List.of(trade1, trade2, trade3);
+	}
+
+	private List<Trade> createETHTrades() {
+		Trade trade1 = new Trade();
+		trade1.setSymbol("ETHUSDT"); trade1.setQty("0.1"); trade1.setQuoteQty("120"); trade1.setPrice("1200"); trade1.setBuyer(true);
+		trade1.setTime(1617782100511L);
+		Trade trade2 = new Trade();
+		trade2.setSymbol("ETHUSDT"); trade2.setQty("0.05"); trade2.setQuoteQty("70"); trade2.setPrice("1400"); trade2.setBuyer(false);
+		trade2.setTime(1617783725934L);
+		return List.of(trade1, trade2);
 	}
 	
 	private HoldingStock createBuyHolding() {		
@@ -126,8 +137,8 @@ public class UpdateFundByHoldingServiceTest {
 		Fund f = new Fund("tester", "cryptofund");
 		f.setType(Fund.FundType.CRYPTO);
 		f.buyStock("BTCUSDT", BigDecimal.ZERO, BigDecimal.ZERO);
+		f.getHoldings().get("BTCUSDT").setLatestTradeTime(1617782100000L);
 		f.buyStock("ETHUSDT", BigDecimal.ZERO, BigDecimal.ZERO);
-		f.setLatestTradeTime(1617782100000L);
 		return f;
 	}
 }

@@ -34,8 +34,7 @@ public class Fund {
 	private BigDecimal cashoutAmount = new BigDecimal("0");
 	private BigDecimal cashinAmount = new BigDecimal("0");
 	private FundType type;
-	private long latestTradeTime;
-		
+
 	public Fund(String userId, String name) {
 		this.userId = userId;
 		this.name = name;
@@ -150,9 +149,4 @@ public class Fund {
 		return this;
 	}
 
-	public long getLatestTradeTime() {	return latestTradeTime;}
-	public Fund setLatestTradeTime(long latestTradeTime) {
-		this.latestTradeTime = latestTradeTime;
-		return this;
-	}
 }

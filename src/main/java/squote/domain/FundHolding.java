@@ -13,6 +13,7 @@ public class FundHolding {
 	private final BigDecimal quantity;
 	private final BigDecimal gross;
 	private final @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
+	private long latestTradeTime;
 	
 	@Transient
 	private BigDecimal spotPrice;
@@ -43,7 +44,7 @@ public class FundHolding {
 	}
 
 	public BigDecimal getPrice() {
-		if (quantity.compareTo(BigDecimal.ONE) < 0)
+		if (quantity.compareTo(BigDecimal.ZERO) < 0)
 			return BigDecimal.ZERO;
 		else
 			return gross.divide(quantity, 4, RoundingMode.HALF_UP);
@@ -62,5 +63,10 @@ public class FundHolding {
 		if (spotPrice == null) throw new IllegalStateException("Spot Price hadn't calculated");
 		return this.spotPrice; 
 	}
-	
+
+	public long getLatestTradeTime() {return latestTradeTime;	}
+	public FundHolding setLatestTradeTime(long latestTradeTime) {
+		this.latestTradeTime = latestTradeTime;
+		return this;
+	}
 }

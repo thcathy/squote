@@ -66,8 +66,24 @@ public class UpdateFundByHoldingService {
 
 	private void addTrades(Fund fund, List<Trade> trades) {
 		trades.stream()
-			.filter(t -> t.getTime() > fund.getLatestTradeTime())
-			.forEach(t -> fund.buyStock(t.getSymbol(), new BigDecimal(t.getQty()), new BigDecimal(t.getQuoteQty())));
+			.filter(t -> t.getTime() > fund.getHoldings().get(t.getSymbol()).getLatestTradeTime())
+			.forEach(t -> updateFundByTrade(fund, t));
+	}
+
+	private void updateFundByTrade(Fund fund, Trade trade) {
+		if (trade.isBuyer()) {
+			fund.buyStock(trade.getSymbol(), new BigDecimal(trade.getQty()), new BigDecimal(trade.getQuoteQty()));
+		} else {
+			updateProfit(fund, trade);
+			fund.sellStock(trade.getSymbol(), new BigDecimal(trade.getQty()), new BigDecimal(trade.getQuoteQty()));
+		}
+		fund.getHoldings().get(trade.getSymbol()).setLatestTradeTime(trade.getTime());
+	}
+
+	private void updateProfit(Fund f, Trade trade) {
+		var holding = f.getHoldings().get(trade.getSymbol());
+		BigDecimal profit = new BigDecimal(trade.getPrice()).subtract(holding.getPrice()).multiply(new BigDecimal(trade.getQty()));
+		f.setProfit(f.getProfit().add(profit));
 	}
 
 	private void updateProfit(Fund f, HoldingStock holding) {
