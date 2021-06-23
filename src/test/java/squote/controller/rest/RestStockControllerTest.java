@@ -2,7 +2,9 @@ package squote.controller.rest;
 
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import squote.IntegrationTest;
 import squote.SquoteConstants;
@@ -12,6 +14,7 @@ import squote.domain.StockQuote;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.security.AuthenticationServiceStub;
+import squote.service.BinanceAPIService;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -21,7 +24,9 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.StreamSupport;
 
+import static java.math.RoundingMode.HALF_UP;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 public class RestStockControllerTest extends IntegrationTest {
     @Autowired RestStockController restStockController;
@@ -31,9 +36,20 @@ public class RestStockControllerTest extends IntegrationTest {
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired AuthenticationServiceStub authenticationServiceStub;
 
+    BinanceAPIService mockBinanceAPIService;
+    BinanceAPIService realBinanceAPIService;
+
+    @BeforeEach
+    public void setup() {
+        realBinanceAPIService = restStockController.binanceAPIService;
+        mockBinanceAPIService = Mockito.mock(BinanceAPIService.class);
+        restStockController.binanceAPIService = mockBinanceAPIService;
+    }
+
     @AfterEach
     public void resetStub() {
         authenticationServiceStub.userId = authenticationServiceStub.TESTER_USERID;
+        restStockController.binanceAPIService = realBinanceAPIService;
     }
 
     @Test
@@ -108,13 +124,18 @@ public class RestStockControllerTest extends IntegrationTest {
     }
 
     @Test
-    public void quote_doNotQueryCryptoHoldings() throws Exception {
+    public void quote_givenCryptoFund_willUpdateNetProfit() throws Exception {
         authenticationServiceStub.userId = UUID.randomUUID().toString();
         Fund testFund = createCryptoFund(authenticationServiceStub.userId);
         fundRepository.save(testFund);
+        var quote = new StockQuote("BTCUSDT").setPrice("36000");
+        when(mockBinanceAPIService.getAllPrices()).thenReturn(Map.of("BTCUSDT", quote));
 
         Map<String, Object> resultMap = restStockController.quote("");
-        assertThat(((Map)resultMap.get("allQuotes")).containsKey("BTCUSDT")).isFalse();
+        List<Fund> funds = (List<Fund>) resultMap.get("funds");
+        assertThat(((Map)resultMap.get("allQuotes")).containsKey("BTCUSDT")).isTrue();
+        assertThat(funds.get(0).getNetProfit().setScale(0, HALF_UP)).isEqualTo(BigDecimal.valueOf(100));
+        assertThat(funds.get(0).getHoldings().get("BTCUSDT").getNetProfit().setScale(0, HALF_UP)).isEqualTo(BigDecimal.valueOf(100));
 
         fundRepository.delete(testFund);
     }
@@ -124,9 +145,9 @@ public class RestStockControllerTest extends IntegrationTest {
     }
 
     private Fund createCryptoFund(String userId) {
-        Fund fund = new Fund(userId, "test");
+        Fund fund = new Fund(userId, this.getClass().getSimpleName() + "test");
         fund.setType(Fund.FundType.CRYPTO);
-        fund.buyStock("BTCUSDT", BigDecimal.valueOf(0), BigDecimal.ZERO);
+        fund.buyStock("BTCUSDT", BigDecimal.valueOf(0.1), BigDecimal.valueOf(3500));
         return fund;
     }
 }

@@ -40,9 +40,10 @@ public class StockQuote {
 		this.stockCode = code.replaceFirst("^0+(?!$)", "");
 	}
 	
-	public void setPrice(String price) {
+	public StockQuote setPrice(String price) {
 		yearHighPercentage = null;
 		this.price = price;
+		return this;
 	}
 	
 	public void setYearHigh(String yearHigh) {

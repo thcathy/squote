@@ -13,6 +13,7 @@ import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.StockQueryRepository;
 import squote.security.AuthenticationService;
+import squote.service.BinanceAPIService;
 import squote.service.MarketReportService;
 import squote.service.StockPerformanceService;
 import squote.service.WebParserRestService;
@@ -40,6 +41,7 @@ public class RestStockController {
 	@Autowired HoldingStockRepository holdingStockRepo;
 	@Autowired FundRepository fundRepo;
 	@Autowired AuthenticationService authenticationService;
+	@Autowired BinanceAPIService binanceAPIService;
 
 	@RequestMapping("/holding/list")
 	public Iterable<HoldingStock> listHolding() {
@@ -113,6 +115,7 @@ public class RestStockController {
 
 		// After all concurrent jobs submitted
 		Map<String, StockQuote> allQuotes = collectAllStockQuotes(stockQuotesFuture.get().getBody());
+		allQuotes.putAll(binanceAPIService.getAllPrices());
 		Future<HttpResponse<StockQuote[]>> indexFutures = webParserService.getIndexQuotes();
 		List<StockQuote> indexes = Arrays.asList(indexFutures.get().getBody());
 		funds.forEach( f -> f.calculateNetProfit(allQuotes) );
@@ -121,7 +124,7 @@ public class RestStockController {
 		resultMap.put("codes", codes);
 		resultMap.put("quotes",
 				Arrays.stream(codes.split(CODE_SEPARATOR))
-						.map(code->allQuotes.get(code))
+						.map(allQuotes::get)
 						.collect(Collectors.toList())
 		);
 		resultMap.put("indexes", indexes);

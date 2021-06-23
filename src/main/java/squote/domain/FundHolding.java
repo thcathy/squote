@@ -44,7 +44,7 @@ public class FundHolding {
 	}
 
 	public BigDecimal getPrice() {
-		if (quantity.compareTo(BigDecimal.ZERO) < 0)
+		if (quantity.compareTo(BigDecimal.ZERO) <= 0)
 			return BigDecimal.ZERO;
 		else
 			return gross.divide(quantity, 4, RoundingMode.HALF_UP);

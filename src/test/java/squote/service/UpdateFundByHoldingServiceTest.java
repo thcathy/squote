@@ -1,10 +1,10 @@
 package squote.service;
 
-import com.binance.api.client.domain.account.Trade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import squote.SquoteConstants.Side;
+import squote.domain.Execution;
 import squote.domain.Fund;
 import squote.domain.FundHolding;
 import squote.domain.HoldingStock;
@@ -18,8 +18,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.when;
- 
+import static org.mockito.Mockito.*;
+
 public class UpdateFundByHoldingServiceTest {
 	UpdateFundByHoldingService service;
 	HoldingStock buy883 = createBuyHolding();
@@ -28,10 +28,11 @@ public class UpdateFundByHoldingServiceTest {
 	Fund fund = createStockFund();
 	Fund cryptoFund = createCryptoFund();
 	BinanceAPIService mockBinanceAPIService;
+	FundRepository mockFundRepo;
 	
 	@BeforeEach
 	public void setupService() {		
-		FundRepository mockFundRepo = Mockito.mock(FundRepository.class);
+		mockFundRepo = Mockito.mock(FundRepository.class);
 		when(mockFundRepo.findByUserIdAndName(fund.userId, fund.name)).thenReturn(Optional.of(fund));
 		when(mockFundRepo.findByUserIdAndName(cryptoFund.userId, cryptoFund.name)).thenReturn(Optional.of(cryptoFund));
 				
@@ -74,8 +75,8 @@ public class UpdateFundByHoldingServiceTest {
 
 	@Test
 	public void getTrades_shouldUpdateToFund() {
-		when(mockBinanceAPIService.getMyTrades("BTCUSDT")).thenReturn(createBTCTrades());
-		when(mockBinanceAPIService.getMyTrades("ETHUSDT")).thenReturn(createETHTrades());
+		when(mockBinanceAPIService.getMyTrades("BTCUSDT")).thenReturn(createBTCExecutions());
+		when(mockBinanceAPIService.getMyTrades("ETHUSDT")).thenReturn(createETHExecutions());
 
 		var f = service.getTradesAndUpdateFund(cryptoFund.userId, cryptoFund.name, "binance");
 		var BTCHolding = f.getHoldings().get("BTCUSDT");
@@ -85,32 +86,27 @@ public class UpdateFundByHoldingServiceTest {
 		assertEquals(BigDecimal.valueOf(0.05), ETHHolding.getQuantity());
 		assertEquals(BigDecimal.valueOf(60), ETHHolding.getGross().setScale(0));
 		assertEquals(BigDecimal.valueOf(10), f.getProfit().setScale(0));
+		verify(mockFundRepo, atLeast(1)).save(any());
 	}
 
-	private List<Trade> createBTCTrades() {
-		Trade trade1 = new Trade();
-		trade1.setSymbol("BTCUSDT");
-		trade1.setQty("0.01");	trade1.setQuoteQty("63.04"); trade1.setBuyer(true);
-		trade1.setTime(1617782100511L);
-		Trade trade2 = new Trade();
-		trade2.setSymbol("BTCUSDT");
-		trade2.setQty("0.015");	trade2.setQuoteQty("123.01"); trade2.setBuyer(true);
-		trade2.setTime(1617783725934L);
-		Trade trade3 = new Trade();
-		trade3.setSymbol("BTCUSDT");
-		trade3.setQty("0.015"); trade3.setQuoteQty("123.01"); trade3.setBuyer(true);
-		trade3.setTime(1617700000511L);
-		return List.of(trade1, trade2, trade3);
+	private List<Execution> createBTCExecutions() {
+		Execution exec1 = new Execution().setSymbol("BTCUSDT").setQuantity(BigDecimal.valueOf(0.01)).setQuoteQuantity(BigDecimal.valueOf(63.04))
+				.setSide(Side.BUY).setTime(1617782100511L);
+		Execution exec2 = new Execution().setSymbol("BTCUSDT").setQuantity(BigDecimal.valueOf(0.015)).setQuoteQuantity(BigDecimal.valueOf(123.01))
+				.setSide(Side.BUY).setTime(1617783725934L);
+		Execution exec3 = new Execution().setSymbol("BTCUSDT").setQuantity(BigDecimal.valueOf(0.015)).setQuoteQuantity(BigDecimal.valueOf(123.01))
+				.setSide(Side.BUY).setTime(1617700000511L);
+		return List.of(exec1, exec2, exec3);
 	}
 
-	private List<Trade> createETHTrades() {
-		Trade trade1 = new Trade();
-		trade1.setSymbol("ETHUSDT"); trade1.setQty("0.1"); trade1.setQuoteQty("120"); trade1.setPrice("1200"); trade1.setBuyer(true);
-		trade1.setTime(1617782100511L);
-		Trade trade2 = new Trade();
-		trade2.setSymbol("ETHUSDT"); trade2.setQty("0.05"); trade2.setQuoteQty("70"); trade2.setPrice("1400"); trade2.setBuyer(false);
-		trade2.setTime(1617783725934L);
-		return List.of(trade1, trade2);
+	private List<Execution> createETHExecutions() {
+		Execution exec1 = new Execution().setSymbol("ETHUSDT")
+				.setQuantity(BigDecimal.valueOf(0.1)).setQuoteQuantity(BigDecimal.valueOf(120)).setPrice(BigDecimal.valueOf(1200))
+				.setSide(Side.BUY).setTime(1617782100511L);
+		Execution exec2 = new Execution().setSymbol("ETHUSDT")
+				.setQuantity(BigDecimal.valueOf(0.05)).setQuoteQuantity(BigDecimal.valueOf(70)).setPrice(BigDecimal.valueOf(1400))
+				.setSide(Side.SELL).setTime(1617783725934L);
+		return List.of(exec1, exec2);
 	}
 	
 	private HoldingStock createBuyHolding() {		
