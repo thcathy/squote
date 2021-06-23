@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/code
     docker:
-      - image: circleci/openjdk:8-jdk
+      - image: circleci/openjdk:13-jdk
       - image: circleci/mongo
     environment:
       JVM_OPTS: -Xmx3200m
@@ -30,7 +30,7 @@ jobs:
   deploy:
     working_directory: ~/code
     docker:
-      - image: circleci/openjdk:8-jdk
+      - image: circleci/openjdk:13-jdk
     steps:
       - attach_workspace:
           at: ~/
