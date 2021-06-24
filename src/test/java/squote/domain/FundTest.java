@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FundTest {
@@ -57,5 +58,21 @@ public class FundTest {
 		f.cashout(new BigDecimal("234.1"));
 		assertEquals(new BigDecimal("234.1"), f.getCashoutAmount());
 		assertEquals(Fund.FundType.STOCK, f.getType());
+	}
+
+	@Test
+	public void sellAllCrypto_shouldKeepHoldingWithLatestUpdateTime() {
+		var f = createCryptoFund();
+		f.sellStock("BTCUSDT", BigDecimal.ONE, BigDecimal.ONE);
+
+		assertThat(f.getHoldings().get("BTCUSDT").getLatestTradeTime()).isEqualTo(1617782100000L);
+	}
+
+	private Fund createCryptoFund() {
+		Fund f = new Fund("tester", "cryptofund");
+		f.setType(Fund.FundType.CRYPTO);
+		f.buyStock("BTCUSDT", BigDecimal.ONE, BigDecimal.ONE);
+		f.getHoldings().get("BTCUSDT").setLatestTradeTime(1617782100000L);
+		return f;
 	}
 }

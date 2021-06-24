@@ -64,7 +64,7 @@ public class Fund {
 		if (!holdings.containsKey(code)) throw new IllegalArgumentException("Fund does not hold " + code);
 		
 		FundHolding updatedHolding = decreaseHolding(holdings.get(code), qty, gross);
-		if (updatedHolding.getQuantity().compareTo(BigDecimal.ZERO) <= 0)
+		if (updatedHolding.getQuantity().compareTo(BigDecimal.ZERO) <= 0 && updatedHolding.getLatestTradeTime() <= 0)
 			holdings.remove(code);
 		else
 			holdings.put(code, updatedHolding);		
@@ -94,7 +94,10 @@ public class Fund {
 	private FundHolding decreaseHolding(FundHolding fundHolding, BigDecimal qty,
 			BigDecimal gross) {		
 		BigDecimal orgGross = fundHolding.getPrice().multiply(qty);
-		return FundHolding.create(fundHolding.getCode(), fundHolding.getQuantity().subtract(qty), fundHolding.getGross().subtract(orgGross));
+		return FundHolding.create(fundHolding.getCode(),
+				fundHolding.getQuantity().subtract(qty),
+				fundHolding.getGross().subtract(orgGross))
+				.setLatestTradeTime(fundHolding.getLatestTradeTime());
 	}
 	
 	public Fund calculateNetProfit(Map<String, StockQuote> quoteMap) {
