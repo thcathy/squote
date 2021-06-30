@@ -81,8 +81,8 @@ public class UpdateFundByHoldingServiceTest {
 		var f = service.getTradesAndUpdateFund(cryptoFund.userId, cryptoFund.name, "binance");
 		var BTCHolding = f.getHoldings().get("BTCUSDT");
 		var ETHHolding = f.getHoldings().get("ETHUSDT");
-		assertEquals(BigDecimal.valueOf(0.025), BTCHolding.getQuantity());
-		assertEquals(BigDecimal.valueOf(186.05), BTCHolding.getGross());
+		assertEquals(BigDecimal.valueOf(0.035), BTCHolding.getQuantity());
+		assertEquals(BigDecimal.valueOf(249.09), BTCHolding.getGross());
 		assertEquals(BigDecimal.valueOf(0.05), ETHHolding.getQuantity());
 		assertEquals(BigDecimal.valueOf(60), ETHHolding.getGross().setScale(0));
 		assertEquals(BigDecimal.valueOf(10), f.getProfit().setScale(0));
@@ -90,13 +90,15 @@ public class UpdateFundByHoldingServiceTest {
 	}
 
 	private List<Execution> createBTCExecutions() {
-		Execution exec1 = new Execution().setSymbol("BTCUSDT").setQuantity(BigDecimal.valueOf(0.01)).setQuoteQuantity(BigDecimal.valueOf(63.04))
+		Execution exec1a = new Execution().setSymbol("BTCUSDT").setQuantity(BigDecimal.valueOf(0.01)).setQuoteQuantity(BigDecimal.valueOf(63.04))
+				.setSide(Side.BUY).setTime(1617782100511L);
+		Execution exec1b = new Execution().setSymbol("BTCUSDT").setQuantity(BigDecimal.valueOf(0.01)).setQuoteQuantity(BigDecimal.valueOf(63.04))
 				.setSide(Side.BUY).setTime(1617782100511L);
 		Execution exec2 = new Execution().setSymbol("BTCUSDT").setQuantity(BigDecimal.valueOf(0.015)).setQuoteQuantity(BigDecimal.valueOf(123.01))
 				.setSide(Side.BUY).setTime(1617783725934L);
 		Execution exec3 = new Execution().setSymbol("BTCUSDT").setQuantity(BigDecimal.valueOf(0.015)).setQuoteQuantity(BigDecimal.valueOf(123.01))
 				.setSide(Side.BUY).setTime(1617700000511L);
-		return List.of(exec1, exec2, exec3);
+		return List.of(exec1a, exec1b, exec2, exec3);
 	}
 
 	private List<Execution> createETHExecutions() {

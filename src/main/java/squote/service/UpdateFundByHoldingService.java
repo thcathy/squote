@@ -52,11 +52,11 @@ public class UpdateFundByHoldingService {
 	public Fund getTradesAndUpdateFund(String userId, String fundName, String source) {
 		Fund f = fundRepo.findByUserIdAndName(userId, fundName).get();
 		if (SOURCE_BINANCE.equalsIgnoreCase(source)) {
-			long latestTradeTime = 0;
 			for (String code : f.getHoldings().keySet()) {
 				var executions = binanceAPIService.getMyTrades(code);
+				var holding = f.getHoldings().get(code);
 				addExecutionsToFund(f, executions);
-				latestTradeTime = Math.max(latestTradeTime, maxTime(executions));
+				holding.setLatestTradeTime(Math.max(holding.getLatestTradeTime(), maxTime(executions)));
 			}
 		}
 		fundRepo.save(f);
@@ -78,7 +78,6 @@ public class UpdateFundByHoldingService {
 			updateProfit(fund, exec);
 			fund.sellStock(exec.getSymbol(), exec.getQuantity(), exec.getQuoteQuantity());
 		}
-		fund.getHoldings().get(exec.getSymbol()).setLatestTradeTime(exec.getTime());
 	}
 
 	private void updateProfit(Fund f, Execution exec) {

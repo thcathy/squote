@@ -88,7 +88,8 @@ public class Fund {
 	public Map<String, FundHolding> getHoldings() { return holdings; }
 	
 	private FundHolding increaseHolding(FundHolding fundHolding, BigDecimal qty, BigDecimal gross) {
-		return FundHolding.create(fundHolding.getCode(), fundHolding.getQuantity().add(qty), gross.add(fundHolding.getGross()));
+		return FundHolding.create(fundHolding.getCode(), fundHolding.getQuantity().add(qty), gross.add(fundHolding.getGross()))
+				.setLatestTradeTime(fundHolding.getLatestTradeTime());
 	}
 	
 	private FundHolding decreaseHolding(FundHolding fundHolding, BigDecimal qty,
