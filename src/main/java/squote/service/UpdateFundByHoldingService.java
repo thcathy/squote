@@ -45,7 +45,8 @@ public class UpdateFundByHoldingService {
 			updateProfit(f, holding);			
 			f.sellStock(holding.getCode(), BigDecimal.valueOf(holding.getQuantity()), holding.getGross());
 		}
-		
+		holding.setFundName(f.name);
+
 		return f;
 	}
 

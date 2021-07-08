@@ -58,7 +58,7 @@ public class UpdateFundByHoldingServiceTest {
 	@Test
 	public void update_givenSell2800_shouldReduceStockAndUpdateProfitToFund() {
 		Fund f = service.updateFundByHolding(fund.userId, fund.name, sell2800.getId());
-		
+
 		FundHolding fundHolding = f.getHoldings().get(sell2800.getCode());
 		assertEquals(690, f.getProfit().doubleValue(), 0);
 		assertEquals(17500, fundHolding.getGross().doubleValue(), 0);
@@ -87,6 +87,13 @@ public class UpdateFundByHoldingServiceTest {
 		assertEquals(BigDecimal.valueOf(60), ETHHolding.getGross().setScale(0));
 		assertEquals(BigDecimal.valueOf(10), f.getProfit().setScale(0));
 		verify(mockFundRepo, atLeast(1)).save(any());
+	}
+
+	@Test
+	public void update_setFundIdToHoldingStock() {
+		Fund f = service.updateFundByHolding(fund.userId, fund.name, buy883.getId());
+
+		assertEquals(fund.name, buy883.getFundName());
 	}
 
 	private List<Execution> createBTCExecutions() {

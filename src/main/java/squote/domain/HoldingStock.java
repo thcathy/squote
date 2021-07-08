@@ -25,6 +25,7 @@ public class HoldingStock {
 	private @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
 	private BigDecimal hsce;
 	private SquoteConstants.Side side;
+	private String fundName;
 	
 	public HoldingStock() {}
 	
@@ -47,7 +48,7 @@ public class HoldingStock {
 				message.getSide(), 
 				message.getQuantity(), 
 				message.getPrice().multiply(new BigDecimal(message.getQuantity())), 
-				message.getDate(), 
+				message.getDate(),
 				hscei);
 	}
 	
@@ -78,5 +79,7 @@ public class HoldingStock {
 	public BigDecimal getHsce() { return this.hsce; }
 	public Side getSide() { return this.side; }
 	public String getUserId() { return this.userId; }
-	
+	public String getFundName() { return fundName; }
+
+	public HoldingStock setFundName(String fundName) { this.fundName = fundName; return this; }
 }
