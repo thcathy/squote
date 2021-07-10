@@ -3,6 +3,7 @@ package squote.domain;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.format.annotation.DateTimeFormat;
 import squote.SquoteConstants;
@@ -10,6 +11,7 @@ import squote.SquoteConstants.Side;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 public class HoldingStock {
@@ -26,6 +28,9 @@ public class HoldingStock {
 	private BigDecimal hsce;
 	private SquoteConstants.Side side;
 	private String fundName;
+
+	@Transient
+	public Map<String, BigDecimal> fees;
 	
 	public HoldingStock() {}
 	
@@ -82,4 +87,6 @@ public class HoldingStock {
 	public String getFundName() { return fundName; }
 
 	public HoldingStock setFundName(String fundName) { this.fundName = fundName; return this; }
+
+
 }

@@ -39,9 +39,9 @@ public class SquoteDataTest extends IntegrationTest {
 		String scbSellMsg = "渣打:買入6000股883.HK 中國海洋石油\n";
 		scbSellMsg += "已完成\n";
 		scbSellMsg += "平均價HKD7.99\n";
-		scbSellMsg += "O1512110016740"; 
-	
-		StockExecutionMessage msg = StockExecutionMessage.construct(scbSellMsg).get();
+		scbSellMsg += "O1512110016740";
+
+		StockExecutionMessage msg = StockExecutionMessageBuilder.build(scbSellMsg).get();
 		return HoldingStock.from(msg, userId, new BigDecimal("123"));
 	}
 	

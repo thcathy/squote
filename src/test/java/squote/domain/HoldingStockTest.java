@@ -33,7 +33,7 @@ public class HoldingStockTest {
 		scbSellMsg += "平均價HKD123\n";
 		scbSellMsg += "O1512110016740"; 
 		
-		StockExecutionMessage msg = StockExecutionMessage.construct(scbSellMsg).get();
+		StockExecutionMessage msg = StockExecutionMessageBuilder.build(scbSellMsg).get();
 		HoldingStock holdingStock = HoldingStock.from(msg, userId, new BigDecimal("123"));
 		assertEquals(new BigDecimal("738000"), holdingStock.getGross());
 	}

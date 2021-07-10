@@ -29,13 +29,13 @@ public class UpdateFundByHoldingService {
 		this.binanceAPIService = binanceAPIService;
 	}
 	
-	public Fund updateFundByHoldingAndPersist(String userId, String fundName, String holdingId) {
-		Fund f = updateFundByHolding(userId, fundName, holdingId);
+	public Fund updateFundByHoldingAndPersist(String userId, String fundName, String holdingId, BigDecimal fee) {
+		Fund f = updateFundByHolding(userId, fundName, holdingId, fee);
 		fundRepo.save(f);
 		return f;
 	}
 
-	public Fund updateFundByHolding(String userId, String fundName, String holdingId) {
+	public Fund updateFundByHolding(String userId, String fundName, String holdingId, BigDecimal fee) {
 		Fund f = fundRepo.findByUserIdAndName(userId, fundName).get();
 		HoldingStock holding = holdingRepo.findById(holdingId).get();
 		
@@ -46,7 +46,7 @@ public class UpdateFundByHoldingService {
 			f.sellStock(holding.getCode(), BigDecimal.valueOf(holding.getQuantity()), holding.getGross());
 		}
 		holding.setFundName(f.name);
-
+		f.setProfit(f.getProfit().subtract(fee));
 		return f;
 	}
 

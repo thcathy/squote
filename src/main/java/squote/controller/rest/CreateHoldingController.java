@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 import squote.domain.Fund;
 import squote.domain.HoldingStock;
 import squote.domain.StockExecutionMessage;
+import squote.domain.StockExecutionMessageBuilder;
 import squote.domain.repository.HoldingStockRepository;
 import squote.security.AuthenticationService;
+import squote.service.HKEXMarketFeesCalculator;
 import squote.service.UpdateFundByHoldingService;
 import squote.service.WebParserRestService;
 
@@ -19,6 +21,7 @@ import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
@@ -33,30 +36,40 @@ public class CreateHoldingController {
 	@Autowired UpdateFundByHoldingService updateFundService;
 	@Autowired WebParserRestService webService;
 	@Autowired AuthenticationService authenticationService;
+	HKEXMarketFeesCalculator feeCalculator = new HKEXMarketFeesCalculator();
 	
 	@RequestMapping(value="/create")
 	public HoldingStock createHoldingFromExecution(@RequestParam(value="message", required=false, defaultValue="") String exeMsg,
 			@RequestParam(value="hscei", required=false, defaultValue="0") String hcei) {
 		
 		log.debug("createHoldingStockFromExecution: execution msg [{}], hscei [{}]", exeMsg, hcei);
-		Optional<StockExecutionMessage> executionMessage = StockExecutionMessage.construct(exeMsg);
+		Optional<StockExecutionMessage> executionMessage = StockExecutionMessageBuilder.build(exeMsg);
 		if (!executionMessage.isPresent()) throw new IllegalArgumentException("Cannot create holding"); 
 			
 		hcei = enrichHscei(hcei, executionMessage.get().getDate());
 		HoldingStock holding = HoldingStock.from(executionMessage.get(), authenticationService.getUserId().get(), new BigDecimal(hcei));
+		holding.fees = calculateFees(holding, executionMessage.get());
 		holdingRepo.save(holding);
 	
 		return holding;
 	}
-	
+
+	private Map<String, BigDecimal> calculateFees(HoldingStock holding, StockExecutionMessage executionMessage) {
+		return Map.of(
+				HKEXMarketFeesCalculator.INCLUDE_STAMP, feeCalculator.totalFee(holding.getGross(), true, executionMessage.broker.calculateCommission),
+				HKEXMarketFeesCalculator.EXCLUDE_STAMP, feeCalculator.totalFee(holding.getGross(), false, executionMessage.broker.calculateCommission)
+		);
+	}
+
 	@RequestMapping(value="/updatefund")
 	public Fund updateFundByHolding(
 			@RequestParam(value="fundName", required=true) String fundName,
-			@RequestParam(value="holdingId", required=true) String holdingId) {
+			@RequestParam(value="holdingId", required=true) String holdingId,
+			@RequestParam(value="fee", required=false, defaultValue = "0") BigDecimal fee) {
 		String userId = authenticationService.getUserId().get();
-		log.info("updateFundByHolding: add holding {} to fund {}:{}", holdingId, userId, fundName);
+		log.info("updateFundByHolding: add holding {} to fund {}:{}. With fee ${}", holdingId, userId, fundName, fee);
 		
-		return updateFundService.updateFundByHoldingAndPersist(userId, fundName, holdingId);
+		return updateFundService.updateFundByHoldingAndPersist(userId, fundName, holdingId, fee);
 	}
 	
 	private String enrichHscei(String hscei, Date date) {

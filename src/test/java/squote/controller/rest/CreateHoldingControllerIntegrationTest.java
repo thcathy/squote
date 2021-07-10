@@ -14,6 +14,7 @@ import squote.domain.HoldingStock;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.security.AuthenticationServiceStub;
+import squote.service.HKEXMarketFeesCalculator;
 import thc.util.DateUtils;
 
 import java.math.BigDecimal;
@@ -69,6 +70,8 @@ public class CreateHoldingControllerIntegrationTest extends IntegrationTest {
 		assertEquals(new BigDecimal(hscei), holding.getHsce());
 		assertEquals(holdingQty + 1, holdingRepo.count());
 		assertEquals(authenticationServiceStub.userId, holding.getUserId());
+		assertEquals(new BigDecimal("164.07"), holding.fees.get(HKEXMarketFeesCalculator.INCLUDE_STAMP));
+		assertEquals(new BigDecimal("102.07"), holding.fees.get(HKEXMarketFeesCalculator.EXCLUDE_STAMP));
 	}
 	
 	@Test
@@ -124,9 +127,11 @@ public class CreateHoldingControllerIntegrationTest extends IntegrationTest {
 	public void updatefund_GivenHoldingStock_ShouldUpdateAndPersist() throws Exception {
 		HoldingStock holding = holdingRepo.save(createSell2800Holding());
 
-		controller.updateFundByHolding(testFund.name, holding.getId());
+		controller.updateFundByHolding(testFund.name, holding.getId(), new BigDecimal("20.98"));
 		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		assertNotNull(fund);
 		assertEquals(BigDecimal.valueOf(700), fund.getHoldings().get(holding.getCode()).getQuantity());
+		assertEquals(new BigDecimal("-20.98"), fund.getProfit());
 	}
+
 }

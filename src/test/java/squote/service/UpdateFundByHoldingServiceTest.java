@@ -48,28 +48,29 @@ public class UpdateFundByHoldingServiceTest {
 	
 	@Test
 	public void update_givenBuyHolding_shouldAddStockToFund() {
-		Fund f = service.updateFundByHolding(fund.userId, fund.name, buy883.getId());
+		Fund f = service.updateFundByHolding(fund.userId, fund.name, buy883.getId(), BigDecimal.ZERO);
 		
 		FundHolding fundHolding = f.getHoldings().get(buy883.getCode());
 		assertEquals(new BigDecimal("78800"), fundHolding.getGross());
 		assertEquals(BigDecimal.valueOf(6500), fundHolding.getQuantity());
+		assertEquals(BigDecimal.ZERO, f.getProfit());
 	}
 	
 	@Test
 	public void update_givenSell2800_shouldReduceStockAndUpdateProfitToFund() {
-		Fund f = service.updateFundByHolding(fund.userId, fund.name, sell2800.getId());
+		Fund f = service.updateFundByHolding(fund.userId, fund.name, sell2800.getId(), new BigDecimal("10.5"));
 
 		FundHolding fundHolding = f.getHoldings().get(sell2800.getCode());
-		assertEquals(690, f.getProfit().doubleValue(), 0);
+		assertEquals(679.5, f.getProfit().doubleValue(), 0);
 		assertEquals(17500, fundHolding.getGross().doubleValue(), 0);
 		assertEquals(700, fundHolding.getQuantity().doubleValue());
 	}	
 	
 	@Test
 	public void update_givenSellAll2828_shouldRemoveStockAndUpdateProfitToFund() {
-		Fund f = service.updateFundByHolding(fund.userId, fund.name, sellAll2828.getId());
+		Fund f = service.updateFundByHolding(fund.userId, fund.name, sellAll2828.getId(), new BigDecimal("10"));
 				
-		assertEquals(-6789.5, f.getProfit().doubleValue(), 0);
+		assertEquals(-6799.5, f.getProfit().doubleValue(), 0);
 		assertNull(f.getHoldings().get(sellAll2828.getCode()));
 	}
 
@@ -91,7 +92,7 @@ public class UpdateFundByHoldingServiceTest {
 
 	@Test
 	public void update_setFundIdToHoldingStock() {
-		Fund f = service.updateFundByHolding(fund.userId, fund.name, buy883.getId());
+		Fund f = service.updateFundByHolding(fund.userId, fund.name, buy883.getId(), BigDecimal.ZERO);
 
 		assertEquals(fund.name, buy883.getFundName());
 	}
