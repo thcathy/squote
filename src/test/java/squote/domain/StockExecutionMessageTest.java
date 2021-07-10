@@ -67,8 +67,6 @@ public class StockExecutionMessageTest {
 		assertEquals("4246", msg.getCode());
 		assertEquals(new BigDecimal("103.100"), msg.getPrice());
 		assertEquals("2021-06-24", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
-		assertEquals(19.89, msg.fees.get(""));
-		assertEquals(19.89 + 40.21, msg.fees.get(""));
 	}
 
 	@Test

@@ -3,12 +3,10 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.annotation.Transient;
 import squote.SquoteConstants.Side;
 
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.Map;
 
 public class StockExecutionMessage {
 	private static Logger log = LoggerFactory.getLogger(StockExecutionMessage.class);
@@ -19,9 +17,6 @@ public class StockExecutionMessage {
 	public int quantity;
 	public Date date;
 	public Broker broker;
-
-    @Transient
-	public Map<String, Double> fees;
 
 	public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
