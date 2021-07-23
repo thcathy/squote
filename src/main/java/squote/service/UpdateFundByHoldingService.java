@@ -55,16 +55,19 @@ public class UpdateFundByHoldingService {
 		if (SOURCE_BINANCE.equalsIgnoreCase(source)) {
 			for (String code : f.getHoldings().keySet()) {
 				var executions = binanceAPIService.getMyTrades(code);
-				var holding = f.getHoldings().get(code);
 				addExecutionsToFund(f, executions);
-				holding.setLatestTradeTime(Math.max(holding.getLatestTradeTime(), maxTime(executions)));
+				f.getHoldings().get(code).setLatestTradeTime(
+						Math.max(f.getHoldings().get(code).getLatestTradeTime(), maxTime(executions))
+				);
 			}
 		}
 		fundRepo.save(f);
 		return f;
 	}
 
-	private long maxTime(List<Execution> executions) { return executions.stream().mapToLong(Execution::getTime).max().orElse(0);	}
+	private long maxTime(List<Execution> executions) {
+		return executions.stream().mapToLong(Execution::getTime).max().orElse(0);
+	}
 
 	private void addExecutionsToFund(Fund fund, List<Execution> executions) {
 		executions.stream()
