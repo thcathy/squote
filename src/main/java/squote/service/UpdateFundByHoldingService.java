@@ -30,14 +30,15 @@ public class UpdateFundByHoldingService {
 	}
 	
 	public Fund updateFundByHoldingAndPersist(String userId, String fundName, String holdingId, BigDecimal fee) {
-		Fund f = updateFundByHolding(userId, fundName, holdingId, fee);
-		fundRepo.save(f);
-		return f;
+		var holding = holdingRepo.findById(holdingId).get();
+		var fund = updateFundByHolding(userId, fundName, holding, fee);
+		fundRepo.save(fund);
+		holdingRepo.save(holding);
+		return fund;
 	}
 
-	public Fund updateFundByHolding(String userId, String fundName, String holdingId, BigDecimal fee) {
+	public Fund updateFundByHolding(String userId, String fundName, HoldingStock holding, BigDecimal fee) {
 		Fund f = fundRepo.findByUserIdAndName(userId, fundName).get();
-		HoldingStock holding = holdingRepo.findById(holdingId).get();
 		
 		if (Side.BUY.equals(holding.getSide()))
 			f.buyStock(holding.getCode(), BigDecimal.valueOf(holding.getQuantity()), holding.getGross());
