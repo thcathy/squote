@@ -17,9 +17,8 @@ pipeline {
       script {
         node {
           docker.image('mongo').withRun('') { c ->
-              docker.image('mysql').inside("--link ${c.id}:db") {
-                  /* Wait until mysql service is up */
-                  sh 'while ! mysqladmin ping -hdb --silent; do sleep 1; done'
+              docker.image('mongo').inside("--link ${c.id}:db") {
+                  sh 'while ! pgrep mongod; do sleep 1; done'
               }
           }
         }
