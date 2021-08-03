@@ -7,19 +7,26 @@ pipeline {
   }
 
   stages {
-    stages {
-      stage('resolve dependency') {
-        steps {
-          sh './mvnw org.apache.maven.plugins:maven-install-plugin:3.0.0-M1:install-file -Dfile=lib/binance-api-client-1.0.1.jar'
-          sh './mvnw dependency:go-offline'
-        }
+    stage('resolve dependency') {
+      steps {
+        sh './mvnw org.apache.maven.plugins:maven-install-plugin:3.0.0-M1:install-file -Dfile=lib/binance-api-client-1.0.1.jar'
+        sh './mvnw dependency:go-offline'
       }
-     
-      stage('build and unit test') {
-        steps {
-          sh './mvnw resources:resources package'
+    }
+    script {
+      node {
+        docker.image('mongo').withRun('') { c ->
+            docker.image('mongo').inside("--link ${c.id}:db") {
+                sh 'while ! pgrep mongod; do sleep 1; done'
+            }
         }
       }
     }
+    stage('build and unit test') {
+      steps {
+        sh './mvnw resources:resources package'
+      }
+    }
   }
+  
 }
