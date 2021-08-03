@@ -13,20 +13,12 @@ pipeline {
         sh './mvnw dependency:go-offline'
       }
     }
-    script {
-      node {
-        docker.image('mongo').withRun('') { c ->
-            docker.image('mongo').inside("--link ${c.id}:db") {
-                sh 'while ! pgrep mongod; do sleep 1; done'
-            }
-        }
-      }
-    }
+    
     stage('build and unit test') {
       steps {
         sh './mvnw resources:resources package'
       }
     }
   }
-  
+
 }
