@@ -1,2 +1,2 @@
 #!/bin/bash
-test $(curl -o /dev/null -s -w "%{http_code}\n" localhost:8765/rest/stock/marketreports) -eq 200
+test $(curl -o /dev/null -s -w "%{http_code}\n" ${1}/rest/stock/marketreports) -eq 200

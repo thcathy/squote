@@ -57,8 +57,22 @@ pipeline {
 
     stage("Deploy to staging") {
       steps {
-        sh "docker run -d --rm -p 8765:8080 --name jenkins-squote thcathy/squote"
+        sh "docker run -d --rm --network jenkins_build --name jenkins-squote thcathy/squote"
       }
+    }
+
+    stage("Acceptance test") {
+      steps {
+        sh 'chmod +x ./script/bin/*.sh'
+        sleep 60
+        sh "./script/bin/acceptance_test.sh jenkins-squote:8765"
+      }
+    }
+  }
+
+  post {
+    always {
+      sh "docker stop jenkins-squote"
     }
   }
 }
