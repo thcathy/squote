@@ -5,8 +5,6 @@ services:
     image: mongo:4.0
     deploy:
       mode: global
-    networks:
-      - overlay
   squote:
     image: thcathy/squote:latest
     deploy:
@@ -19,8 +17,4 @@ services:
       AUTH0_AUDIENCE: ${AUTH0_AUDIENCE}
       BINANCE_APIKEY: ${BINANCE_APIKEY}
       BINANCE_APISECRET: ${BINANCE_APISECRET}
-    networks:
-      - overlay
 
-networks:
-  overlay:
