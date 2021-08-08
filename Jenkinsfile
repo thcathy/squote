@@ -1,9 +1,16 @@
 pipeline {
   agent {
     docker {
-      args '-v $HOME/.m2:$HOME/.m2 --network jenkins_build'
+      args '-v $HOME/.m2:$HOME/.m2'
       image 'cimg/openjdk:13.0'
     }
+  }
+
+  environment {
+    APISERVER_HOST = 'https://api.funfunspell.com'
+    BINANCE_APIKEY = credentials('BINANCE_APIKEY')
+    BINANCE_APISECRET = credentials('BINANCE_APISECRET')
+    AUTH0_AUDIENCE = 'testing'
   }
 
   stages {
@@ -17,18 +24,15 @@ pipeline {
     }
 
     stage('build and test') {
-      environment {
-        APISERVER_HOST = 'https://api.funfunspell.com'
-        BINANCE_APIKEY = credentials('BINANCE_APIKEY')
-        BINANCE_APISECRET = credentials('BINANCE_APISECRET')
-        AUTH0_AUDIENCE = 'testing'
-        MONGO_CONTAINER_NAME = "squote-mongo-test-${env.BUILD_NUMBER}"
-        MONGO_HOST = "${env.MONGO_CONTAINER_NAME}:27017"
-      }
-
       steps {
         script {
-          docker.image('mongo').withRun("-p 27017 --hostname=${env.MONGO_CONTAINER_NAME} --network jenkins_build") { c ->
+          docker.image('mongo').withRun("") { c ->
+            script {
+                env.MONGO_HOST = sh (
+                    script: "echo \$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${c.id}):27017",
+                    returnStdout: true
+                ).trim()
+            }
             sh "docker exec -t ${c.id} bash -c 'while ! pgrep mongod; do sleep 1; done'"
             sh './mvnw package'
             publishHTML (target: [
@@ -57,22 +61,34 @@ pipeline {
 
     stage("Deploy to staging") {
       steps {
-        sh "docker run -d --rm --network jenkins_build --name jenkins-squote thcathy/squote"
+        sh "docker-compose -f docker-compose-test.yaml up -d"
       }
     }
 
     stage("Acceptance test") {
       steps {
         sh 'chmod +x ./script/bin/*.sh'
-        sleep 60
-        sh "./script/bin/acceptance_test.sh jenkins-squote:8765"
+        script {
+          env.SQUOTE_CID = sh (
+              script: 'docker ps -f name=squote_jenkins_squote | grep thcathy/squote | cut -d \' \' -f1',
+              returnStdout: true
+          ).trim()
+          env.SQUOTE_HOST = sh (
+              script: "docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${env.SQUOTE_CID}",
+              returnStdout: true
+          ).trim()
+        }
+        sh 'echo $SQUOTE_HOST'
+        sleep 30
+        sh "./script/bin/acceptance_test.sh http://${env.SQUOTE_HOST}:8080"
       }
     }
+
   }
 
   post {
     always {
-      sh "docker stop jenkins-squote"
+      sh "docker-compose -f docker-compose-test.yaml down"
     }
   }
 }
