@@ -7,10 +7,8 @@ pipeline {
   }
 
   environment {
-    APISERVER_HOST = 'https://api.funfunspell.com'
-    BINANCE_APIKEY = credentials('BINANCE_APIKEY')
-    BINANCE_APISECRET = credentials('BINANCE_APISECRET')
-    AUTH0_AUDIENCE = 'testing'
+    APISERVER_HOST = 'https://homeserver.funfunspell.com/web-parser-rest'
+    JASYPT_ENCRYPTOR_PASSWORD = credentials('JASYPT_ENCRYPTOR_PASSWORD')
   }
 
   stages {
@@ -59,36 +57,36 @@ pipeline {
       }
     }
 
-    stage("Deploy to staging") {
-      steps {
-        sh "docker-compose -f docker-compose-test.yaml up -d"
-      }
-    }
-
-    stage("Acceptance test") {
-      steps {
-        sh 'chmod +x ./script/bin/*.sh'
-        script {
-          env.SQUOTE_CID = sh (
-              script: 'docker ps -f name=squote_jenkins_squote | grep thcathy/squote | cut -d \' \' -f1',
-              returnStdout: true
-          ).trim()
-          env.SQUOTE_HOST = sh (
-              script: "docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${env.SQUOTE_CID}",
-              returnStdout: true
-          ).trim()
-        }
-        sh 'echo $SQUOTE_HOST'
-        sleep 30
-        sh "./script/bin/acceptance_test.sh http://${env.SQUOTE_HOST}:8080"
-      }
-    }
+    //stage("Deploy to staging") {
+    //  steps {
+    //    sh "docker-compose -f docker-compose-test.yaml up -d"
+    //  }
+    //}
+//
+    //stage("Acceptance test") {
+    //  steps {
+    //    sh 'chmod +x ./script/bin/*.sh'
+    //    script {
+    //      env.SQUOTE_CID = sh (
+    //          script: 'docker ps -f name=squote_jenkins_squote | grep thcathy/squote | cut -d \' \' -f1',
+    //          returnStdout: true
+    //      ).trim()
+    //      env.SQUOTE_HOST = sh (
+    //          script: "docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${env.SQUOTE_CID}",
+    //          returnStdout: true
+    //      ).trim()
+    //    }
+    //    sh 'echo $SQUOTE_HOST'
+    //    sleep 30
+    //    sh "./script/bin/acceptance_test.sh http://${env.SQUOTE_HOST}:8080"
+    //  }
+    //}
 
   }
 
-  post {
-    always {
-      sh "docker-compose -f docker-compose-test.yaml down"
-    }
-  }
+  //post {
+  //  always {
+  //    sh "docker-compose -f docker-compose-test.yaml down"
+  //  }
+  //}
 }

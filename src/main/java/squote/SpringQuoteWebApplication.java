@@ -32,9 +32,9 @@ public class SpringQuoteWebApplication {
 	@Value("${http.max_connection:20}") 			int httpMaxConnection;
 	@Value("${http.max_connection_per_route:20}") 	int httpMaxConnectionPerRoute;
 	@Value("${http.timeout:300000}")				int httpTimeout;
-	@Value("${APISERVER_HOST}")						String APIServerHost;
-	@Value("${BINANCE_APIKEY}")						String binanceAPIKey;
-	@Value("${BINANCE_APISECRET}")					String binanceAPISecret;
+	@Value("${apiserver.host}")						String APIServerHost;
+	@Value("${binance.apikey}")						String binanceAPIKey;
+	@Value("${binance.apisecret}")					String binanceAPISecret;
 	
 	// repository interface
 	@Autowired private HoldingStockRepository holdingStockRepo;
