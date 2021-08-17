@@ -1,0 +1,17 @@
+[all:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+deploy_folder=~/ffs-uat
+
+[uat]
+homeserver.funfunspell.com:43420
+
+[uat:vars]
+app_name=myquote-uat
+traefik_rule=PathPrefix(`/myquote-uat`)
+
+[prod]
+homeserver.funfunspell.com:43420
+
+[prod:vars]
+app_name=squote
+traefik_rule=PathPrefix(`/squote`)

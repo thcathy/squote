@@ -1,0 +1,21 @@
+---
+- hosts: all
+  
+  tasks:
+    - name: check traefik is running
+      shell: docker stack ps traefik | grep traefik
+      register: traefik_status
+      failed_when: traefik_status.stdout is not match(".*Running.*Running.*")
+
+    - name: create docker stack yml
+      template:
+        src: template/squote-stack.yml.j2
+        dest: "{{ deploy_folder }}/{{ app_name }}-stack.yml"
+
+    - name: start docker stack
+      command: "docker stack deploy -c {{ app_name }}-stack.yml {{ app_name }}"
+      args:
+        chdir: "{{ deploy_folder }}"
+      register: stack_deploy
+
+    - debug: msg="{{ stack_deploy}}"
