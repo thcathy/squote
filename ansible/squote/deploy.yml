@@ -17,7 +17,6 @@
       args:
         chdir: "{{ deploy_folder }}"
       register: stack_deploy
-
     - debug: msg="{{ stack_deploy}}"
 
     - name: check server is respsonding
@@ -31,3 +30,4 @@
       retries: 5
       delay: 30
       tags: verify
+    - debug: msg="{{ result }}"
