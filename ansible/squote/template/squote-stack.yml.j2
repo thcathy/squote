@@ -16,18 +16,18 @@ services:
         max-file: 2
         max-size: 100m
   squote:
-    image: thcathy/squote:{{ DOCKER_IMAGE_TAG }}
+    image: thcathy/squote:{{ docker_image_tag }}
     deploy:
       mode: replicated
       replicas: 1
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.squote.rule=PathPrefix(`/squote`)"
-        - "traefik.http.routers.squote.middlewares=squote-prefix@docker"
-        - "traefik.http.routers.squote.tls.certresolver=myresolver"
-        - "traefik.http.routers.squote.entrypoints=websecure"
-        - "traefik.http.services.squote.loadbalancer.server.port=8080"
-        - "traefik.http.middlewares.squote-prefix.stripprefix.prefixes=/squote"
+        - "traefik.http.routers.{{ app_name }}.rule={{ traefik_rule }}"
+        - "traefik.http.routers.{{ app_name }}.middlewares={{ app_name }}-prefix@docker"
+        - "traefik.http.routers.{{ app_name }}.tls.certresolver=myresolver"
+        - "traefik.http.routers.{{ app_name }}.entrypoints=websecure"
+        - "traefik.http.services.{{ app_name }}.loadbalancer.server.port=8080"
+        - "traefik.http.middlewares.{{ app_name }}-prefix.stripprefix.prefixes=/{{ app_name }}"
         - "traefik.docker.network=traefik_traefik-public"
       update_config:
         delay: 10s
@@ -35,8 +35,8 @@ services:
         order: start-first
     environment:
       MONGO_HOST: squote-mongo:27017
-      APISERVER_HOST: {{ APISERVER_HOST }}
-      JASYPT_ENCRYPTOR_PASSWORD: {{ JASYPT_ENCRYPTOR_PASSWORD }}
+      APISERVER_HOST: {{ apiserver_host }}
+      JASYPT_ENCRYPTOR_PASSWORD: {{ jasypt_encryptor_password }}
     networks:
       - overlay
       - traefik_traefik-public
