@@ -34,3 +34,7 @@
       fail:
         msg: "{{ result }}"
       when: result.json[0].stockCode is not defined
+
+    - name: clean up docker stack in UAT
+      command: "docker stack rm {{ app_name }}"
+      when: app_name|lower is match(".*uat")
