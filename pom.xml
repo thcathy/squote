@@ -10,10 +10,8 @@
 
 	<groupId>org.thcathy</groupId>
 	<artifactId>squote</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
-	<url>http://squote.herokuapp.com/</url>
+	<version>1.0.0</version>
 	<name>Spring Quote</name>
-	<description>Web Util - Pet Project by thcathy</description>
 
 	<properties>
 		<java.version>13</java.version>

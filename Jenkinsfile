@@ -7,8 +7,10 @@ pipeline {
   }
 
   environment {
-    APISERVER_HOST = 'https://homeserver.funfunspell.com/web-parser-rest'
-    JASYPT_ENCRYPTOR_PASSWORD = credentials('JASYPT_ENCRYPTOR_PASSWORD')
+    apiserver_host = 'https://homeserver.funfunspell.com/web-parser-rest'
+    jasypt_encryptor_password = credentials('JASYPT_ENCRYPTOR_PASSWORD')
+    docker_image_tag = "${readMavenPom().getVersion()}-${env.BUILD_NUMBER}"
+    DEPLOY_USER = 'thcathy'
   }
 
   stages {
@@ -47,46 +49,54 @@ pipeline {
     stage("Docker build") {
       environment {
         DOCKER_LOGIN = credentials('DOCKER_LOGIN')
-        DOCKER_IMAGE_TAG = "${readMavenPom().getVersion()}-${env.BUILD_NUMBER}"
       }
       steps {
-        sh "docker build -t thcathy/squote:latest -t thcathy/squote:${DOCKER_IMAGE_TAG} -f docker/Dockerfile ."
+        sh "docker build -t thcathy/squote:latest -t thcathy/squote:${docker_image_tag} -f docker/Dockerfile ."
         sh "docker login -u $DOCKER_LOGIN_USR -p $DOCKER_LOGIN_PSW"
         sh "docker push thcathy/squote:latest"
-        sh "docker push thcathy/squote:${DOCKER_IMAGE_TAG}"
+        sh "docker push thcathy/squote:${docker_image_tag}"
       }
     }
 
-    //stage("Deploy to staging") {
-    //  steps {
-    //    sh "docker-compose -f docker-compose-test.yaml up -d"
-    //  }
-    //}
-//
-    //stage("Acceptance test") {
-    //  steps {
-    //    sh 'chmod +x ./script/bin/*.sh'
-    //    script {
-    //      env.SQUOTE_CID = sh (
-    //          script: 'docker ps -f name=squote_jenkins_squote | grep thcathy/squote | cut -d \' \' -f1',
-    //          returnStdout: true
-    //      ).trim()
-    //      env.SQUOTE_HOST = sh (
-    //          script: "docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${env.SQUOTE_CID}",
-    //          returnStdout: true
-    //      ).trim()
-    //    }
-    //    sh 'echo $SQUOTE_HOST'
-    //    sleep 30
-    //    sh "./script/bin/acceptance_test.sh http://${env.SQUOTE_HOST}:8080"
-    //  }
-    //}
+    stage("deploy and verify UAT") {
+      when {
+        branch 'master'
+      }
+      agent {
+        docker {
+          image 'ansible/ansible-runner'
+        }
+      }
+      steps {
+        ansiblePlaybook(
+          inventory: 'ansible/squote/inventory_uat',
+          limit: 'uat',
+          extras: "-e docker_image_tag=${docker_image_tag} -e jasypt_encryptor_password=${jasypt_encryptor_password} -e apiserver_host=${apiserver_host}",
+          playbook: 'ansible/squote/deploy.yml',
+          credentialsId: 'Jenkins-master'
+        )
+      }
+    }
 
+    stage("deploy and verify Prod") {
+      when {
+        branch 'master'
+      }
+      agent {
+        docker {
+          image 'ansible/ansible-runner'
+        }
+      }
+      steps {
+        ansiblePlaybook(
+          inventory: 'ansible/squote/inventory_prod',
+          limit: 'prod',
+          extras: "-e docker_image_tag=${docker_image_tag} -e jasypt_encryptor_password=${jasypt_encryptor_password} -e apiserver_host=${apiserver_host}",
+          playbook: 'ansible/squote/deploy.yml',
+          credentialsId: 'Jenkins-master'
+        )
+      }
+    }
   }
 
-  //post {
-  //  always {
-  //    sh "docker-compose -f docker-compose-test.yaml down"
-  //  }
-  //}
 }
