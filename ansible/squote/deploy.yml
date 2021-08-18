@@ -19,3 +19,15 @@
       register: stack_deploy
 
     - debug: msg="{{ stack_deploy}}"
+
+    - name: check server is respsonding
+      uri:
+        url: "https://{{ inventory_hostname }}/{{ app_name }}/rest/stock/indexquotes"
+        return_content: yes
+        status_code: 200
+        body_format: json
+      register: result
+      until: result.json[0].stockCode != ""
+      retries: 5
+      delay: 30
+      tags: verify
