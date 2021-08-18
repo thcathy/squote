@@ -1,4 +1,3 @@
----
-ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-deploy_folder: ~/ffs-uat
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+deploy_folder=~/ffs-uat
 
