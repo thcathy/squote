@@ -35,13 +35,17 @@ pipeline {
             }
             sh "docker exec -t ${c.id} bash -c 'while ! pgrep mongod; do sleep 1; done'"
             sh './mvnw package'
-            publishHTML (target: [
-              reportDir: 'target/site/jacoco/',
-              reportFiles: 'index.html',
-              reportName: "JaCoCo Report"
-            ])
-            junit 'target/surefire-reports/**/*.xml'
           }
+        }
+      }
+      post {
+        always {
+          junit 'target/surefire-reports/**/*.xml'
+          publishHTML (target: [
+                        reportDir: 'target/site/jacoco/',
+                        reportFiles: 'index.html',
+                        reportName: "JaCoCo Report"
+                      ])
         }
       }
     }
@@ -96,12 +100,6 @@ pipeline {
           credentialsId: 'Jenkins-master'
         )
       }
-    }
-  }
-
-  post {
-    always {
-      junit 'build/test-results/test/*.xml'
     }
   }
 
