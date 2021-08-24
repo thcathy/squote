@@ -23,7 +23,7 @@ public class Fund {
 	@Id
 	private String id;
 
-    public final String name;
+	public final String name;
 
 	@Indexed
 	public String userId;
@@ -59,18 +59,21 @@ public class Fund {
 			holdings.put(code, FundHolding.create(code, qty, gross));
 		}
 	}
-		
+
 	public void sellStock(String code, BigDecimal qty, BigDecimal gross) {
-		if (!holdings.containsKey(code)) throw new IllegalArgumentException("Fund does not hold " + code);
-		
+		if (!holdings.containsKey(code)) {
+			log.warn("Fund does not hold " + code);
+			return;
+		}
+
 		FundHolding updatedHolding = decreaseHolding(holdings.get(code), qty, gross);
 		if (updatedHolding.getQuantity().compareTo(BigDecimal.ZERO) <= 0 && updatedHolding.getLatestTradeTime() <= 0)
 			holdings.remove(code);
 		else
-			holdings.put(code, updatedHolding);		
+			holdings.put(code, updatedHolding);
 	}
-	
-	public FundHolding payInterest(String code, BigDecimal interest) {			
+
+	public FundHolding payInterest(String code, BigDecimal interest) {
 		FundHolding holding = holdings.get(code);
 		if (holding != null) {
 			holding = FundHolding.create(code, holding.getQuantity(), holding.getGross().subtract(interest));
@@ -81,26 +84,26 @@ public class Fund {
 
 	@Override
 	public String toString() {
-        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
-    }
-		
+		return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+	}
+
 	public Date getDate() { return this.date; }
 	public Map<String, FundHolding> getHoldings() { return holdings; }
-	
+
 	private FundHolding increaseHolding(FundHolding fundHolding, BigDecimal qty, BigDecimal gross) {
 		return FundHolding.create(fundHolding.getCode(), fundHolding.getQuantity().add(qty), gross.add(fundHolding.getGross()))
 				.setLatestTradeTime(fundHolding.getLatestTradeTime());
 	}
-	
+
 	private FundHolding decreaseHolding(FundHolding fundHolding, BigDecimal qty,
-			BigDecimal gross) {		
+										BigDecimal gross) {
 		BigDecimal orgGross = fundHolding.getPrice().multiply(qty);
 		return FundHolding.create(fundHolding.getCode(),
-				fundHolding.getQuantity().subtract(qty),
-				fundHolding.getGross().subtract(orgGross))
+						fundHolding.getQuantity().subtract(qty),
+						fundHolding.getGross().subtract(orgGross))
 				.setLatestTradeTime(fundHolding.getLatestTradeTime());
 	}
-	
+
 	public Fund calculateNetProfit(Map<String, StockQuote> quoteMap) {
 		holdings
 				.entrySet().stream()
@@ -110,7 +113,7 @@ public class Fund {
 		netProfit = holdings.values().stream()
 				.map(v -> v.netProfit())
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
-		
+
 		return this;
 	}
 
@@ -124,7 +127,7 @@ public class Fund {
 				.map(v -> v.getGross())
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
 	}
-	
+
 	public void setProfit(BigDecimal profit) {
 		this.profit = profit;
 	}
@@ -151,6 +154,10 @@ public class Fund {
 	public Fund setType(FundType type) {
 		this.type = type;
 		return this;
+	}
+
+	public boolean containSymbol(String symbol) {
+		return holdings.containsKey(symbol);
 	}
 
 }

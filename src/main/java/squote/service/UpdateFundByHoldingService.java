@@ -18,17 +18,17 @@ public class UpdateFundByHoldingService {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	final static String SOURCE_BINANCE = "binance";
-		
+
 	@Autowired FundRepository fundRepo;
 	@Autowired HoldingStockRepository holdingRepo;
 	@Autowired BinanceAPIService binanceAPIService;
-		
+
 	public UpdateFundByHoldingService(FundRepository fundRepo, HoldingStockRepository holdingRepo, BinanceAPIService binanceAPIService) {
 		this.fundRepo = fundRepo;
 		this.holdingRepo = holdingRepo;
 		this.binanceAPIService = binanceAPIService;
 	}
-	
+
 	public Fund updateFundByHoldingAndPersist(String userId, String fundName, String holdingId, BigDecimal fee) {
 		var holding = holdingRepo.findById(holdingId).get();
 		var fund = updateFundByHolding(userId, fundName, holding, fee);
@@ -39,11 +39,11 @@ public class UpdateFundByHoldingService {
 
 	public Fund updateFundByHolding(String userId, String fundName, HoldingStock holding, BigDecimal fee) {
 		Fund f = fundRepo.findByUserIdAndName(userId, fundName).get();
-		
+
 		if (Side.BUY.equals(holding.getSide()))
 			f.buyStock(holding.getCode(), BigDecimal.valueOf(holding.getQuantity()), holding.getGross());
 		else if (Side.SELL.equals(holding.getSide())) {
-			updateProfit(f, holding);			
+			updateProfit(f, holding);
 			f.sellStock(holding.getCode(), BigDecimal.valueOf(holding.getQuantity()), holding.getGross());
 		}
 		holding.setFundName(f.name);
@@ -57,9 +57,11 @@ public class UpdateFundByHoldingService {
 			for (String code : f.getHoldings().keySet()) {
 				var executions = binanceAPIService.getMyTrades(code);
 				addExecutionsToFund(f, executions);
-				f.getHoldings().get(code).setLatestTradeTime(
-						Math.max(f.getHoldings().get(code).getLatestTradeTime(), maxTime(executions))
-				);
+				if (f.getHoldings().containsKey(code)) {
+					f.getHoldings().get(code).setLatestTradeTime(
+							Math.max(f.getHoldings().get(code).getLatestTradeTime(), maxTime(executions))
+					);
+				}
 			}
 		}
 		fundRepo.save(f);
@@ -72,8 +74,8 @@ public class UpdateFundByHoldingService {
 
 	private void addExecutionsToFund(Fund fund, List<Execution> executions) {
 		executions.stream()
-			.filter(exec -> exec.getTime() > fund.getHoldings().get(exec.getSymbol()).getLatestTradeTime())
-			.forEach(exec -> updateFundByExecution(fund, exec));
+				.filter(exec -> !fund.containSymbol(exec.getSymbol()) || exec.getTime() > fund.getHoldings().get(exec.getSymbol()).getLatestTradeTime())
+				.forEach(exec -> updateFundByExecution(fund, exec));
 	}
 
 	private void updateFundByExecution(Fund fund, Execution exec) {
@@ -87,7 +89,15 @@ public class UpdateFundByHoldingService {
 
 	private void updateProfit(Fund f, Execution exec) {
 		var holding = f.getHoldings().get(exec.getSymbol());
-		BigDecimal profit = exec.getPrice().subtract(holding.getPrice()).multiply(exec.getQuantity());
+		BigDecimal profit;
+		if (holding == null) {
+			profit = exec.getPrice().multiply(exec.getQuantity());
+		} else if (holding.getQuantity().compareTo(exec.getQuantity()) >= 0) {
+			profit = exec.getPrice().subtract(holding.getPrice()).multiply(exec.getQuantity());
+		} else {
+			profit = exec.getQuantity().subtract(holding.getQuantity()).multiply(exec.getPrice());
+			profit = exec.getPrice().subtract(holding.getPrice()).multiply(holding.getQuantity()).add(profit);
+		}
 		f.setProfit(f.getProfit().add(profit));
 	}
 
@@ -101,7 +111,7 @@ public class UpdateFundByHoldingService {
 				.subtract(fundHolding.getPrice())
 				.multiply(new BigDecimal(holding.getQuantity()));
 	}
-	
-	
+
+
 }
     

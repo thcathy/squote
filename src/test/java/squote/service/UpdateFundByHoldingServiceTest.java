@@ -1,6 +1,7 @@
 package squote.service;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import squote.SquoteConstants.Side;
@@ -12,6 +13,7 @@ import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +21,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
+import static squote.service.UpdateFundByHoldingService.SOURCE_BINANCE;
 
 public class UpdateFundByHoldingServiceTest {
 	UpdateFundByHoldingService service;
@@ -29,33 +32,33 @@ public class UpdateFundByHoldingServiceTest {
 	Fund cryptoFund = createCryptoFund();
 	BinanceAPIService mockBinanceAPIService;
 	FundRepository mockFundRepo;
-	
+
 	@BeforeEach
-	public void setupService() {		
+	public void setupService() {
 		mockFundRepo = Mockito.mock(FundRepository.class);
 		when(mockFundRepo.findByUserIdAndName(fund.userId, fund.name)).thenReturn(Optional.of(fund));
 		when(mockFundRepo.findByUserIdAndName(cryptoFund.userId, cryptoFund.name)).thenReturn(Optional.of(cryptoFund));
-				
+
 		HoldingStockRepository mockHoldingRepo = Mockito.mock(HoldingStockRepository.class);
 		when(mockHoldingRepo.findById(buy883.getId())).thenReturn(Optional.of(buy883));
 		when(mockHoldingRepo.findById(sell2800.getId())).thenReturn(Optional.of(sell2800));
 		when(mockHoldingRepo.findById(sellAll2828.getId())).thenReturn(Optional.of(sellAll2828));
 
 		mockBinanceAPIService = Mockito.mock(BinanceAPIService.class);
-		
+
 		service = new UpdateFundByHoldingService(mockFundRepo, mockHoldingRepo, mockBinanceAPIService);
 	}
-	
+
 	@Test
 	public void update_givenBuyHolding_shouldAddStockToFund() {
 		Fund f = service.updateFundByHolding(fund.userId, fund.name, buy883, BigDecimal.ZERO);
-		
+
 		FundHolding fundHolding = f.getHoldings().get(buy883.getCode());
 		assertEquals(new BigDecimal("78800"), fundHolding.getGross());
 		assertEquals(BigDecimal.valueOf(6500), fundHolding.getQuantity());
 		assertEquals(BigDecimal.ZERO, f.getProfit());
 	}
-	
+
 	@Test
 	public void update_givenSell2800_shouldReduceStockAndUpdateProfitToFund() {
 		Fund f = service.updateFundByHolding(fund.userId, fund.name, sell2800, new BigDecimal("10.5"));
@@ -64,12 +67,12 @@ public class UpdateFundByHoldingServiceTest {
 		assertEquals(679.5, f.getProfit().doubleValue(), 0);
 		assertEquals(17500, fundHolding.getGross().doubleValue(), 0);
 		assertEquals(700, fundHolding.getQuantity().doubleValue());
-	}	
-	
+	}
+
 	@Test
 	public void update_givenSellAll2828_shouldRemoveStockAndUpdateProfitToFund() {
 		Fund f = service.updateFundByHolding(fund.userId, fund.name, sellAll2828, new BigDecimal("10"));
-				
+
 		assertEquals(-6799.5, f.getProfit().doubleValue(), 0);
 		assertNull(f.getHoldings().get(sellAll2828.getCode()));
 	}
@@ -79,7 +82,7 @@ public class UpdateFundByHoldingServiceTest {
 		when(mockBinanceAPIService.getMyTrades("BTCUSDT")).thenReturn(createBTCExecutions());
 		when(mockBinanceAPIService.getMyTrades("ETHUSDT")).thenReturn(createETHExecutions());
 
-		var f = service.getTradesAndUpdateFund(cryptoFund.userId, cryptoFund.name, "binance");
+		var f = service.getTradesAndUpdateFund(cryptoFund.userId, cryptoFund.name, SOURCE_BINANCE);
 		var BTCHolding = f.getHoldings().get("BTCUSDT");
 		var ETHHolding = f.getHoldings().get("ETHUSDT");
 		assertEquals(BigDecimal.valueOf(0.035), BTCHolding.getQuantity());
@@ -94,10 +97,21 @@ public class UpdateFundByHoldingServiceTest {
 	public void getTradesAndUpdateFund_shouldSetLatestTradeTime() {
 		when(mockBinanceAPIService.getMyTrades("FTTUSDT")).thenReturn(createFTTExecutions());
 
-		var f = service.getTradesAndUpdateFund(cryptoFund.userId, cryptoFund.name, "binance");
+		var f = service.getTradesAndUpdateFund(cryptoFund.userId, cryptoFund.name, SOURCE_BINANCE);
 		var FTTHolding = f.getHoldings().get("FTTUSDT");
 		assertEquals(1617782100511L, FTTHolding.getLatestTradeTime());
 		verify(mockFundRepo, atLeast(1)).save(any());
+	}
+
+	@Test
+	@DisplayName("Support sell trade which quantity is more than holding quantity")
+	public void getTradesAndUpdateFund_shouldSupportOverSell() {
+		when(mockBinanceAPIService.getMyTrades("ADAUSDT")).thenReturn(createADAExecutions());
+
+		var f = service.getTradesAndUpdateFund(cryptoFund.userId, cryptoFund.name, SOURCE_BINANCE);
+		verify(mockFundRepo, atLeast(1)).save(any());
+		assertNull(f.getHoldings().get("ADAUSDT"));
+		assertEquals(new BigDecimal("20.5"), f.getProfit().setScale(1, RoundingMode.HALF_UP));
 	}
 
 	@Test
@@ -138,19 +152,29 @@ public class UpdateFundByHoldingServiceTest {
 				.setSide(Side.BUY).setTime(1617782100511L);
 		return List.of(exec1, exec2);
 	}
-	
-	private HoldingStock createBuyHolding() {		
+
+	private List<Execution> createADAExecutions() {
+		Execution exec1 = new Execution().setSymbol("ADAUSDT")
+				.setQuantity(BigDecimal.valueOf(0.15)).setQuoteQuantity(BigDecimal.valueOf(30)).setPrice(BigDecimal.valueOf(200))
+				.setSide(Side.SELL).setTime(1617782100511L);
+		Execution exec2 = new Execution().setSymbol("ADAUSDT")
+				.setQuantity(BigDecimal.valueOf(0.05)).setQuoteQuantity(BigDecimal.valueOf(10.5)).setPrice(BigDecimal.valueOf(210))
+				.setSide(Side.SELL).setTime(1617782100511L);
+		return List.of(exec1, exec2);
+	}
+
+	private HoldingStock createBuyHolding() {
 		return new HoldingStock("1", "883", Side.BUY, 6000, new BigDecimal("73800"), new Date(), null);
 	}
-	
+
 	private HoldingStock createSell2800Holding() {
 		return new HoldingStock("2", "2800", Side.SELL, 300, new BigDecimal("8190"), new Date(), null);
 	}
-	
+
 	private HoldingStock createSellAll2828Holding() {
 		return new HoldingStock("3", "2828", Side.SELL, 500, new BigDecimal("43210.5"), new Date(), null);
 	}
-	
+
 	private Fund createStockFund() {
 		Fund f = new Fund("tester", "testfund");
 		f.buyStock("2828", BigDecimal.valueOf(500), BigDecimal.valueOf(50000));
@@ -166,6 +190,7 @@ public class UpdateFundByHoldingServiceTest {
 		f.getHoldings().get("BTCUSDT").setLatestTradeTime(1617782100000L);
 		f.buyStock("ETHUSDT", BigDecimal.ZERO, BigDecimal.ZERO);
 		f.buyStock("FTTUSDT", BigDecimal.ZERO, BigDecimal.ZERO);
+		f.buyStock("ADAUSDT", new BigDecimal("0.1"), new BigDecimal("20"));
 		return f;
 	}
 }

@@ -14,7 +14,6 @@ pipeline {
   }
 
   stages {
-
     stage('resolve dependency') {
       steps {
         sh 'chmod +x mvnw'
