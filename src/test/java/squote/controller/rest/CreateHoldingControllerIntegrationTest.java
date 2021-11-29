@@ -89,8 +89,8 @@ public class CreateHoldingControllerIntegrationTest extends IntegrationTest {
 		});
 		assertEquals("Cannot create holding", exception.getMessage());
 	}
-	
-	@Test
+
+	// @Test // ignore due to scb msg missing trade date. Trade date is the obj created time, will always success in getting HSI
 	public void createHolding_whenCannotGetHcei_shouldThrowException() {
 		String scbSellMsg = "渣打:買入17500股7288.HK\n" +
 				"已完成\n" +
