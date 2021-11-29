@@ -1,4 +1,5 @@
 package squote.domain;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import squote.SquoteConstants.Side;
@@ -7,6 +8,7 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -41,7 +43,7 @@ public class StockExecutionMessageBuilder {
 		// parse qty
 		startPos = message.indexOf(seMsg.side.chinese) + 2;
 		endPos = message.indexOf("股");
-		seMsg.quantity = Integer.valueOf(message.substring(startPos, endPos).replaceAll(",", ""));
+		seMsg.quantity = Integer.parseInt(message.substring(startPos, endPos).replaceAll(",", ""));
 
 		// parse code
 		startPos = endPos + 1;
@@ -52,7 +54,7 @@ public class StockExecutionMessageBuilder {
 		// parse price
 		startPos = message.indexOf("成交價格：", endPos) + 5;
 		endPos = message.indexOf("，", startPos);
-		seMsg.price = new BigDecimal(message.substring(startPos, endPos).replaceAll("[^0-9\\.]+", ""));
+		seMsg.price = new BigDecimal(message.substring(startPos, endPos).replaceAll("[^0-9.]+", ""));
 
 		// parse exec id
 		seMsg.executionId = UUID.randomUUID().toString();
@@ -79,7 +81,7 @@ public class StockExecutionMessageBuilder {
 		// parse qty
 		startPos = message.indexOf(seMsg.side.chinese) + 2;
 		endPos = message.indexOf("股");
-		seMsg.quantity = Integer.valueOf(message.substring(startPos, endPos).replaceAll(",", ""));
+		seMsg.quantity = Integer.parseInt(message.substring(startPos, endPos).replaceAll(",", ""));
 
 		// parse code
 		startPos = endPos + 1;
@@ -89,17 +91,12 @@ public class StockExecutionMessageBuilder {
 		// parse price
 		startPos = message.indexOf("平均價", endPos) + 6;
 		endPos = message.indexOf("\n", startPos);
-		seMsg.price = new BigDecimal(message.substring(startPos, endPos).replaceAll("[^0-9\\.]+", ""));
+		seMsg.price = new BigDecimal(message.substring(startPos, endPos).replaceAll("[^0-9.]+", ""));
 
 		// parse exec id
 		seMsg.executionId = message.split("\n")[3];
 
-		// parse execution date
-		try {
-			seMsg.date = new SimpleDateFormat("yyMMdd").parse(seMsg.executionId.substring(1, 7));
-		} catch (ParseException e) {
-			log.warn("Cannot parse execution date", e);
-		}
+		seMsg.date = new Date();
 		seMsg.broker = Broker.SCBANK;
 		return Optional.of(seMsg);
 	}
