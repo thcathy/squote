@@ -92,13 +92,12 @@ public class CreateHoldingControllerIntegrationTest extends IntegrationTest {
 	
 	@Test
 	public void createHolding_whenCannotGetHcei_shouldThrowException() {
-		String scbSellMsg = "渣打:買入6000股883.HK 中國海洋石油\n";
-		scbSellMsg += "已完成\n";
-		scbSellMsg += "平均價HKD7.99\n";
-		scbSellMsg += "O1512110016740";
-		String finalScbSellMsg = scbSellMsg;
+		String scbSellMsg = "渣打:買入17500股7288.HK\n" +
+				"已完成\n" +
+				"平均價HKD4.79\n" +
+				"OSCBABT44566440";
 		Exception exception = Assertions.assertThrows(RuntimeException.class, () -> {
-			controller.createHoldingFromExecution(finalScbSellMsg, "0");
+			controller.createHoldingFromExecution(scbSellMsg, "0");
 		});
 		assertEquals("Cannot getHistoryPrice hcei", exception.getMessage());
 	}
