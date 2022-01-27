@@ -6,7 +6,8 @@ import java.util.function.Function;
 
 public enum Broker {
     FUTU("", Broker::futuCommission),
-    SCBANK("", Broker::scbCommission);
+    SCBANK("", Broker::scbCommission),
+    USMART("", Broker::defaultCommission);
 
     public String chineseName;
     public Function<BigDecimal, BigDecimal> calculateCommission;
@@ -23,5 +24,9 @@ public enum Broker {
     static BigDecimal scbCommission(BigDecimal value) {
         return value.multiply(new BigDecimal("0.002")).max(new BigDecimal("50"))
                 .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    static BigDecimal defaultCommission(BigDecimal value) {
+        return BigDecimal.ZERO;
     }
 }

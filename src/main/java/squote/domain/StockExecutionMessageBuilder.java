@@ -7,10 +7,7 @@ import squote.SquoteConstants.Side;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public class StockExecutionMessageBuilder {
 	private static Logger log = LoggerFactory.getLogger(StockExecutionMessageBuilder.class);
@@ -20,6 +17,8 @@ public class StockExecutionMessageBuilder {
 			return parseScbMessage(message);
 		} else if (isFutuFullyFilled(message)) {
     		return parseFutuMessage(message);
+		} else if (isUsmart(message)) {
+    		return parseUsmartMessage(message);
 		}
     	
     	return Optional.empty();
@@ -31,6 +30,10 @@ public class StockExecutionMessageBuilder {
 
 	private static boolean isFutuFullyFilled(String message) {
 		return message.contains("富途證券") && message.contains("全部成交");
+	}
+
+	private static boolean isUsmart(String message) {
+    	return (message.contains("智能訂單") || message.toLowerCase().contains("usmart")) && message.contains("已成交");
 	}
 
 	private static Optional<StockExecutionMessage> parseFutuMessage(String message) {
@@ -68,6 +71,37 @@ public class StockExecutionMessageBuilder {
 			log.warn("Cannot parse execution date", e);
 		}
 		seMsg.broker = Broker.FUTU;
+		return Optional.of(seMsg);
+	}
+
+	private static Optional<StockExecutionMessage> parseUsmartMessage(String message) {
+
+		String usmartBuyMsg = "尊敬的客戶，您所委托的智能訂單已成交：買入07288FL二南方國指，數量19,000股，成交價格4.490港幣。";
+		int startPos, endPos;
+		StockExecutionMessage seMsg = new StockExecutionMessage();
+
+		// parse side
+		seMsg.side = Arrays.stream(Side.values()).filter(x-> message.contains(x.chinese)).findFirst().get();
+
+		// parse code
+		startPos = message.indexOf(seMsg.side.chinese) + 2;
+		endPos = startPos+5;
+		seMsg.code = message.substring(startPos, endPos).replaceFirst("^0+(?!$)", "");
+
+		// parse qty
+		startPos = endPos + 1;
+		startPos = message.indexOf("數量") + 2;
+		endPos = message.indexOf("股");
+		seMsg.quantity = Integer.parseInt(message.substring(startPos, endPos).replaceAll(",", ""));
+
+		// parse price
+		startPos = message.indexOf("成交價格", endPos) + 4;
+		endPos = message.indexOf("港幣", startPos);
+		seMsg.price = new BigDecimal(message.substring(startPos, endPos).replaceAll("[^0-9.]+", ""));
+
+		seMsg.executionId = UUID.randomUUID().toString();
+		seMsg.date = new Date();
+		seMsg.broker = Broker.USMART;
 		return Optional.of(seMsg);
 	}
 

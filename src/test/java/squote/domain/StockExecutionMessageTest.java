@@ -58,12 +58,23 @@ public class StockExecutionMessageTest {
 
 	@Test
 	public void construct_GivenFutuBuyMsg_ShouldParseSuccess() {
-		String futuSellMsg = "【成交提醒】成功買入7,200股南方两倍看多國指(07288.HK)，成交價格：6.855，此筆訂單委託已全部成交，2021-07-07 13:22:05。 【富途證券(香港)】";
-		StockExecutionMessage msg = StockExecutionMessageBuilder.build(futuSellMsg).get();
+		String futuBuyMsg = "【成交提醒】成功買入7,200股南方两倍看多國指(07288.HK)，成交價格：6.855，此筆訂單委託已全部成交，2021-07-07 13:22:05。 【富途證券(香港)】";
+		StockExecutionMessage msg = StockExecutionMessageBuilder.build(futuBuyMsg).get();
 		assertEquals(SquoteConstants.Side.BUY, msg.getSide());
 		assertEquals(7200, msg.getQuantity());
 		assertEquals("7288", msg.getCode());
 		assertEquals(new BigDecimal("6.855"), msg.getPrice());
 		assertEquals("2021-07-07", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
+	}
+
+	@Test
+	public void construct_GivenUsmartBuyMsg_ShouldParseSuccess() {
+		String usmartBuyMsg = "尊敬的客戶，您所委托的智能訂單已成交：買入07288FL二南方國指，數量19,000股，成交價格4.490港幣。";
+		StockExecutionMessage msg = StockExecutionMessageBuilder.build(usmartBuyMsg).get();
+		assertEquals(SquoteConstants.Side.BUY, msg.getSide());
+		assertEquals(19000, msg.getQuantity());
+		assertEquals("7288", msg.getCode());
+		assertEquals(new BigDecimal("4.490"), msg.getPrice());
+		assertEquals(new SimpleDateFormat("yyyy-MM-dd").format(new Date()), new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
 	}
 }
