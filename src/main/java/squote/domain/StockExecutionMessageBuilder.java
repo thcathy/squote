@@ -75,8 +75,6 @@ public class StockExecutionMessageBuilder {
 	}
 
 	private static Optional<StockExecutionMessage> parseUsmartMessage(String message) {
-
-		String usmartBuyMsg = "尊敬的客戶，您所委托的智能訂單已成交：買入07288FL二南方國指，數量19,000股，成交價格4.490港幣。";
 		int startPos, endPos;
 		StockExecutionMessage seMsg = new StockExecutionMessage();
 
