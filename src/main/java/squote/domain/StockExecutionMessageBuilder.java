@@ -29,7 +29,7 @@ public class StockExecutionMessageBuilder {
 	}
 
 	private static boolean isFutuFullyFilled(String message) {
-		return message.contains("富途證券") && message.contains("全部成交");
+		return message.contains("富途證券") && message.contains("成交");
 	}
 
 	private static boolean isUsmart(String message) {
@@ -64,7 +64,7 @@ public class StockExecutionMessageBuilder {
 
 		// parse execution date
 		try {
-			startPos = message.indexOf("全部成交，", endPos) + 5;
+			startPos = message.indexOf("成交，", endPos) + 3;
 			endPos = startPos + 10;
 			seMsg.date = new SimpleDateFormat("yyyy-MM-dd").parse(message.substring(startPos, endPos));
 		} catch (ParseException e) {
