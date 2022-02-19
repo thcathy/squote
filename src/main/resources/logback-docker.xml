@@ -1,0 +1,28 @@
+<configuration>
+
+	<appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>logs/squote.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>logs/squote.%d{yyyy-MM-dd}.log</fileNamePattern>
+			<maxHistory>365</maxHistory>
+		</rollingPolicy>
+
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="async" class="ch.qos.logback.classic.AsyncAppender">
+		<appender-ref ref="file" />
+	</appender>
+
+	<logger name="org.apache" level="info" />
+	<logger name="org.springframework" level="info" />
+	<logger name="org.asynchttpclient" level="info" />
+	<logger name="thc" level="debug" />
+	<logger name="squote" level="debug" />
+
+	<root level="info">
+		<appender-ref ref="async" />
+	</root>
+</configuration>
