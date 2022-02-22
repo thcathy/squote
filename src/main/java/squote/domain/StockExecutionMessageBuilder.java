@@ -33,7 +33,7 @@ public class StockExecutionMessageBuilder {
 	}
 
 	private static boolean isUsmart(String message) {
-    	return (message.contains("智能訂單") || message.toLowerCase().contains("usmart")) && message.contains("已成交");
+    	return (message.contains("智能訂單") || message.toLowerCase().contains("usmart")) && (message.contains("已成交") || message.contains("已成功"));
 	}
 
 	private static Optional<StockExecutionMessage> parseFutuMessage(String message) {
@@ -93,9 +93,15 @@ public class StockExecutionMessageBuilder {
 		seMsg.quantity = Integer.parseInt(message.substring(startPos, endPos).replaceAll(",", ""));
 
 		// parse price
-		startPos = message.indexOf("成交價格", endPos) + 4;
-		endPos = message.indexOf("港幣", startPos);
-		seMsg.price = new BigDecimal(message.substring(startPos, endPos).replaceAll("[^0-9.]+", ""));
+		if (message.contains("成交價格")) {
+			startPos = message.indexOf("成交價格", endPos) + 4;
+			endPos = message.indexOf("港幣", startPos);
+			seMsg.price = new BigDecimal(message.substring(startPos, endPos).replaceAll("[^0-9.]+", ""));
+		} else if (message.contains("成交均價格")) {
+			startPos = message.indexOf("成交均價格", endPos) + 5;
+			endPos = message.indexOf("港幣", startPos);
+			seMsg.price = new BigDecimal(message.substring(startPos, endPos).replaceAll("[^0-9.]+", ""));
+		}
 
 		seMsg.executionId = UUID.randomUUID().toString();
 		seMsg.date = new Date();

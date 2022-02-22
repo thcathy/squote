@@ -88,4 +88,15 @@ public class StockExecutionMessageTest {
 		assertEquals(new BigDecimal("4.490"), msg.getPrice());
 		assertEquals(new SimpleDateFormat("yyyy-MM-dd").format(new Date()), new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
 	}
+
+	@Test
+	public void construct_GivenUsmartBuyMsg2_ShouldParseSuccess() {
+		String usmartBuyMsg = "您已成功買入07288FL二南方國指，數量20,000股，成交均價格4.414港幣，買入金額88280.00港幣。詳情請登錄uSMART APP查看，感謝您的支持";
+		StockExecutionMessage msg = StockExecutionMessageBuilder.build(usmartBuyMsg).get();
+		assertEquals(SquoteConstants.Side.BUY, msg.getSide());
+		assertEquals(20000, msg.getQuantity());
+		assertEquals("7288", msg.getCode());
+		assertEquals(new BigDecimal("4.414"), msg.getPrice());
+		assertEquals(new SimpleDateFormat("yyyy-MM-dd").format(new Date()), new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
+	}
 }
