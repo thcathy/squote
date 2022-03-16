@@ -88,9 +88,14 @@ public class StockExecutionMessageBuilder {
 
 		// parse qty
 		startPos = endPos + 1;
-		startPos = message.indexOf("數量") + 2;
-		endPos = message.indexOf("股");
-		seMsg.quantity = Integer.parseInt(message.substring(startPos, endPos).replaceAll(",", ""));
+		if (message.indexOf("數量") >= 0) {
+			startPos = message.indexOf("數量") + 2;
+			endPos = message.indexOf("股");
+			seMsg.quantity = Integer.parseInt(message.substring(startPos, endPos).replaceAll(",", ""));
+		} else {
+			endPos = message.indexOf("股");
+			seMsg.quantity = Integer.parseInt(message.substring(startPos, endPos).replaceAll("[\\D]", ""));
+		}
 
 		// parse price
 		if (message.contains("成交價格")) {
@@ -99,6 +104,10 @@ public class StockExecutionMessageBuilder {
 			seMsg.price = new BigDecimal(message.substring(startPos, endPos).replaceAll("[^0-9.]+", ""));
 		} else if (message.contains("成交均價格")) {
 			startPos = message.indexOf("成交均價格", endPos) + 5;
+			endPos = message.indexOf("港幣", startPos);
+			seMsg.price = new BigDecimal(message.substring(startPos, endPos).replaceAll("[^0-9.]+", ""));
+		} else if (message.contains("成交價")) {
+			startPos = message.indexOf("成交價", endPos) + 3;
 			endPos = message.indexOf("港幣", startPos);
 			seMsg.price = new BigDecimal(message.substring(startPos, endPos).replaceAll("[^0-9.]+", ""));
 		}

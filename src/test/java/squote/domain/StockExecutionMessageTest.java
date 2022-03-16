@@ -99,4 +99,15 @@ public class StockExecutionMessageTest {
 		assertEquals(new BigDecimal("4.414"), msg.getPrice());
 		assertEquals(new SimpleDateFormat("yyyy-MM-dd").format(new Date()), new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
 	}
+
+	@Test
+	public void construct_GivenUsmartSellMsg_ShouldParseSuccess() {
+		String usmartSellMsg = "您已成功賣出07288南方兩倍做多國指ETF36,200股，成交價2.930港幣。 usmart";
+		StockExecutionMessage msg = StockExecutionMessageBuilder.build(usmartSellMsg).get();
+		assertEquals(SquoteConstants.Side.SELL, msg.getSide());
+		assertEquals(36200, msg.getQuantity());
+		assertEquals("7288", msg.getCode());
+		assertEquals(new BigDecimal("2.930"), msg.getPrice());
+		assertEquals(new SimpleDateFormat("yyyy-MM-dd").format(new Date()), new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
+	}
 }
