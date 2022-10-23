@@ -32,4 +32,4 @@ jobs:
       uses: EnricoMi/publish-unit-test-result-action@v2
       if: always()
       with:
-        junit_files: "test-results/junit/**/*.xml"
+        junit_files: "target/surefire/**/*.xml"
