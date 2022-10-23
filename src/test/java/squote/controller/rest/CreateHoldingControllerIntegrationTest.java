@@ -117,7 +117,7 @@ public class CreateHoldingControllerIntegrationTest extends IntegrationTest {
 		assertEquals(6000, holding.getQuantity());
 		assertEquals(new BigDecimal("47940.00"), holding.getGross());
 		assertEquals(SquoteConstants.Side.BUY, holding.getSide());
-		assertTrue(holding.getHsce().doubleValue() > 6000);
+		assertTrue(holding.getHsce().doubleValue() > 1000);
 		assertEquals(totalHoldings+1, holdingRepo.count());
 		assertEquals(authenticationServiceStub.userId, holding.getUserId());
 	}
