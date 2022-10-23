@@ -36,9 +36,9 @@ jobs:
     - name: JaCoCo Code Coverage Report
       uses: PavanMudigonda/jacoco-reporter@v4.6
       with:
-        coverage_results_path: site/jacoco/jacoco.xml
-        coverage_report_name: Coverage
-        coverage_report_title: JaCoCo
+        coverage_results_path: 'target/site/jacoco/jacoco.xml'
+        coverage_report_name: 'Coverage'
+        coverage_report_title: 'JaCoCo'
         github_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Add Coverage Job Summary
       run: echo "${{ steps.jacoco_reporter.outputs.coverageSummary }}" >> $GITHUB_STEP_SUMMARY
