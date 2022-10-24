@@ -52,7 +52,7 @@ jobs:
     needs: [build-test]
     if: github.ref == 'refs/heads/master'
     env:
-      ANSIBLE_HOST_KEY_CHECKING: False
+      ANSIBLE_HOST_KEY_CHECKING: 'False'
     steps:
     - name: Checkout 
       uses: actions/checkout@v3
