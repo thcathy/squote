@@ -49,6 +49,8 @@ jobs:
         path: target
   docker:
     runs-on: ubuntu-latest
+    needs: [build-test]
+    if: github.ref == 'refs/heads/master'
     steps:
     - name: Download Artifact
       uses: actions/download-artifact@master
