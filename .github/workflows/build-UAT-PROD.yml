@@ -73,5 +73,6 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         push: true
+        context: .
         file: docker/Dockerfile
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/squote:latest,${{ secrets.DOCKERHUB_USERNAME }}/squote:${{ env.RELEASE_VERSION }}-${{ github.run_number }}
