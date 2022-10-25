@@ -66,7 +66,7 @@ jobs:
         echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
     - name: Set docker image tag env variable
       run: |
-        echo "DOCKER_IMAGE_TAG=${{ secrets.DOCKERHUB_USERNAME }}/squote:${{ env.RELEASE_VERSION }}-${{ github.run_number }}" >> $GITHUB_ENV
+        echo "DOCKER_IMAGE_TAG=${{ env.RELEASE_VERSION }}-${{ github.run_number }}" >> $GITHUB_ENV
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
     - name: Set up Docker Buildx
@@ -82,7 +82,7 @@ jobs:
         push: true
         context: .
         file: docker/Dockerfile
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/squote:latest,${{ env.DOCKER_IMAGE_TAG }}
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/squote:latest,${{ secrets.DOCKERHUB_USERNAME }}/squote:${{ env.DOCKER_IMAGE_TAG }}
     - name: Run playbook
       uses: dawidd6/action-ansible-playbook@v2
       with:    
