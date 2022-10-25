@@ -83,7 +83,7 @@ jobs:
         context: .
         file: docker/Dockerfile
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/squote:latest,${{ secrets.DOCKERHUB_USERNAME }}/squote:${{ env.DOCKER_IMAGE_TAG }}
-    - name: Run playbook
+    - name: Run ansible playbook to deploy and verify UAT
       uses: dawidd6/action-ansible-playbook@v2
       with:    
         playbook: ansible/squote/deploy.yml
@@ -92,6 +92,18 @@ jobs:
         options: |
           --inventory ansible/squote/inventory_uat
           --limit uat          
+          -e docker_image_tag=${{ env.DOCKER_IMAGE_TAG }}
+          -e jasypt_encryptor_password=${{ secrets.JASYPT_ENCRYPTOR_PASSWORD }}
+          -e apiserver_host=${{ env.apiserver_host }}
+    - name: Run ansible playbook to deploy and verify PROD
+      uses: dawidd6/action-ansible-playbook@v2
+      with:    
+        playbook: ansible/squote/deploy.yml
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        vault_password: ${{ secrets.VAULT_PASSWORD }}
+        options: |
+          --inventory ansible/squote/inventory_prod
+          --limit prod          
           -e docker_image_tag=${{ env.DOCKER_IMAGE_TAG }}
           -e jasypt_encryptor_password=${{ secrets.JASYPT_ENCRYPTOR_PASSWORD }}
           -e apiserver_host=${{ env.apiserver_host }}
