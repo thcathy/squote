@@ -11,6 +11,10 @@ env:
   jasypt_encryptor_password: ${{ secrets.JASYPT_ENCRYPTOR_PASSWORD }}
   MONGO_HOST: 'localhost:27017'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-test:
     runs-on: ubuntu-latest
