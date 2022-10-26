@@ -51,10 +51,12 @@ jobs:
       with:
         name: target
         path: target
-  docker:
+  docker-uat-prod:
     runs-on: ubuntu-latest
     needs: [build-test]
     if: github.ref == 'refs/heads/master'
+    env:
+      ANSIBLE_HOST_KEY_CHECKING: 'False'
     steps:
     - name: Checkout 
       uses: actions/checkout@v3
@@ -66,6 +68,9 @@ jobs:
     - name: Set Release version env variable
       run: |
         echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+    - name: Set docker image tag env variable
+      run: |
+        echo "DOCKER_IMAGE_TAG=${{ env.RELEASE_VERSION }}-${{ github.run_number }}" >> $GITHUB_ENV
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
     - name: Set up Docker Buildx
@@ -81,4 +86,28 @@ jobs:
         push: true
         context: .
         file: docker/Dockerfile
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/squote:latest,${{ secrets.DOCKERHUB_USERNAME }}/squote:${{ env.RELEASE_VERSION }}-${{ github.run_number }}
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/squote:latest,${{ secrets.DOCKERHUB_USERNAME }}/squote:${{ env.DOCKER_IMAGE_TAG }}
+    - name: Run ansible playbook to deploy and verify UAT
+      uses: dawidd6/action-ansible-playbook@v2
+      with:    
+        playbook: ansible/squote/deploy.yml
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        vault_password: ${{ secrets.VAULT_PASSWORD }}
+        options: |
+          --inventory ansible/squote/inventory_uat
+          --limit uat          
+          -e docker_image_tag=${{ env.DOCKER_IMAGE_TAG }}
+          -e jasypt_encryptor_password=${{ secrets.JASYPT_ENCRYPTOR_PASSWORD }}
+          -e apiserver_host=${{ env.apiserver_host }}
+    - name: Run ansible playbook to deploy and verify PROD
+      uses: dawidd6/action-ansible-playbook@v2
+      with:    
+        playbook: ansible/squote/deploy.yml
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        vault_password: ${{ secrets.VAULT_PASSWORD }}
+        options: |
+          --inventory ansible/squote/inventory_prod
+          --limit prod          
+          -e docker_image_tag=${{ env.DOCKER_IMAGE_TAG }}
+          -e jasypt_encryptor_password=${{ secrets.JASYPT_ENCRYPTOR_PASSWORD }}
+          -e apiserver_host=${{ env.apiserver_host }}
