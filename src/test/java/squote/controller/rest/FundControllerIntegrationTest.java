@@ -6,7 +6,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.test.web.servlet.MockMvc;
 import squote.IntegrationTest;
 import squote.domain.Fund;
 import squote.domain.FundHolding;
@@ -28,9 +27,8 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 
 	String userId = UUID.randomUUID().toString();
 
-	@Autowired
-	private MockMvc mockMvc;
-	private Fund testFund = createSimpleFund();
+	private final Fund testFund = createSimpleFund();
+	private final Fund testFund2 = createSimpleFund2();
 
 	private Fund createSimpleFund() {
 		Fund f = new Fund(userId, "testfund");
@@ -39,10 +37,17 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 		return f;
 	}
 
+	private Fund createSimpleFund2() {
+		Fund f = new Fund(userId, "testfund2");
+		f.buyStock("2828", BigDecimal.valueOf(400), BigDecimal.valueOf(44000));
+		return f;
+	}
+
 	@BeforeEach
 	public void setup() {
 		authenticationServiceStub.userId = userId;
 		fundRepo.save(testFund);
+		fundRepo.save(testFund2);
 	}
 
 	@AfterEach
@@ -76,7 +81,7 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 		assertEquals("newfund", result.name);
 		assertEquals(0, result.getProfit().intValue());
 
-		assertThat(fundRepo.findByUserId(userId).size()).isEqualTo(2);
+		assertThat(fundRepo.findByUserId(userId).size()).isEqualTo(3);
 	}
 	
 	@Test
@@ -84,7 +89,7 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 		fundController.delete("testfund");
 			
 		assertFalse(fundRepo.findByUserIdAndName(userId, "testfund").isPresent());
-		assertThat(fundRepo.findByUserId(userId).size()).isEqualTo(0);
+		assertThat(fundRepo.findByUserId(userId).size()).isEqualTo(1);
 	}
 	
 	@Test
@@ -137,7 +142,7 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 	public void getAll_shouldReturnAllFunds() throws Exception {
 		List<Fund> result = Lists.newArrayList(fundController.getAll());
 
-		assertThat(result.size()).isEqualTo(1);
+		assertThat(result.size()).isEqualTo(2);
 		assertThat(result.stream().anyMatch(f -> f.name.equals("testfund"))).isTrue();
 	}
 
@@ -173,5 +178,38 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 
 		Fund fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		assertEquals(Fund.FundType.STOCK, fund.getType());
+	}
+
+	@Test
+	public void splitInterest_basicCase() {
+		var result = fundController.splitInterest("2828", "900", "/testfund2/testfund");
+		assertEquals(2, result.size());
+		assertEquals("[testfund2] 2828: 400, 44000.00 > 43600.00, 110.00 > 109.00", result.get(0));
+		assertEquals("[testfund] 2828: 500, 50000.00 > 49500.00, 100.00 > 99.00", result.get(1));
+	}
+
+	@Test
+	public void splitInterest_singleFund() {
+		var result = fundController.splitInterest("2800", "1000", "/testfund");
+		assertEquals(1, result.size());
+		assertEquals("[testfund] 2800: 1000, 25000.00 > 24000.00, 25.00 > 24.00", result.get(0));
+	}
+
+	@Test
+	public void splitInterest_missingFund() {
+		var result = fundController.splitInterest("2828", "900", "/not exist fund");
+		assertEquals("Error: cannot find fund=[not exist fund]", result.get(0));
+	}
+
+	@Test
+	public void splitInterest_missingCode() {
+		var result = fundController.splitInterest("2800", "900", "/testfund2/testfund");
+		assertEquals("Error: cannot find code=2800 in all funds=[testfund2, testfund]", result.get(0));
+	}
+
+	@Test
+	public void splitInterest_wrongAmount() {
+		var result = fundController.splitInterest("2828", "10xyz900", "/testfund2/testfund");
+		assertEquals("Error: invalid amount=10xyz900", result.get(0));
 	}
 }

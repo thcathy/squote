@@ -3,6 +3,7 @@ package squote.controller.rest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -10,16 +11,19 @@ import squote.domain.Fund;
 import squote.domain.FundHolding;
 import squote.domain.repository.FundRepository;
 import squote.security.AuthenticationService;
+import squote.service.SplitInterestService;
 import squote.service.UpdateFundByHoldingService;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.BinaryOperator;
 
 @RequestMapping("/rest/fund")
 @RestController
 public class FundController {
 	private static Logger log = LoggerFactory.getLogger(FundController.class);
+	public static final String SEPARATOR = ",";
 
 	public enum ValueAction {
 		add((x,y) -> x.add(y)),
@@ -32,6 +36,7 @@ public class FundController {
 	@Autowired FundRepository fundRepo;
 	@Autowired AuthenticationService authenticationService;
 	@Autowired UpdateFundByHoldingService updateFundByHoldingService;
+	@Autowired SplitInterestService splitInterestService;
 			
 	@RequestMapping(value = "/{fundName}/buy/{code}/{qty}/{price}")
 	public Fund buy(@PathVariable String fundName, @PathVariable String code, @PathVariable String qty, @PathVariable String price) {
@@ -99,6 +104,14 @@ public class FundController {
 		log.debug("Updated Fund: {}", fund);
 		return newHolding;
 	}
+
+	@GetMapping(value = "/splitinterest/{code}/{amount}/{*fundNames}")
+	public List<String> splitInterest(@PathVariable String code, @PathVariable String amount, @PathVariable String fundNames) {
+		String userId = authenticationService.getUserId().get();
+		log.debug("Interest ${} is paid by code {} to funds {}:{}", amount, code, userId, fundNames);
+
+		return splitInterestService.splitInterest(userId, code, amount, fundNames.substring(1).split("/"));
+	}
 	
 	@RequestMapping(value = "/{fundName}/set/profit/{amount}")
 	public BigDecimal setProfit(@PathVariable String fundName, @PathVariable String amount) {
@@ -116,7 +129,7 @@ public class FundController {
 		String userId = authenticationService.getUserId().get();
 		log.debug("{} profit '{}' to fund {}:{}", action, amounts, userId, fundName);
 		Fund fund = fundRepo.findByUserIdAndName(userId, fundName).get();
-		BigDecimal newProfit = Arrays.stream(amounts.split(","))
+		BigDecimal newProfit = Arrays.stream(amounts.split(SEPARATOR))
 			.map(v -> new BigDecimal(v))
 			.reduce(fund.getProfit(), action.accumulator);
 		fund.setProfit(newProfit);
