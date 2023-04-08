@@ -83,7 +83,7 @@ spec:
       volumes:
       - name: logs
         hostPath:
-        path: {{ volume_root }}/{{ namespace }}/logs
+          path: {{ volume_root }}/{{ namespace }}/logs
       livenessProbe:
         httpGet:
           path: /rest/stock/indexquotes/

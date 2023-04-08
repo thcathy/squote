@@ -95,8 +95,8 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         vault_password: ${{ secrets.VAULT_PASSWORD }}
         options: |
-          --inventory ansible/squote/inventory_k8s-uat
-          --limit k8s-uat
+          --inventory ansible/squote/inventory_k8s_uat
+          --limit k8s_uat
           -e docker_image_tag=${{ env.DOCKER_IMAGE_TAG }}
           -e jasypt_encryptor_password=${{ secrets.JASYPT_ENCRYPTOR_PASSWORD }}
           -e apiserver_host=${{ secrets.apiserver_host }}
@@ -107,8 +107,8 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         vault_password: ${{ secrets.VAULT_PASSWORD }}
         options: |
-          --inventory ansible/squote/inventory_k8s-prod
-          --limit k8s-prod          
+          --inventory ansible/squote/inventory_k8s_prod
+          --limit k8s_prod
           -e docker_image_tag=${{ env.DOCKER_IMAGE_TAG }}
           -e jasypt_encryptor_password=${{ secrets.JASYPT_ENCRYPTOR_PASSWORD }}
           -e apiserver_host=${{ secrets.apiserver_host }}
