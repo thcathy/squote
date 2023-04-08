@@ -9,7 +9,7 @@
 
     - name: create docker stack yml
       template:
-        src: template/squote-stack.yml.j2
+        src: templates/squote-stack.yml.j2
         dest: "{{ deploy_folder }}/{{ app_name }}-stack.yml"
 
     - name: start docker stack
@@ -27,7 +27,7 @@
       delay: 30
     - debug: msg="{{ image_tag_output }}"
 
-    - name: check server is respsonding
+    - name: check server is responding
       uri:
         url: "https://{{ inventory_hostname }}/{{ app_name }}/rest/stock/indexquotes"
         return_content: yes
