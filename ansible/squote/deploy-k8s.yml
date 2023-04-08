@@ -34,8 +34,14 @@
         kind: Secret
         name: "squote-secrets"
         namespace: "{{ namespace }}"
-        data:
-          JASYPT_ENCRYPTOR_PASSWORD: "{{ jasypt_encryptor_password | b64encode }}"
+        inline:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: "squote-secrets"
+            namespace: "{{ namespace }}"
+          data:
+            JASYPT_ENCRYPTOR_PASSWORD: "{{ jasypt_encryptor_password | b64encode }}"
 
     - name: apply k8s manifest
       k8s:
