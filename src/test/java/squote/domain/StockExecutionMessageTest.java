@@ -110,4 +110,15 @@ public class StockExecutionMessageTest {
 		assertEquals(new BigDecimal("2.930"), msg.getPrice());
 		assertEquals(new SimpleDateFormat("yyyy-MM-dd").format(new Date()), new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
 	}
+
+	@Test
+	public void construct_GivenFutuMsgWithParentheses_ShouldParseSuccess() {
+		String futuMsg = "成交提醒 【成交提醒】成功買入14,800股$南方東英恒生指數每日槓桿(2x)產品 (07200.HK)$，成交價格：4.056，此筆訂單委託已全部成交，2023-05-24 09:30:59（香港時間）。【富途證券(香港)】";
+		StockExecutionMessage msg = StockExecutionMessageBuilder.build(futuMsg).get();
+		assertEquals(SquoteConstants.Side.BUY, msg.getSide());
+		assertEquals(14800, msg.getQuantity());
+		assertEquals("7200", msg.getCode());
+		assertEquals(new BigDecimal("4.056"), msg.getPrice());
+		assertEquals("2023-05-24", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
+	}
 }

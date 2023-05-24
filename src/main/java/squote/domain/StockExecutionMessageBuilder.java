@@ -7,7 +7,10 @@ import squote.SquoteConstants.Side;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Optional;
+import java.util.UUID;
 
 public class StockExecutionMessageBuilder {
 	private static Logger log = LoggerFactory.getLogger(StockExecutionMessageBuilder.class);
@@ -50,7 +53,7 @@ public class StockExecutionMessageBuilder {
 
 		// parse code
 		startPos = endPos + 1;
-		startPos = message.indexOf("(", startPos) + 1;
+		startPos = message.indexOf(".HK)", startPos) - 4;
 		endPos = message.indexOf(".HK", startPos);
 		seMsg.code = message.substring(startPos, endPos).replaceFirst("^0+(?!$)", "");
 
