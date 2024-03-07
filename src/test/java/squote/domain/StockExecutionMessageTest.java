@@ -121,4 +121,15 @@ public class StockExecutionMessageTest {
 		assertEquals(new BigDecimal("4.056"), msg.getPrice());
 		assertEquals("2023-05-24", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
 	}
+
+	@Test
+	public void construct_GivenMoxBuyMsg_ShouldParseSuccess() {
+		String moxMsg = "Mox: 成功買入4500股2800.HK，成交價HKD16.45。剩餘0股2800.HK有待成交。訂單編號：20240306-00095160";
+		StockExecutionMessage msg = StockExecutionMessageBuilder.build(moxMsg).get();
+		assertEquals(SquoteConstants.Side.BUY, msg.getSide());
+		assertEquals(4500, msg.getQuantity());
+		assertEquals("2800", msg.getCode());
+		assertEquals(new BigDecimal("16.45"), msg.getPrice());
+		assertEquals("2024-03-06", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
+	}
 }

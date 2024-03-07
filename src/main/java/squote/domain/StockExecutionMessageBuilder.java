@@ -22,10 +22,16 @@ public class StockExecutionMessageBuilder {
     		return parseFutuMessage(message);
 		} else if (isUsmart(message)) {
     		return parseUsmartMessage(message);
+		} else if (isMox(message)) {
+			return parseMoxMessage(message);
 		}
     	
     	return Optional.empty();
     }
+
+	private static boolean isMox(String message) {
+		return message.startsWith("Mox") && message.contains("剩餘0股");
+	}
 
 	private static boolean isScbFullyFilled(String message) {
 		return message.startsWith("渣打") && message.contains("已完成");
@@ -149,6 +155,41 @@ public class StockExecutionMessageBuilder {
 		seMsg.date = new Date();
 		seMsg.broker = Broker.SCBANK;
 		return Optional.of(seMsg);
+	}
+
+	private static Optional<StockExecutionMessage> parseMoxMessage(String message) {
+		int startPos, endPos;
+		StockExecutionMessage executionMessage = new StockExecutionMessage();
+
+		// parse side
+		executionMessage.side = Arrays.stream(Side.values()).filter(x-> message.contains(x.chinese)).findFirst().get();
+
+		// parse qty
+		startPos = message.indexOf(executionMessage.side.chinese) + 2;
+		endPos = message.indexOf("股");
+		executionMessage.quantity = Integer.parseInt(message.substring(startPos, endPos).replaceAll(",", ""));
+
+		// parse code
+		startPos = endPos + 1;
+		endPos = message.indexOf(".HK", startPos);
+		executionMessage.code = message.substring(startPos, endPos).replaceFirst("^0+(?!$)", "");
+
+		// parse price
+		startPos = message.indexOf("成交價HKD", endPos) + 6;
+		endPos = message.indexOf("。", startPos);
+		executionMessage.price = new BigDecimal(message.substring(startPos, endPos).replaceAll("[^0-9.]+", ""));
+
+		// parse exec id
+		startPos = message.indexOf("訂單編號：", endPos) + 5;
+		executionMessage.executionId = message.substring(startPos);
+
+        try {
+            executionMessage.date = new SimpleDateFormat("yyyyMMdd").parse(executionMessage.executionId.split("-")[0]);
+        } catch (ParseException e) {
+			log.warn("Cannot parse execution date", e);
+        }
+        executionMessage.broker = Broker.MOX;
+		return Optional.of(executionMessage);
 	}
 
 
