@@ -75,7 +75,8 @@ public class StockExecutionMessageBuilder {
 		try {
 			startPos = message.indexOf("成交，", endPos) + 3;
 			endPos = startPos + 10;
-			seMsg.date = new SimpleDateFormat("yyyy-MM-dd").parse(message.substring(startPos, endPos));
+			var isHyphen = message.charAt(startPos+4) == '-';
+			seMsg.date = new SimpleDateFormat(isHyphen ? "yyyy-MM-dd" : "yyyy/MM/dd").parse(message.substring(startPos, endPos));
 		} catch (ParseException e) {
 			log.warn("Cannot parse execution date", e);
 		}
