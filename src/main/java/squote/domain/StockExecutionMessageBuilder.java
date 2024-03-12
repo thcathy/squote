@@ -30,7 +30,7 @@ public class StockExecutionMessageBuilder {
     }
 
 	private static boolean isMox(String message) {
-		return message.startsWith("Mox") && message.contains("剩餘0股");
+		return message.startsWith("Mox") && message.contains("剩餘");
 	}
 
 	private static boolean isScbFullyFilled(String message) {
