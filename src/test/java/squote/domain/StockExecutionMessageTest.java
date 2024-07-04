@@ -79,6 +79,17 @@ public class StockExecutionMessageTest {
 	}
 
 	@Test
+	public void construct_GivenFutuSellMsg2_ShouldParseSuccess() {
+		String futuBuyMsg = "成交提醒\n【成交提醒】成功賣出42,600股$南方两倍做多國指 (07288.HK)$，成交價格：1.752，此筆訂單委託已全部成交，2024/03/12 13:58:15 (香港)。【富途證券(香港)】";
+		StockExecutionMessage msg = StockExecutionMessageBuilder.build(futuBuyMsg).get();
+		assertEquals(SquoteConstants.Side.SELL, msg.getSide());
+		assertEquals(42600, msg.getQuantity());
+		assertEquals("7288", msg.getCode());
+		assertEquals(new BigDecimal("1.752"), msg.getPrice());
+		assertEquals("2024-03-12", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
+	}
+
+	@Test
 	public void construct_GivenUsmartBuyMsg_ShouldParseSuccess() {
 		String usmartBuyMsg = "尊敬的客戶，您所委托的智能訂單已成交：買入07288FL二南方國指，數量19,000股，成交價格4.490港幣。";
 		StockExecutionMessage msg = StockExecutionMessageBuilder.build(usmartBuyMsg).get();
@@ -131,5 +142,16 @@ public class StockExecutionMessageTest {
 		assertEquals("2800", msg.getCode());
 		assertEquals(new BigDecimal("16.45"), msg.getPrice());
 		assertEquals("2024-03-06", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
+	}
+
+	@Test
+	public void construct_GivenMoxSellMsg_ShouldParseSuccess() {
+		String moxMsg = "Mox: 成功賣出8000股2800.HK，成交價HKD17.06。 剩餘0股2800.HK有待成交。訂單編號：20240312-00703058";
+		StockExecutionMessage msg = StockExecutionMessageBuilder.build(moxMsg).get();
+		assertEquals(SquoteConstants.Side.SELL, msg.getSide());
+		assertEquals(8000, msg.getQuantity());
+		assertEquals("2800", msg.getCode());
+		assertEquals(new BigDecimal("17.06"), msg.getPrice());
+		assertEquals("2024-03-12", new SimpleDateFormat("yyyy-MM-dd").format(msg.getDate()));
 	}
 }
