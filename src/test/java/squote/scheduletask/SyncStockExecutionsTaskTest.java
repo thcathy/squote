@@ -7,6 +7,7 @@ import org.mockito.Mockito;
 import squote.SquoteConstants;
 import squote.domain.HoldingStock;
 import squote.domain.repository.HoldingStockRepository;
+import squote.service.EmailService;
 import squote.service.FutuAPIClient;
 
 import java.util.Date;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.*;
 class SyncStockExecutionsTaskTest {
     SyncStockExecutionsTask task;
     FutuAPIClientFactory mockFactory = Mockito.mock(FutuAPIClientFactory.class);
+    EmailService emailService = Mockito.mock(EmailService.class);
     HoldingStockRepository mockHoldingStockRepository = Mockito.mock(HoldingStockRepository.class);
     FutuAPIClient mockFutuAPIClient = Mockito.mock(FutuAPIClient.class);
 
@@ -32,6 +34,7 @@ class SyncStockExecutionsTaskTest {
         task.enabled = true;
         task.futuAPIClientFactory = mockFactory;
         task.holdingRepo = mockHoldingStockRepository;
+        task.emailService = emailService;
         task.clientConfigJson = """
         [
             {"ip":"127.0.0.1","port":1,"fundName":"A"}
