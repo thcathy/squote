@@ -28,6 +28,7 @@ public class HoldingStock {
 	private BigDecimal hsce;
 	private SquoteConstants.Side side;
 	private String fundName;
+	private String fillIds;
 
 	@Transient
 	public Map<String, BigDecimal> fees;
@@ -55,6 +56,19 @@ public class HoldingStock {
 				message.getPrice().multiply(new BigDecimal(message.getQuantity())), 
 				message.getDate(),
 				hscei);
+	}
+
+	public static HoldingStock from(Execution execution, String userId) {
+		var holding = new HoldingStock(
+				userId,
+				execution.getCode(),
+				execution.getSide(),
+				execution.getQuantity().intValue(),
+				execution.getPrice().multiply(execution.getQuantity()),
+				new Date(execution.getTime()),
+				null);
+		holding.setFillIds(execution.getFillIds());
+		return holding;
 	}
 	
 	public BigDecimal getPrice() { return gross.divide(BigDecimal.valueOf(quantity)); }
@@ -85,8 +99,7 @@ public class HoldingStock {
 	public Side getSide() { return this.side; }
 	public String getUserId() { return this.userId; }
 	public String getFundName() { return fundName; }
-
 	public HoldingStock setFundName(String fundName) { this.fundName = fundName; return this; }
-
-
+	public String getFillIds() { return fillIds; }
+	public HoldingStock setFillIds(String fillIds) { this.fillIds = fillIds; return this; }
 }

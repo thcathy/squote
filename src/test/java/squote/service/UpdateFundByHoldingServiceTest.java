@@ -122,42 +122,42 @@ public class UpdateFundByHoldingServiceTest {
 	}
 
 	private List<Execution> createBTCExecutions() {
-		Execution exec1a = new Execution().setSymbol("BTCUSDT").setQuantity(BigDecimal.valueOf(0.01)).setQuoteQuantity(BigDecimal.valueOf(63.04))
+		Execution exec1a = new Execution().setCode("BTCUSDT").setQuantity(BigDecimal.valueOf(0.01)).setQuoteQuantity(BigDecimal.valueOf(63.04))
 				.setSide(Side.BUY).setTime(1617782100511L);
-		Execution exec1b = new Execution().setSymbol("BTCUSDT").setQuantity(BigDecimal.valueOf(0.01)).setQuoteQuantity(BigDecimal.valueOf(63.04))
+		Execution exec1b = new Execution().setCode("BTCUSDT").setQuantity(BigDecimal.valueOf(0.01)).setQuoteQuantity(BigDecimal.valueOf(63.04))
 				.setSide(Side.BUY).setTime(1617782100511L);
-		Execution exec2 = new Execution().setSymbol("BTCUSDT").setQuantity(BigDecimal.valueOf(0.015)).setQuoteQuantity(BigDecimal.valueOf(123.01))
+		Execution exec2 = new Execution().setCode("BTCUSDT").setQuantity(BigDecimal.valueOf(0.015)).setQuoteQuantity(BigDecimal.valueOf(123.01))
 				.setSide(Side.BUY).setTime(1617783725934L);
-		Execution exec3 = new Execution().setSymbol("BTCUSDT").setQuantity(BigDecimal.valueOf(0.015)).setQuoteQuantity(BigDecimal.valueOf(123.01))
+		Execution exec3 = new Execution().setCode("BTCUSDT").setQuantity(BigDecimal.valueOf(0.015)).setQuoteQuantity(BigDecimal.valueOf(123.01))
 				.setSide(Side.BUY).setTime(1617700000511L);
 		return List.of(exec1a, exec1b, exec2, exec3);
 	}
 
 	private List<Execution> createETHExecutions() {
-		Execution exec1 = new Execution().setSymbol("ETHUSDT")
+		Execution exec1 = new Execution().setCode("ETHUSDT")
 				.setQuantity(BigDecimal.valueOf(0.1)).setQuoteQuantity(BigDecimal.valueOf(120)).setPrice(BigDecimal.valueOf(1200))
 				.setSide(Side.BUY).setTime(1617782100511L);
-		Execution exec2 = new Execution().setSymbol("ETHUSDT")
+		Execution exec2 = new Execution().setCode("ETHUSDT")
 				.setQuantity(BigDecimal.valueOf(0.05)).setQuoteQuantity(BigDecimal.valueOf(70)).setPrice(BigDecimal.valueOf(1400))
 				.setSide(Side.SELL).setTime(1617783725934L);
 		return List.of(exec1, exec2);
 	}
 
 	private List<Execution> createFTTExecutions() {
-		Execution exec1 = new Execution().setSymbol("FTTUSDT")
+		Execution exec1 = new Execution().setCode("FTTUSDT")
 				.setQuantity(BigDecimal.valueOf(0.1)).setQuoteQuantity(BigDecimal.valueOf(120)).setPrice(BigDecimal.valueOf(1200))
 				.setSide(Side.BUY).setTime(1617782100511L);
-		Execution exec2 = new Execution().setSymbol("FTTUSDT")
+		Execution exec2 = new Execution().setCode("FTTUSDT")
 				.setQuantity(BigDecimal.valueOf(0.05)).setQuoteQuantity(BigDecimal.valueOf(70)).setPrice(BigDecimal.valueOf(1400))
 				.setSide(Side.BUY).setTime(1617782100511L);
 		return List.of(exec1, exec2);
 	}
 
 	private List<Execution> createADAExecutions() {
-		Execution exec1 = new Execution().setSymbol("ADAUSDT")
+		Execution exec1 = new Execution().setCode("ADAUSDT")
 				.setQuantity(BigDecimal.valueOf(0.15)).setQuoteQuantity(BigDecimal.valueOf(30)).setPrice(BigDecimal.valueOf(200))
 				.setSide(Side.SELL).setTime(1617782100511L);
-		Execution exec2 = new Execution().setSymbol("ADAUSDT")
+		Execution exec2 = new Execution().setCode("ADAUSDT")
 				.setQuantity(BigDecimal.valueOf(0.05)).setQuoteQuantity(BigDecimal.valueOf(10.5)).setPrice(BigDecimal.valueOf(210))
 				.setSide(Side.SELL).setTime(1617782100511L);
 		return List.of(exec1, exec2);

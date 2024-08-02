@@ -1,4 +1,5 @@
 ---
+spring_profiles_active: prod
 deploy_folder: /home/ubuntu/k3s
 namespace: squote
 url_base_path: squote

@@ -1,0 +1,31 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://${MONGO_HOST}/squote
+  mail:
+    host: ENC(QFdjEhb2wr4YW6y55kwhOAJPbG3zqCrpCFhnZtVLVVHnS+9ls7O9Qd6dH0TmgoUk)
+    port: ENC(ZoAUR8C7Rhb3wursBftSfsQ7bfFrQSyEYRLFXgmhJ+L0zIFtLQR0tB1g+AeN5O0s)
+    username: ENC(ToT5Lf2KIZqwR6xa6u95y+hOKNrC2n52pCuOah2NLtWxY5BjSPvnR27pVEyJ5x3dhT4T7UhQV0T/tp+2vkbO7w==)
+    password: ENC(zINHdmof/dbcJcQpU3zVf+Xs9bq96S3l6SKI4MH2/DWJe010Q8n/sXRWf0LmA26He5uc64SdGFQjZqsDWqWS0w==)
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+build:
+  timestamp: '@mavenBuildTimestamp@'
+
+server:
+  port: 8080
+
+auth0:
+  cert: /auth0.pem
+  audience: ENC(6WHzsczsXYbFH5qld+COuOuG2EoVNr4h2N2l86c+kmEEG/yao/r6rxTAidPMvp0vudow79XdwGND42rWpRBR6vytdSqlBRIe4AmhP2t/c1c=)
+
+binance:
+  apikey: ENC(hKK/0HzU+XKYVHmMr1lUE++UaUiXFmVs3SKBiOtIrTEB2cAhcZinV8RJHEtzsw1sMsS7zfTxkkNa5zRU068qr4HQ256dag8B/NZwTCC1GzlI2DeGgTgOQdO/xsYQP9qpLRWdLYzOifKFIo01zRv3zQ==)
+  apisecret: ENC(3FQgjA75ZWQdKa8GxxnNA5ZoCNUZTRiRtqp7e3bG0AhKPUnOGu4Uhg2PHSTWXNW0m+Mr9JVc4T5o/GSMNWBKoq6gWP9MtOeyrBO1jSB/37mDeD2dPh/oj1p0sfPNnFYRaPWGjXmILwx0HnTCDRNrvA==)
+
+syncstockexecutionstask:
+  userId: ENC(id2aQXDykk0dxNszwHuzAebsrZNbGu9Spvbrxmq/R8iahdAGPk7C4k+ZOqIQ+rd6CUVJTD1tr/1eeOieMSbWNg==)
+  enabled: false
+  clientConfigsJson: 'ENC(UJpqgkb7ne5m1GRDFdY1GVWF8tjLmPlAAGK3jhtyN/cLt/3vLBkmS0v9hACbvnALpByqdpGyLbd9knz7eufGdoAt9Pz2s/AmG56hqrVTL+bkXGxZtPxIN1hHE3k7mCeBSsFHqQ0hrYifr6sQK6p/CzXXD6mEFLGgUS/6hXlohCaoXICay4KRkuZh46QKZzbW)'

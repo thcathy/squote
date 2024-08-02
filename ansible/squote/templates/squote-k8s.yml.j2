@@ -77,6 +77,8 @@ spec:
             secretKeyRef:
               name: squote-secrets
               key: JASYPT_ENCRYPTOR_PASSWORD
+        - name: SPRING_PROFILES_ACTIVE
+          value: {{ spring_profiles_active }}
         volumeMounts:
         - name: logs
           mountPath: /logs

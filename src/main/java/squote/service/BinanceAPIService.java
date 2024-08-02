@@ -49,7 +49,7 @@ public class BinanceAPIService {
 				.setQuantity(new BigDecimal(trade.getQty()))
 				.setQuoteQuantity(new BigDecimal(trade.getQuoteQty()))
 				.setSide(trade.isBuyer() ? BUY : SELL)
-				.setSymbol(trade.getSymbol())
+				.setCode(trade.getSymbol())
 				.setTime(trade.getTime());
 	}
 

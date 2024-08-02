@@ -74,21 +74,21 @@ public class UpdateFundByHoldingService {
 
 	private void addExecutionsToFund(Fund fund, List<Execution> executions) {
 		executions.stream()
-				.filter(exec -> !fund.containSymbol(exec.getSymbol()) || exec.getTime() > fund.getHoldings().get(exec.getSymbol()).getLatestTradeTime())
+				.filter(exec -> !fund.containSymbol(exec.getCode()) || exec.getTime() > fund.getHoldings().get(exec.getCode()).getLatestTradeTime())
 				.forEach(exec -> updateFundByExecution(fund, exec));
 	}
 
 	private void updateFundByExecution(Fund fund, Execution exec) {
 		if (Side.BUY == exec.getSide()) {
-			fund.buyStock(exec.getSymbol(), exec.getQuantity(), exec.getQuoteQuantity());
+			fund.buyStock(exec.getCode(), exec.getQuantity(), exec.getQuoteQuantity());
 		} else {
 			updateProfit(fund, exec);
-			fund.sellStock(exec.getSymbol(), exec.getQuantity(), exec.getQuoteQuantity());
+			fund.sellStock(exec.getCode(), exec.getQuantity(), exec.getQuoteQuantity());
 		}
 	}
 
 	private void updateProfit(Fund f, Execution exec) {
-		var holding = f.getHoldings().get(exec.getSymbol());
+		var holding = f.getHoldings().get(exec.getCode());
 		BigDecimal profit;
 		if (holding == null) {
 			profit = exec.getPrice().multiply(exec.getQuantity());

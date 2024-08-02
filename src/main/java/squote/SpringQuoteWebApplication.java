@@ -1,14 +1,12 @@
 package squote;
 
+import com.futu.openapi.FTAPI_Conn_Trd;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.*;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.MarketDailyReportRepository;
@@ -17,15 +15,16 @@ import squote.service.*;
 import squote.unirest.UnirestSetup;
 
 @SpringBootApplication
+@Import({ SchedulingConfiguration.class })
 public class SpringQuoteWebApplication {
 
 	@Configuration
-	@PropertySource("classpath:application.properties")
+	@PropertySource("classpath:application.yml")
 	static class Default {}
 
 	@Configuration
 	@Profile("dev")
-	@PropertySource({"classpath:application.properties", "classpath:application-dev.properties"})
+	@PropertySource({"classpath:application.yml", "classpath:application-dev.yml"})
 	static class Dev {}
 
 	// application properties
@@ -63,14 +62,6 @@ public class SpringQuoteWebApplication {
 	public StockPerformanceService stockPerformanceService() {
 		return new StockPerformanceService(webParserRestService());
 	}
-			
-//	@Bean
-//	public Filter characterEncodingFilter() {
-//		CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
-//		characterEncodingFilter.setEncoding("UTF-8");
-//		characterEncodingFilter.setForceEncoding(true);
-//		return characterEncodingFilter;
-//	}
 
 	@Bean
 	public AuthenticationService authenticationService() {
@@ -86,11 +77,18 @@ public class SpringQuoteWebApplication {
 	public UpdateFundByHoldingService updateFundByHoldingService() {
 		return new UpdateFundByHoldingService(fundRepo, holdingStockRepo, binanceAPIService());
 	}
-	
+
+	@Bean
+	public FTAPI_Conn_Trd FTAPIConnTrd() { return new FTAPI_Conn_Trd(); }
+
+	@Bean
+	public EmailService emailService() { return new EmailService(); }
+
+
 	/**
 	 * Main function for the whole application
 	 */
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 		ConfigurableApplicationContext c = SpringApplication.run(SpringQuoteWebApplication.class, args);
 		c.getBean(SpringQuoteWebApplication.class).init();
 	}

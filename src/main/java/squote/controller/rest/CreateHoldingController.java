@@ -44,7 +44,7 @@ public class CreateHoldingController {
 		
 		log.debug("createHoldingStockFromExecution: execution msg [{}], hscei [{}]", exeMsg, hcei);
 		Optional<StockExecutionMessage> executionMessage = StockExecutionMessageBuilder.build(exeMsg);
-		if (!executionMessage.isPresent()) throw new IllegalArgumentException("Cannot create holding"); 
+		if (!executionMessage.isPresent()) throw new IllegalArgumentException("Cannot create holding");
 			
 		hcei = enrichHscei(hcei, executionMessage.get().getDate());
 		HoldingStock holding = HoldingStock.from(executionMessage.get(), authenticationService.getUserId().get(), new BigDecimal(hcei));
