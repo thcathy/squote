@@ -49,7 +49,10 @@ public class SyncStockExecutionsTask {
 
     @Scheduled(fixedRate = 43200000) // Run every 12 hours
     public void executeTask() {
-        if (!enabled || StringUtils.isEmpty(clientConfigJson)) return;
+        if (!enabled || StringUtils.isEmpty(clientConfigJson)) {
+            log.info("Task Disabled");
+            return;
+        }
 
         var mapper = new ObjectMapper();
         StringBuilder logs = new StringBuilder("Start SyncStockExecutionsTask\n");
