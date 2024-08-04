@@ -54,17 +54,17 @@ class FutuAPIClientTest {
     @Test
     void getHKStockExecutions_ReturnExecutionList() {
         var buy2828 = TrdCommon.OrderFill.newBuilder()
-                .setCode("2828").setOrderID(1L).setQty(100).setPrice(10)
+                .setCode("02828").setOrderID(1L).setQty(100).setPrice(10)
                 .setTrdSide(TrdCommon.TrdSide.TrdSide_Buy_VALUE)
                 .setFillID(1).setFillIDEx("1").setName("").setCreateTime("")
                 .setUpdateTimestamp(1);
         var buy2828_2 = TrdCommon.OrderFill.newBuilder()
-                .setCode("2828").setOrderID(1L).setQty(500).setPrice(10.24)
+                .setCode("02828").setOrderID(1L).setQty(500).setPrice(10.24)
                 .setTrdSide(TrdCommon.TrdSide.TrdSide_Buy_VALUE)
                 .setFillID(2).setFillIDEx("1").setName("").setCreateTime("")
                 .setUpdateTimestamp(2);
         var buy2800 = TrdCommon.OrderFill.newBuilder()
-                .setCode("2800").setOrderID(2L).setQty(500).setPrice(18.1)
+                .setCode("02800").setOrderID(2L).setQty(500).setPrice(18.1)
                 .setTrdSide(TrdCommon.TrdSide.TrdSide_Sell_VALUE)
                 .setFillID(3).setFillIDEx("1").setName("").setCreateTime("")
                 .setUpdateTimestamp(3);

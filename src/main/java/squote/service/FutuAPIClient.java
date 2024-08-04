@@ -112,7 +112,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 		exec.setQuantity(BigDecimal.valueOf(fill.getQty()));
 		exec.setPrice(BigDecimal.valueOf(fill.getPrice()));
 		exec.setSide(fill.getTrdSide() == TrdCommon.TrdSide.TrdSide_Buy_VALUE ? BUY : SELL);
-		exec.setCode(fill.getCode());
+		exec.setCode(fill.getCode().replaceAll("^0+(?!$)", ""));
 		exec.setTime((long) (fill.getUpdateTimestamp() * 1000));
 		return exec;
 	}
