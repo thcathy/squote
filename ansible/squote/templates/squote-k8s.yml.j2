@@ -72,6 +72,8 @@ spec:
           value: squote-mongo:27017
         - name: APISERVER_HOST
           value: {{ apiserver_host }}
+        - name: FUTUOPEND_RSAKEY
+          value: {{ futuopend_rsakey }}
         - name: JASYPT_ENCRYPTOR_PASSWORD
           valueFrom:
             secretKeyRef:

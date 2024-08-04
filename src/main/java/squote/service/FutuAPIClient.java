@@ -27,13 +27,14 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 
 	int timeoutSeconds = 30;
 
-	public FutuAPIClient(@NotNull FTAPI_Conn_Trd futuConnTrd, String ip, short port) {
+	public FutuAPIClient(@NotNull FTAPI_Conn_Trd futuConnTrd, String ip, short port, String rsaKey) {
 		this.futuConnTrd = futuConnTrd;
 		futuConnTrd.setClientInfo("javaclient", 1);
 		futuConnTrd.setConnSpi(this);
 		futuConnTrd.setTrdSpi(this);
+		futuConnTrd.setRSAPrivateKey(rsaKey);
 		FTAPI.init();
-		futuConnTrd.initConnect(ip, port, false);
+		futuConnTrd.initConnect(ip, port, true);
 	}
 
 	public boolean isConnected() { return errorCode == 0; }
@@ -62,6 +63,8 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 		log.info("{} account returned", accountList.size());
 		resultMap.put(seq, new WeakReference<>(accountList));
 	}
+
+	public void close() { futuConnTrd.close(); }
 
 	@Override
 	public void onReply_GetHistoryOrderFillList(FTAPI_Conn client, int seq, TrdGetHistoryOrderFillList.Response response) {

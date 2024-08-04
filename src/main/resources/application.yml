@@ -28,4 +28,5 @@ binance:
 syncstockexecutionstask:
   userId: ENC(id2aQXDykk0dxNszwHuzAebsrZNbGu9Spvbrxmq/R8iahdAGPk7C4k+ZOqIQ+rd6CUVJTD1tr/1eeOieMSbWNg==)
   enabled: false
-  clientConfigsJson: 'ENC(UJpqgkb7ne5m1GRDFdY1GVWF8tjLmPlAAGK3jhtyN/cLt/3vLBkmS0v9hACbvnALpByqdpGyLbd9knz7eufGdoAt9Pz2s/AmG56hqrVTL+bkXGxZtPxIN1hHE3k7mCeBSsFHqQ0hrYifr6sQK6p/CzXXD6mEFLGgUS/6hXlohCaoXICay4KRkuZh46QKZzbW)'
+  clientConfigsJson: 'ENC(4t/oCln+0i9OuTiRYNMAi70I+rPEyxp1DbRV1YpDN3Ug33hWWWn+CYr9/ocOji5cZqEgqH2voBcN07+oFzusc/xq6j4WsHsXf0K88bxnivQpG03FLHA1xgMhaTZsd9LGwmH1sUwkxq476UJ6D2+GizvsNDSYHIy3T8qNTe04juQ7zP9yY8r2CBYsP1ePUU3PVaTXDwFAp27pfyp9lq6U8jVKD6YhVNIWe7ccKttm7ac=)'
+  rsakey: ${FUTUOPEND_RSAKEY:dummy}

@@ -29,14 +29,10 @@ public class SyncStockExecutionsTask {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Value(value = "${syncstockexecutionstask.enabled}")
-    boolean enabled;
-
-    @Value(value = "${syncstockexecutionstask.clientConfigsJson}")
-    String clientConfigJson;
-
-    @Value(value = "${syncstockexecutionstask.userId}")
-    String userId;
+    @Value(value = "${syncstockexecutionstask.enabled}") boolean enabled;
+    @Value(value = "${syncstockexecutionstask.clientConfigsJson}") String clientConfigJson;
+    @Value(value = "${syncstockexecutionstask.userId}") String userId;
+    @Value(value = "${syncstockexecutionstask.rsakey}") String rsaKey;
 
     @Autowired HoldingStockRepository holdingRepo;
     @Autowired FundRepository fundRepo;
@@ -45,7 +41,7 @@ public class SyncStockExecutionsTask {
 
     HKEXMarketFeesCalculator feeCalculator = new HKEXMarketFeesCalculator();
 
-    public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), ip, port);
+    public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), ip, port, rsaKey);
 
     @Scheduled(fixedRate = 43200000) // Run every 12 hours
     public void executeTask() {
@@ -56,12 +52,13 @@ public class SyncStockExecutionsTask {
 
         var mapper = new ObjectMapper();
         StringBuilder logs = new StringBuilder("Start SyncStockExecutionsTask\n");
+        FutuAPIClient futuAPIClient = null;
         try {
             var clientConfigs = mapper.readValue(clientConfigJson, ClientConfig[].class);
             for (var config : clientConfigs) {
                 logs.append("---------------------------\n");
                 logs.append("Process config=").append(config).append("\n");
-                var futuAPIClient = futuAPIClientFactory.build(config.ip, config.port);
+                futuAPIClient = futuAPIClientFactory.build(config.ip, config.port);
 
                 var maxHolding = holdingRepo.findTopByFundNameOrderByDateDesc(config.fundName);
                 var fromDate = maxHolding.isPresent() ? maxHolding.get().getDate() : getLastMonth();
@@ -89,10 +86,13 @@ public class SyncStockExecutionsTask {
                             .append(" with fee ").append(fees).append("\n");
                     logs.append("updated fund profit=").append(fund.getProfit()).append("\n");
                 }
+                futuAPIClient.close();
             }
         } catch (Exception e) {
             logs.append("ERROR, stop execute\n\n").append(ExceptionUtils.getStackTrace(e));
         } finally {
+            if (futuAPIClient != null) futuAPIClient.close();
+
             var logsString = logs.toString();
             log.info(logsString);
             emailService.sendEmail("thcathy@gmail.com", "SyncStockExecutionsTask Executed", logsString);
