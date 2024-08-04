@@ -42,7 +42,7 @@
             namespace: "{{ namespace }}"
           data:
             JASYPT_ENCRYPTOR_PASSWORD: "{{ jasypt_encryptor_password | b64encode }}"
-            FUTUOPEND_RSAKEY: "{{ futuopend_rsakey }}"
+            FUTUOPEND_RSAKEY: "{{ futuopend_rsakey | b64decode | b64encode }}"
 
     - name: apply k8s manifest
       k8s:
