@@ -73,7 +73,7 @@ spec:
         - name: APISERVER_HOST
           value: {{ apiserver_host }}
         - name: FUTUOPEND_RSAKEY
-          value: {{ futuopend_rsakey }}
+          value: "{{ futuopend_rsakey }}"
         - name: JASYPT_ENCRYPTOR_PASSWORD
           valueFrom:
             secretKeyRef:
