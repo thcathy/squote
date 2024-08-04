@@ -28,12 +28,14 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 	int timeoutSeconds = 30;
 
 	public FutuAPIClient(@NotNull FTAPI_Conn_Trd futuConnTrd, String ip, short port, String rsaKey) {
-		log.info("RSAKey {}", rsaKey);
+		byte[] decodedBytes = Base64.getDecoder().decode(rsaKey);
+		var decodedRsaKey = new String(decodedBytes);
+		log.info("RSAKey\n{}", decodedRsaKey);
 		this.futuConnTrd = futuConnTrd;
-		futuConnTrd.setClientInfo("javaclient", 1);
+		futuConnTrd.setClientInfo("squote", 1);
 		futuConnTrd.setConnSpi(this);
 		futuConnTrd.setTrdSpi(this);
-		futuConnTrd.setRSAPrivateKey(rsaKey);
+		futuConnTrd.setRSAPrivateKey(decodedRsaKey);
 		FTAPI.init();
 		futuConnTrd.initConnect(ip, port, true);
 	}
@@ -131,8 +133,12 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 
 		var result = (List<TrdCommon.TrdAcc>) getResult(seq);
 		return result.stream().filter(a ->
-				(a.getAccType() == TrdCommon.TrdAccType.TrdAccType_Margin_VALUE || a.getAccType() == TrdCommon.TrdAccType.TrdAccType_Cash_VALUE)
-				&& a.getTrdMarketAuthListList().contains(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)).findFirst().get().getAccID();
+				(
+						a.getAccType() == TrdCommon.TrdAccType.TrdAccType_Margin_VALUE || a.getAccType() == TrdCommon.TrdAccType.TrdAccType_Cash_VALUE)
+						&& a.getTrdMarketAuthListList().contains(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
+						&& a.getSimAccType() < 1
+				)
+				.findFirst().get().getAccID();
 	}
 
 	private Object getResult(int seq) {
