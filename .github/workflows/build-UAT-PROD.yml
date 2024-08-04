@@ -99,7 +99,7 @@ jobs:
           --limit k8s_uat
           -e docker_image_tag=${{ env.DOCKER_IMAGE_TAG }}
           -e jasypt_encryptor_password=${{ secrets.JASYPT_ENCRYPTOR_PASSWORD }}
-          -e apiserver_host="${{ secrets.APISERVER_HOST }}"
+          -e apiserver_host='${{ secrets.APISERVER_HOST }}'
           -e futuopend_rsakey=${{ secrets.FUTUOPEND_RSAKEY }}
 #    - name: Run ansible playbook to deploy and verify PROD
 #      uses: dawidd6/action-ansible-playbook@v2
