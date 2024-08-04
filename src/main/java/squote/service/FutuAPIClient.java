@@ -28,6 +28,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 	int timeoutSeconds = 30;
 
 	public FutuAPIClient(@NotNull FTAPI_Conn_Trd futuConnTrd, String ip, short port, String rsaKey) {
+		log.info("RSAKey {}", rsaKey);
 		this.futuConnTrd = futuConnTrd;
 		futuConnTrd.setClientInfo("javaclient", 1);
 		futuConnTrd.setConnSpi(this);
