@@ -26,7 +26,7 @@ binance:
   apisecret: ENC(3FQgjA75ZWQdKa8GxxnNA5ZoCNUZTRiRtqp7e3bG0AhKPUnOGu4Uhg2PHSTWXNW0m+Mr9JVc4T5o/GSMNWBKoq6gWP9MtOeyrBO1jSB/37mDeD2dPh/oj1p0sfPNnFYRaPWGjXmILwx0HnTCDRNrvA==)
 
 syncstockexecutionstask:
-  userId: ENC(id2aQXDykk0dxNszwHuzAebsrZNbGu9Spvbrxmq/R8iahdAGPk7C4k+ZOqIQ+rd6CUVJTD1tr/1eeOieMSbWNg==)
+  userId: 'ENC(0TMR4CMt1UaDKj0YxVU5WrsLgOo7/+3en6fWwwpu54OdViKdBjImlKP1JLMq7PrRMdbMjegACHEqgL6dKnNoVH9H6gjPMJOICSMmvDqoQI8=)'
   enabled: false
-  clientConfigsJson: 'ENC(4t/oCln+0i9OuTiRYNMAi70I+rPEyxp1DbRV1YpDN3Ug33hWWWn+CYr9/ocOji5cZqEgqH2voBcN07+oFzusc/xq6j4WsHsXf0K88bxnivQpG03FLHA1xgMhaTZsd9LGwmH1sUwkxq476UJ6D2+GizvsNDSYHIy3T8qNTe04juQ7zP9yY8r2CBYsP1ePUU3PVaTXDwFAp27pfyp9lq6U8jVKD6YhVNIWe7ccKttm7ac=)'
+  clientConfigsJson: 'ENC(gCnhlsVeMtWHSmh+U7IC8+tGR2+GNSrigSrBhjfMPv1MnaGsuJoiV/jSg2tEGp2m6AwTSlL6oQ8glV3BOF/jeaqCuAIMj0XcP09L4G6ukf03ruSSgga1bjnvsy1tYOQK1SnpLu0g9Ca+gfN5w7C5qBkWHxX6yc0VDv9qD6EbrW7kXXJi9oMzrtSzn8n8RSnSNWjpXCOA5WENLxC9Ir5vMMCfdf1UsMD2fxWCjqzX4FI=)'
   rsakey: '${FUTUOPEND_RSAKEY:dummy}'
