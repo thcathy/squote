@@ -27,7 +27,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 
 	int timeoutSeconds = 30;
 
-	public FutuAPIClient(@NotNull FTAPI_Conn_Trd futuConnTrd, String ip, short port, String rsaKey) {
+	public FutuAPIClient(@NotNull FTAPI_Conn_Trd futuConnTrd, String ip, short port, String rsaKey, boolean waitConnected) {
 		FTAPI.init();
 
 		byte[] decodedBytes = Base64.getDecoder().decode(rsaKey);
@@ -41,6 +41,15 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 
 		futuConnTrd.setRSAPrivateKey(decodedRsaKey);
 		futuConnTrd.initConnect(ip, port, true);
+
+		Instant timeout = Instant.now().plusSeconds(timeoutSeconds);
+		while (waitConnected && timeout.isAfter(Instant.now()) && !isConnected()) {
+			log.info("waiting for connected");
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException ignored) {}
+		}
+		log.info("isConnected={}", isConnected());
 	}
 
 	public boolean isConnected() { return errorCode == 0; }

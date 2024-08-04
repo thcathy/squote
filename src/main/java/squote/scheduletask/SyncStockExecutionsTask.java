@@ -41,7 +41,7 @@ public class SyncStockExecutionsTask {
 
     HKEXMarketFeesCalculator feeCalculator = new HKEXMarketFeesCalculator();
 
-    public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), ip, port, rsaKey);
+    public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), ip, port, rsaKey, true);
 
     @Scheduled(fixedRate = 43200000) // Run every 12 hours
     public void executeTask() {

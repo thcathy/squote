@@ -27,7 +27,7 @@ class FutuAPIClientTest {
 
     @BeforeEach
     void setUp() {
-        client = new FutuAPIClient(FTAPIConnTrd, "", (short) 80, "");
+        client = new FutuAPIClient(FTAPIConnTrd, "", (short) 80, "", false);
     }
 
     @Test
