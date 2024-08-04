@@ -28,15 +28,18 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 	int timeoutSeconds = 30;
 
 	public FutuAPIClient(@NotNull FTAPI_Conn_Trd futuConnTrd, String ip, short port, String rsaKey) {
+		FTAPI.init();
+
 		byte[] decodedBytes = Base64.getDecoder().decode(rsaKey);
 		var decodedRsaKey = new String(decodedBytes);
-		log.info("RSAKey\n{}", decodedRsaKey);
+		decodedRsaKey = decodedRsaKey.replace("\\n", "\n");
+		log.info("decodedRsaKey\n{}", decodedRsaKey);
 		this.futuConnTrd = futuConnTrd;
 		futuConnTrd.setClientInfo("squote", 1);
 		futuConnTrd.setConnSpi(this);
 		futuConnTrd.setTrdSpi(this);
+
 		futuConnTrd.setRSAPrivateKey(decodedRsaKey);
-		FTAPI.init();
 		futuConnTrd.initConnect(ip, port, true);
 	}
 
