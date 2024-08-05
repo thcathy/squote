@@ -43,7 +43,7 @@ public class SyncStockExecutionsTask {
 
     public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), ip, port, rsaKey, true);
 
-    @Scheduled(fixedRate = 43200000) // Run every 12 hours
+    @Scheduled(cron = "0 30 16 * * MON-FRI", zone = "Asia/Hong_Kong")
     public void executeTask() {
         if (!enabled || StringUtils.isEmpty(clientConfigJson)) {
             log.info("Task Disabled");
