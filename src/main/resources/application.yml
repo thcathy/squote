@@ -30,4 +30,3 @@ syncstockexecutionstask:
   enabled: false
   clientConfigsJson: 'ENC(NXi3hEVyNiqrO/NNNvXrcXZSOzPN0p8wMKI9wD1cm3XX38cACZM/1Jrm1qT9et7qXig5s/cpX95FwrbjTiz51A5Oara9Wr4BfjSCT7EzCb2CO/WQNWg07QLYPSZUaJIM8Oo4PxBCX1m3cR70e8pQmq4l433LNYu21enMcGemr3MAcEjRzTNU5azVaKVyQPojn2tPEMbniJvTo1hb47d/ZNVT0c77RCXZeAH88UQrt63nZ6HSVGccKXJujV5INiPM4nrqSSiCcI2laroxXn4sIUKx1ZwyOfakprGHw1ThVREZzjciyQLSEiwFNhp+TR4G)'
   rsakey: '${FUTUOPEND_RSAKEY:dummy}'
-º
