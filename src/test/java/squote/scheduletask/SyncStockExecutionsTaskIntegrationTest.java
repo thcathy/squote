@@ -54,7 +54,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         task.updateFundService = updateFundByHoldingService;
         task.clientConfigJson = """
         [
-            {"ip":"127.0.0.1","port":1,"fundName":"A"}
+            {"ip":"127.0.0.1","port":1,"fundName":"A","accountId": 1234567}
         ]""";
     }
 
@@ -78,7 +78,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         exec.setTime(execDate.getTime());
         executions.put(exec.getOrderId(), exec);
 
-        when(mockFutuAPIClient.getHKStockExecutions(anyLong(), any())).thenReturn(executions);
+        when(mockFutuAPIClient.getHKStockExecutions(eq(1234567L), any())).thenReturn(executions);
         task.executeTask();
         verify(emailService, times(1)).sendEmail(any(), any(), any());
 

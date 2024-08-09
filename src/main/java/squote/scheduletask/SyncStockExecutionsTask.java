@@ -24,7 +24,7 @@ import java.util.Date;
 
 @Component
 public class SyncStockExecutionsTask {
-    record ClientConfig(String ip, short port, String fundName) {
+    record ClientConfig(String ip, short port, String fundName, long accountId) {
     }
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -62,10 +62,9 @@ public class SyncStockExecutionsTask {
 
                 var maxHolding = holdingRepo.findTopByFundNameOrderByDateDesc(config.fundName);
                 var fromDate = maxHolding.isPresent() ? maxHolding.get().getDate() : getLastMonth();
-                var accountId = futuAPIClient.getHKStockAccountId();
-                logs.append("Get executions for accountId=").append(accountId).append(" since ").append(fromDate).append("\n");
+                logs.append("Get executions for accountId=").append(config.accountId).append(" since ").append(fromDate).append("\n");
 
-                var executions = futuAPIClient.getHKStockExecutions(accountId, fromDate);
+                var executions = futuAPIClient.getHKStockExecutions(config.accountId, fromDate);
                 for (var exec : executions.values()) {
                     logs.append("Process execution=").append(exec).append("\n");
                     if (holdingRepo.existsByFillIdsLike(exec.getFillIds())) {
