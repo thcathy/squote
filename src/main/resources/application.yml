@@ -6,7 +6,7 @@ spring:
     host: ENC(QFdjEhb2wr4YW6y55kwhOAJPbG3zqCrpCFhnZtVLVVHnS+9ls7O9Qd6dH0TmgoUk)
     port: ENC(ZoAUR8C7Rhb3wursBftSfsQ7bfFrQSyEYRLFXgmhJ+L0zIFtLQR0tB1g+AeN5O0s)
     username: ENC(ToT5Lf2KIZqwR6xa6u95y+hOKNrC2n52pCuOah2NLtWxY5BjSPvnR27pVEyJ5x3dhT4T7UhQV0T/tp+2vkbO7w==)
-    password: ENC(zINHdmof/dbcJcQpU3zVf+Xs9bq96S3l6SKI4MH2/DWJe010Q8n/sXRWf0LmA26He5uc64SdGFQjZqsDWqWS0w==)
+    password: ENC(vshHpDEnUcNhw2E61Fn955bwp6wZhRAzH8mNI7Zke33VFqx68J3PxXvsjc7B2d/8Sy5Inei0aZycXqchLgu+6Q==)
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
