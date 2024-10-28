@@ -147,7 +147,7 @@
 		<dependency>
 			<groupId>com.futunn.openapi</groupId>
 			<artifactId>futu-api</artifactId>
-			<version>8.4.4408</version>
+			<version>8.6.4608</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
