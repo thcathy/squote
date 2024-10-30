@@ -66,7 +66,7 @@ public class SyncStockExecutionsTask {
 
                 var executions = futuAPIClient.getHKStockExecutions(config.accountId, fromDate);
                 for (var exec : executions.values()) {
-                    logs.append("Process execution=").append(exec).append("\n");
+                    logs.append("\n").append("Process execution=").append(exec).append("\n");
                     if (holdingRepo.existsByFillIdsLike(exec.getFillIds())) {
                         logs.append("Fill id exists. Skip processing\n");
                         continue;
