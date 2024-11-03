@@ -11,6 +11,7 @@ import squote.domain.Execution;
 import squote.domain.Fund;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
+import squote.domain.repository.TaskConfigRepository;
 import squote.service.EmailService;
 import squote.service.FutuAPIClient;
 import squote.service.UpdateFundByHoldingService;
@@ -31,6 +32,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
     @Autowired SyncStockExecutionsTask task;
     @Autowired FundRepository fundRepo;
     @Autowired HoldingStockRepository holdingRepo;
+    @Autowired TaskConfigRepository taskConfigRepo;
     @Autowired UpdateFundByHoldingService updateFundByHoldingService;
     // @Autowired EmailService emailService;    // for actual SMTP testing
 
@@ -52,6 +54,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         task.enabled = true;
         task.futuAPIClientFactory = mockFactory;
         task.updateFundService = updateFundByHoldingService;
+        task.taskConfigRepo = taskConfigRepo;
         task.clientConfigJson = """
         [
             {"ip":"127.0.0.1","port":1,"fundName":"A","accountId": 1234567}
@@ -96,6 +99,10 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         var fundHolding = fund.getHoldings().get("2800");
         assertEquals(2000, fundHolding.getQuantity().intValue());
         assertEquals(50000, fundHolding.getGross().intValue());
+
+        var configEntity = taskConfigRepo.findById(SyncStockExecutionsTask.class.toString()).orElseThrow();
+        var config = SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.fromJson(configEntity.jsonConfig());
+        assertEquals(execDate, config.lastExecutionTime());
 
         // run the task again will not repeat same fill id
         task.executeTask();
