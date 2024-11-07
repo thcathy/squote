@@ -138,7 +138,7 @@ public class SyncStockExecutionsTask {
             var entity = taskConfigRepo.findById(this.getClass().toString()).orElseThrow();
             var lastExecution = SyncStockExecutionsTaskConfig.fromJson(entity.jsonConfig()).lastExecutionTime;
             log.info("lastExecutionTime in config: {}", lastExecution);
-            return new Date(lastExecution.getTime() + 1);
+            return new Date(lastExecution.getTime() + 1000);
         } catch (Exception e) {
             log.info("Cannot get last execution time: {}", e.toString());
         }
