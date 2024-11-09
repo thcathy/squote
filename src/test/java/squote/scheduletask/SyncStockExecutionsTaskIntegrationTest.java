@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import squote.IntegrationTest;
 import squote.domain.Execution;
 import squote.domain.Fund;
+import squote.domain.TaskConfig;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.TaskConfigRepository;
@@ -22,6 +23,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyShort;
 import static org.mockito.Mockito.*;
@@ -59,10 +61,12 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         [
             {"ip":"127.0.0.1","port":1,"fundName":"A","accountId": 1234567}
         ]""";
+
+        taskConfigRepo.deleteAll();
     }
 
     @Test
-    void executeTask_canBeDisabled() {
+    void executeTaskTest() {
         var userId = UUID.randomUUID().toString();
         task.userId = userId;
         Fund f = new Fund(userId, "A");
@@ -112,5 +116,37 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         fundHolding = fund.getHoldings().get("2800");
         assertEquals(2000, fundHolding.getQuantity().intValue());
         assertEquals(50000, fundHolding.getGross().intValue());
+    }
+
+    @Test
+    void executeTask_onlySaveMaxExecutionTime() {
+        var userId = UUID.randomUUID().toString();
+        task.userId = userId;
+        Fund f = new Fund(userId, "A");
+        fundRepo.save(f);
+
+        var configDate = new Date();
+        var jsonConfig = SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.toJson(
+                new SyncStockExecutionsTask.SyncStockExecutionsTaskConfig(configDate));
+        taskConfigRepo.save(new TaskConfig(SyncStockExecutionsTask.class.toString(), jsonConfig));
+
+        var executions = new HashMap<String, Execution>();
+        var exec = new Execution();
+        var execDate = new Date(configDate.getTime() - 86400000);   // 1 day ago
+        exec.setOrderId("orderId1");
+        exec.setFillIds(",fillId1");
+        exec.setQuantity(BigDecimal.valueOf(1000));
+        exec.setPrice(BigDecimal.valueOf(25));
+        exec.setSide(BUY);
+        exec.setCode("2800");
+        exec.setTime(execDate.getTime());
+        executions.put(exec.getOrderId(), exec);
+        when(mockFutuAPIClient.getHKStockExecutions(eq(1234567L), any())).thenReturn(executions);
+
+        task.executeTask();
+
+        var configEntity = taskConfigRepo.findById(SyncStockExecutionsTask.class.toString()).orElseThrow();
+        var config = SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.fromJson(configEntity.jsonConfig());
+        assertTrue(configDate.getTime() < config.lastExecutionTime().getTime());
     }
 }

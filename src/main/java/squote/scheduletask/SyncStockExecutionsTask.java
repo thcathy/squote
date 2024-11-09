@@ -108,7 +108,7 @@ public class SyncStockExecutionsTask {
                 }
                 futuAPIClient.close();
 
-                saveLastExecutionTime(executions);
+                saveLastExecutionTime(fromDate, executions);
             }
         } catch (Exception e) {
             logs.append("ERROR, stop execute\n\n").append(ExceptionUtils.getStackTrace(e));
@@ -121,13 +121,13 @@ public class SyncStockExecutionsTask {
         }
     }
 
-    private void saveLastExecutionTime(HashMap<String, Execution> executions) {
+    private void saveLastExecutionTime(Date fromDate, HashMap<String, Execution> executions) {
         if (executions.isEmpty()) return;
 
         long maxTime = executions.values().stream()
                 .mapToLong(Execution::getTime)
                 .max().orElseThrow();
-        var date = new Date(maxTime);
+        var date = new Date(Math.max(maxTime,fromDate.getTime()));
         log.info("Save last execution time: {}", date);
         var jsonConfig = SyncStockExecutionsTaskConfig.toJson(new SyncStockExecutionsTaskConfig(date));
         taskConfigRepo.save(new TaskConfig(this.getClass().toString(), jsonConfig));
