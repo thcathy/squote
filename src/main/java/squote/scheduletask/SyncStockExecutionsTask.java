@@ -78,12 +78,13 @@ public class SyncStockExecutionsTask {
         FutuAPIClient futuAPIClient = null;
         try {
             var clientConfigs = mapper.readValue(clientConfigJson, ClientConfig[].class);
+            var fromDate = getLastExecutionTime();
+
             for (var config : clientConfigs) {
                 logs.append("---------------------------\n");
                 logs.append("Process config=").append(config).append("\n");
                 futuAPIClient = futuAPIClientFactory.build(config.ip, config.port);
 
-                var fromDate = getLastExecutionTime();
                 logs.append("Get executions for accountId=").append(config.accountId).append(" since ").append(fromDate).append("\n");
                 var executions = futuAPIClient.getHKStockExecutions(config.accountId, fromDate);
                 for (var exec : executions.values()) {
@@ -108,7 +109,8 @@ public class SyncStockExecutionsTask {
                 }
                 futuAPIClient.close();
 
-                saveLastExecutionTime(fromDate, executions);
+                var updatedDate = saveLastExecutionTime(fromDate, executions);
+                log.info("Saved last execution time: {}", updatedDate);
             }
         } catch (Exception e) {
             logs.append("ERROR, stop execute\n\n").append(ExceptionUtils.getStackTrace(e));
@@ -121,16 +123,16 @@ public class SyncStockExecutionsTask {
         }
     }
 
-    private void saveLastExecutionTime(Date fromDate, HashMap<String, Execution> executions) {
-        if (executions.isEmpty()) return;
+    private Date saveLastExecutionTime(Date fromDate, HashMap<String, Execution> executions) {
+        if (executions.isEmpty()) return fromDate;
 
         long maxTime = executions.values().stream()
                 .mapToLong(Execution::getTime)
                 .max().orElseThrow();
-        var date = new Date(Math.max(maxTime,fromDate.getTime()));
-        log.info("Save last execution time: {}", date);
+        var date = new Date(Math.max(maxTime, fromDate.getTime()));
         var jsonConfig = SyncStockExecutionsTaskConfig.toJson(new SyncStockExecutionsTaskConfig(date));
         taskConfigRepo.save(new TaskConfig(this.getClass().toString(), jsonConfig));
+        return fromDate;
     }
 
     private Date getLastExecutionTime() {
