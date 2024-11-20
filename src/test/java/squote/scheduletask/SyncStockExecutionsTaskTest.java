@@ -94,6 +94,6 @@ class SyncStockExecutionsTaskTest {
         ArgumentCaptor<Date> argumentCaptor = ArgumentCaptor.forClass(Date.class);
         verify(mockFutuAPIClient).getHKStockExecutions(anyLong(), argumentCaptor.capture());
         var date = argumentCaptor.getValue();
-        assertEquals(config.lastExecutionTime().getTime() + 60 * 60 * 1000, date.getTime());
+        assertEquals(formatter.parse("2024-11-02 00:00:00"), date);
     }
 }
