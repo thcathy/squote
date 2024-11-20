@@ -23,9 +23,12 @@ import squote.service.FutuAPIClient;
 import squote.service.HKEXMarketFeesCalculator;
 import squote.service.UpdateFundByHoldingService;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Optional;
 
 @Component
 public class SyncStockExecutionsTask {
@@ -78,7 +81,7 @@ public class SyncStockExecutionsTask {
         FutuAPIClient futuAPIClient = null;
         try {
             var clientConfigs = mapper.readValue(clientConfigJson, ClientConfig[].class);
-            var fromDate = getLastExecutionTime();
+            var fromDate = getFromDate();
 
             for (var config : clientConfigs) {
                 logs.append("---------------------------\n");
@@ -135,16 +138,28 @@ public class SyncStockExecutionsTask {
         return fromDate;
     }
 
-    private Date getLastExecutionTime() {
+    private Date getFromDate() {
+        var date = getLastExecutionTime().orElseGet(this::getLastMonth);
+        return getTomorrowAtMidnight(date);
+    }
+
+    private Optional<Date> getLastExecutionTime() {
         try {
             var entity = taskConfigRepo.findById(this.getClass().toString()).orElseThrow();
             var lastExecution = SyncStockExecutionsTaskConfig.fromJson(entity.jsonConfig()).lastExecutionTime;
             log.info("lastExecutionTime in config: {}", lastExecution);
-            return new Date(lastExecution.getTime() + 60 * 60 * 1000); // 1 hour
+            return Optional.ofNullable(lastExecution); // 1 hour
         } catch (Exception e) {
             log.info("Cannot get last execution time: {}", e.toString());
+            return Optional.empty();
         }
-        return getLastMonth();
+    }
+
+    public static Date getTomorrowAtMidnight(Date date) {
+        ZonedDateTime zonedDateTime = date.toInstant().atZone(ZoneId.systemDefault());
+        ZonedDateTime tomorrowMidnight = zonedDateTime.plusDays(1)
+                .withHour(0).withMinute(0).withSecond(0).withNano(0);
+        return Date.from(tomorrowMidnight.toInstant());
     }
 
     private Date getLastMonth() {
