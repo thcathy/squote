@@ -86,6 +86,7 @@ public class SyncStockExecutionsTask {
             for (var config : clientConfigs) {
                 logs.append("---------------------------\n");
                 logs.append("Process config=").append(config).append("\n");
+                logs.append("Fund snapshot before:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName)).append("\n");
                 futuAPIClient = futuAPIClientFactory.build(config.ip, config.port);
 
                 logs.append("Get executions for accountId=").append(config.accountId).append(" since ").append(fromDate).append("\n");
@@ -114,6 +115,7 @@ public class SyncStockExecutionsTask {
 
                 var updatedDate = saveLastExecutionTime(fromDate, executions);
                 log.info("Saved last execution time: {}", updatedDate);
+                logs.append("Fund snapshot after:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName)).append("\n");
             }
         } catch (Exception e) {
             logs.append("ERROR, stop execute\n\n").append(ExceptionUtils.getStackTrace(e));
