@@ -5,6 +5,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.commons.lang3.StringUtils;
+import squote.domain.DailyStockQuote;
 import squote.domain.ForumThread;
 import squote.domain.StockQuote;
 import squote.unirest.UnirestSetup;
@@ -71,5 +72,13 @@ public class WebParserRestService {
                 .routeParam("code", code)
                 .routeParam("preYear", preYear)
                 .asObjectAsync(String.class);
+    }
+
+    public Future<HttpResponse<DailyStockQuote[]>> getQuotesInRange(String code, String fromDate, String toDate) {
+        return Unirest.get(host + "/rest/quote/{code}/range/{fromDate}/{toDate}")
+                .routeParam("code", code)
+                .routeParam("fromDate", fromDate)
+                .routeParam("toDate", toDate)
+                .asObjectAsync(DailyStockQuote[].class);
     }
 }
