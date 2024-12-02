@@ -77,7 +77,7 @@ class SyncStockExecutionsTaskTest {
         ArgumentCaptor<Date> argumentCaptor = ArgumentCaptor.forClass(Date.class);
         verify(mockFutuAPIClient).getHKStockExecutions(anyLong(), argumentCaptor.capture());
         var date = argumentCaptor.getValue();
-        assertTrue(date.getTime() < new Date().getTime() - (30L * 24 * 60 * 60 * 1000));
+        assertTrue(date.getTime() < new Date().getTime() - (27L * 24 * 60 * 60 * 1000));    // 1 month minus 1 day earlier 
     }
 
     @Test
