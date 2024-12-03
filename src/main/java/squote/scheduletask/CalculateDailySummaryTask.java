@@ -1,5 +1,7 @@
 package squote.scheduletask;
 
+import com.mashape.unirest.http.exceptions.UnirestException;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +38,12 @@ public class CalculateDailySummaryTask {
         this.webService = webService;
     }
 
+    @PostConstruct
+    public void init() {
+        // Call the scheduled method immediately on startup
+        executeTask();
+    }
+
     @Scheduled(cron = "0 30 16 * * MON-FRI", zone = "Asia/Hong_Kong")
     public void executeTask() {
         if (!enabled) {
@@ -50,7 +58,7 @@ public class CalculateDailySummaryTask {
         }
     }
 
-    public void innerExecute() throws ExecutionException, InterruptedException {
+    public void innerExecute() throws ExecutionException, InterruptedException, UnirestException {
         log.info("Input: stdDevRange={}, codes={}", stdDevRange, codes);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         String fromDate = LocalDate.now().minusDays(stdDevRange).format(formatter);
@@ -58,8 +66,8 @@ public class CalculateDailySummaryTask {
         var today = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
 
         for (String symbol : codes.split(CODE_SEPARATOR)) {
-            log.info("Processing code: {}", symbol);
-            var quotes = webService.getQuotesInRange(symbol, fromDate, toDate).get().getBody();
+            log.info("Processing code: {}, {}-{}", symbol, fromDate, toDate);
+            var quotes = webService.getQuotesInRange(symbol, fromDate, toDate).getBody();
             var closingPrices = Arrays.stream(quotes).mapToDouble(DailyStockQuote::close).boxed().toList();
             var stdDev = MathUtils.calStdDev(closingPrices);
             log.info("stdDev of {} days: {}", stdDevRange, stdDev);

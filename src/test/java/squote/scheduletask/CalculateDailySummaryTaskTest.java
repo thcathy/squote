@@ -1,6 +1,7 @@
 package squote.scheduletask;
 
 import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,7 +14,6 @@ import squote.service.WebParserRestService;
 
 import java.time.LocalDate;
 import java.util.Date;
-import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.Mockito.*;
 
@@ -42,14 +42,14 @@ class CalculateDailySummaryTaskTest {
     }
 
     @Test
-    void testExecuteTaskEnabled() {
+    void testExecuteTaskEnabled() throws UnirestException {
         DailyStockQuote[] mockQuotes = {
             quoteWithClose(100.0), quoteWithClose(110.0), quoteWithClose(120.0), quoteWithClose(130.0), quoteWithClose(140.0)
         };
         HttpResponse<DailyStockQuote[]> mockResponse = mock(HttpResponse.class);
         when(mockResponse.getBody()).thenReturn(mockQuotes);
         when(webService.getQuotesInRange(any(), any(), any()))
-                .thenReturn(CompletableFuture.completedFuture(mockResponse));
+                .thenReturn(mockResponse);
 
         calculateDailySummaryTask.executeTask();
         var expectedFromDate = LocalDate.now().minusDays(stdDevRange).format(CalculateDailySummaryTask.rangeQuoteDateFormatter);
@@ -60,7 +60,7 @@ class CalculateDailySummaryTaskTest {
     }
 
     @Test
-    void testExecuteTaskDisabled() {
+    void testExecuteTaskDisabled() throws UnirestException {
         calculateDailySummaryTask.enabled = false;
         calculateDailySummaryTask.executeTask();
         verify(webService, never()).getQuotesInRange(any(), any(), any());
