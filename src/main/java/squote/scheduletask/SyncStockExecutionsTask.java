@@ -77,19 +77,18 @@ public class SyncStockExecutionsTask {
         }
 
         var mapper = new ObjectMapper();
-        StringBuilder logs = new StringBuilder("Start SyncStockExecutionsTask\n");
+        StringBuilder logs = new StringBuilder("Start SyncStockExecutionsTask\n\n");
         FutuAPIClient futuAPIClient = null;
         try {
             var clientConfigs = mapper.readValue(clientConfigJson, ClientConfig[].class);
             var fromDate = getFromDate();
 
             for (var config : clientConfigs) {
-                logs.append("---------------------------\n");
-                logs.append("Process config=").append(config).append("\n");
-                logs.append("Fund snapshot before:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName)).append("\n");
+                logs.append("Process config=").append(config).append("\n\n");
+                logs.append("Fund snapshot before:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName)).append("\n\n");
                 futuAPIClient = futuAPIClientFactory.build(config.ip, config.port);
 
-                logs.append("Get executions for accountId=").append(config.accountId).append(" since ").append(fromDate).append("\n");
+                logs.append("Get executions for accountId=").append(config.accountId).append(" since ").append(fromDate).append("\n\n");
                 var executions = futuAPIClient.getHKStockExecutions(config.accountId, fromDate);
                 for (var exec : executions.values()) {
                     logs.append("\n").append("Process execution=").append(exec).append("\n");
@@ -109,13 +108,14 @@ public class SyncStockExecutionsTask {
                     logs.append("update with holding to fund ")
                             .append(userId).append(":").append(config.fundName)
                             .append(" with fee ").append(fees).append("\n");
-                    logs.append("updated fund profit=").append(fund.getProfit()).append("\n");
+                    logs.append("updated fund profit=").append(fund.getProfit()).append("\n\n");
                 }
                 futuAPIClient.close();
 
                 var updatedDate = saveLastExecutionTime(fromDate, executions);
                 log.info("Saved last execution time: {}", updatedDate);
-                logs.append("Fund snapshot after:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName)).append("\n");
+                logs.append("Saved last execution time: ").append(updatedDate).append("\n\n");
+                logs.append("Fund snapshot after:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName)).append("\n\n");
             }
         } catch (Exception e) {
             logs.append("ERROR, stop execute\n\n").append(ExceptionUtils.getStackTrace(e));
