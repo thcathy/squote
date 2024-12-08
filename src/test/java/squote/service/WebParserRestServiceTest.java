@@ -10,9 +10,7 @@ public class WebParserRestServiceTest {
 
     @Test
     public void createServiceWithoutHost_ShouldThrowException() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            new WebParserRestService(null);
-        });
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new WebParserRestService(null));
     }
 
 }

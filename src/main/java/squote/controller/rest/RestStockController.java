@@ -7,8 +7,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import squote.domain.*;
+import squote.domain.repository.DailyAssetSummaryRepository;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.StockQueryRepository;
@@ -42,6 +44,7 @@ public class RestStockController {
 	@Autowired FundRepository fundRepo;
 	@Autowired AuthenticationService authenticationService;
 	@Autowired BinanceAPIService binanceAPIService;
+	@Autowired DailyAssetSummaryRepository dailyAssetSummaryRepository;
 
 	@RequestMapping("/holding/list")
 	public Iterable<HoldingStock> listHolding() {
@@ -133,6 +136,17 @@ public class RestStockController {
 		resultMap.put("allQuotes", allQuotes);
 		resultMap.put("funds", funds);
 		return resultMap;
+	}
+
+	@GetMapping("/summary/latest")
+	public ResponseEntity<Map<String, DailyAssetSummary>> getLatestSummaries(@RequestParam List<String> symbols) {
+		Map<String, DailyAssetSummary> summaryMap = new HashMap<>();
+		for (String symbol : symbols) {
+			Optional<DailyAssetSummary> summary = dailyAssetSummaryRepository.findTopBySymbolOrderByDateDesc(symbol);
+			summary.ifPresent(s -> summaryMap.put(symbol, s));
+		}
+
+		return ResponseEntity.ok(summaryMap);
 	}
 
 	Map<String, StockQuote> collectAllStockQuotes(

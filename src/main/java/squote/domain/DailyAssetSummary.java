@@ -9,8 +9,8 @@ import java.util.Map;
 public class DailyAssetSummary {
     @Id
     private String id;
-    private String symbol;
-    private Date date;
+    public String symbol;
+    public Date date;
     public Map<Integer, Double> stdDevs = new HashMap<>();
 
     public DailyAssetSummary() {}
