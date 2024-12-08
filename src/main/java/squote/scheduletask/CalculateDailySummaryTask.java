@@ -1,7 +1,6 @@
 package squote.scheduletask;
 
 import com.mashape.unirest.http.exceptions.UnirestException;
-import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,12 +35,6 @@ public class CalculateDailySummaryTask {
     public CalculateDailySummaryTask(DailyAssetSummaryRepository dailyAssetSummaryRepo, WebParserRestService webService) {
         this.dailyAssetSummaryRepo = dailyAssetSummaryRepo;
         this.webService = webService;
-    }
-
-    @PostConstruct
-    public void init() {
-        // Call the scheduled method immediately on startup
-        executeTask();
     }
 
     @Scheduled(cron = "0 30 16 * * MON-FRI", zone = "Asia/Hong_Kong")
