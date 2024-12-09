@@ -69,7 +69,7 @@ public class SyncStockExecutionsTask {
 
     public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), ip, port, rsaKey, true);
 
-    @Scheduled(cron = "0 30 16 * * MON-FRI", zone = "Asia/Hong_Kong")
+    @Scheduled(cron = "0 30 5,16 * * MON-SAT", zone = "Asia/Hong_Kong")
     public void executeTask() {
         if (!enabled || StringUtils.isEmpty(clientConfigJson)) {
             log.info("Task Disabled");
