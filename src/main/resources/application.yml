@@ -33,5 +33,5 @@ syncstockexecutionstask:
 
 calculatedailysummarytask:
   enabled: true
-  stdDevRange: 30
+  stdDevRange: 20,30
   codes: 2800,3020,2840

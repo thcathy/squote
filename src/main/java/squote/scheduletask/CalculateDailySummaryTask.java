@@ -17,6 +17,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @Component
@@ -24,9 +25,9 @@ public class CalculateDailySummaryTask {
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     @Value(value = "${calculatedailysummarytask.enabled}") boolean enabled;
-    @Value(value = "${calculatedailysummarytask.stdDevRange}") int stdDevRange;
-    @Value(value = "${calculatedailysummarytask.codes}") String codes;
-    static String CODE_SEPARATOR = ",";
+    @Value(value = "${calculatedailysummarytask.stdDevRange}") List<Integer> stdDevRanges;
+    @Value(value = "${calculatedailysummarytask.codes}") List<String> codes;
+
     public static DateTimeFormatter rangeQuoteDateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     final DailyAssetSummaryRepository dailyAssetSummaryRepo;
@@ -52,23 +53,31 @@ public class CalculateDailySummaryTask {
     }
 
     public void innerExecute() throws ExecutionException, InterruptedException, UnirestException {
-        log.info("Input: stdDevRange={}, codes={}", stdDevRange, codes);
+        log.info("Input: stdDevRange={}, codes={}", stdDevRanges, codes);
+        var maxStdDevRange = stdDevRanges.stream().mapToInt(s -> s).max().orElse(20);
+
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
-        String fromDate = LocalDate.now().minusDays(stdDevRange).format(formatter);
+        String fromDate = LocalDate.now().minusDays(maxStdDevRange).format(formatter);
         String toDate = LocalDate.now().format(formatter);
         var today = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
 
-        for (String symbol : codes.split(CODE_SEPARATOR)) {
+        for (String symbol : codes) {
             log.info("Processing code: {}, {}-{}", symbol, fromDate, toDate);
             var quotes = webService.getQuotesInRange(symbol, fromDate, toDate).getBody();
             var closingPrices = Arrays.stream(quotes).mapToDouble(DailyStockQuote::close).boxed().toList();
-            var stdDev = MathUtils.calStdDev(closingPrices);
-            log.info("stdDev of {} days: {}", stdDevRange, stdDev);
-
             var summary = new DailyAssetSummary(symbol, today);
-            summary.stdDevs.put(stdDevRange, stdDev);
+
+            for (int stdDevRange : stdDevRanges) {
+                var closingPricesSubList = closingPrices.stream()
+                        .skip(Math.max(0, closingPrices.size() - stdDevRange))
+                        .toList();
+                var stdDev = MathUtils.calStdDev(closingPricesSubList);
+                log.info("stdDev of {} days: {}", stdDevRange, stdDev);
+                summary.stdDevs.put(stdDevRange, stdDev);
+            }
+
             dailyAssetSummaryRepo.save(summary);
-            log.info("Saved: {} {} days stdDev={}", symbol, stdDevRange, stdDev);
+            log.info("Saved: {} for {}", symbol, today);
         }
     }
 }
