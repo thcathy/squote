@@ -13,6 +13,8 @@ import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -119,6 +121,8 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 
 	private int sendGetHistoryOrderFillRequest(long accountId, Date fromDate) {
 		var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		var oneDayAfter = LocalDateTime.now().plusDays(1);
+
 		var header = TrdCommon.TrdHeader.newBuilder()
 				.setAccID(accountId)
 				.setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
@@ -126,7 +130,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 				.build();
 		var filter = TrdCommon.TrdFilterConditions.newBuilder()
 				.setBeginTime(dateFormat.format(fromDate))
-				.setEndTime(dateFormat.format(new Date()))
+				.setEndTime(dateFormat.format(Date.from(oneDayAfter.atZone(ZoneId.systemDefault()).toInstant())))
 				.build();
 		TrdGetHistoryOrderFillList.C2S c2s = TrdGetHistoryOrderFillList.C2S.newBuilder()
 				.setHeader(header)
