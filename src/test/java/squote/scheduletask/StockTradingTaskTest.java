@@ -203,5 +203,20 @@ class StockTradingTaskTest {
     }
 
     @Test
-    void cancelOrderFailed() {}
+    void cancelOrderFailed_stopProcessing() {
+        var holding = HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000));
+        var expectedPrice = 20.0 / (1 + stdDev * stdDevMultiplier);
+        var pendingOrderId = 123456L;
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(
+                Order.newOrder(stockCode, BUY, 4000, expectedPrice * 1.0021, pendingOrderId)
+        ));
+        when(mockFutuAPIClient.cancelOrder(anyLong(), anyLong()))
+                .thenReturn(new FutuAPIClient.CancelOrderResponse(400, "error for testing"));
+
+        stockTradingTask.executeTask();
+
+        verify(mockFutuAPIClient, times(1)).cancelOrder(anyLong(), eq(pendingOrderId));
+        verify(mockFutuAPIClient, never()).placeOrder(anyLong(), any(), any(), anyInt(), anyLong());
+    }
 }

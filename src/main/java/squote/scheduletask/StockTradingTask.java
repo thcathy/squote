@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import squote.SquoteConstants.Side;
 import squote.domain.HoldingStock;
+import squote.domain.Order;
 import squote.domain.repository.DailyAssetSummaryRepository;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
@@ -16,6 +17,8 @@ import squote.service.FutuAPIClient;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static squote.SquoteConstants.Side.BUY;
 
 @Component
 public class StockTradingTask {
@@ -102,7 +105,7 @@ public class StockTradingTask {
                 .filter(e -> e.getCode().equals(code))
                 .toList();
 
-        var buyExecutions = createSortedExecutions(holdings, allTodayExecutions, Side.BUY);
+        var buyExecutions = createSortedExecutions(holdings, allTodayExecutions, BUY);
         var sellExecutions = createSortedExecutions(holdings, allTodayExecutions, Side.SELL);
         printExecutions("Buy executions:", buyExecutions);
         printExecutions("Sell executions:", sellExecutions);
@@ -118,43 +121,76 @@ public class StockTradingTask {
         var pendingOrders = futuAPIClient.getPendingOrders(accountId);
         var stockCode = execution.code;
 
-        // placing buy order
-        if (execution.side == Side.BUY) {
-            var placeNewOrder = true;
-            var buyPrice = execution.price / (1 + stdDev * stdDevMultiplier);
-            var pendingOrder = pendingOrders.stream().filter(o -> o.side() == Side.BUY && o.code().equals(stockCode) && o.quantity() == execution.quantity).findFirst();
-            if (pendingOrder.isPresent()) {
-                var pendingOrderPrice = pendingOrder.get().price();
-                if (priceOverThreshold(pendingOrderPrice, buyPrice)) {
-                    var pendingOrderId = pendingOrder.get().orderId();
-                    log.info("pending order price {} over threshold {}. Going to cancel order id={}", pendingOrderPrice, buyPrice, pendingOrderId);
-                    var cancelOrderResponse = futuAPIClient.cancelOrder(accountId, pendingOrder.get().orderId());
-                    if (cancelOrderResponse.errorCode() > 0) {
-                        log.error("Cannot cancel order {}, error cod={}, message={}", pendingOrderId, cancelOrderResponse.errorCode(), cancelOrderResponse.message());
-                        return; // stop processing for unexpected error
-                    }
-                } else {
-                    placeNewOrder = false;
-                }
+        handleBuyOrder(futuAPIClient, accountId, execution, pendingOrders, stockCode, stdDev);
+
+        handleSellOrder(futuAPIClient, accountId, execution, pendingOrders, stockCode, stdDev);
+    }
+
+    private void handleSellOrder(FutuAPIClient futuAPIClient, long accountId, Execution execution, List<Order> pendingOrders, String stockCode, double stdDev) {
+//        var buyPrice = execution.price / (1 + stdDev * stdDevMultiplier);
+//        var pendingOrder = pendingOrders.stream()
+//                .filter(o -> o.side() == BUY && o.code().equals(stockCode) && o.quantity() == execution.quantity)
+//                .findFirst();
+//
+//        if (pendingOrder.isPresent()) {
+//            var pendingOrderPrice = pendingOrder.get().price();
+//            if (priceWithinThreshold(pendingOrderPrice, buyPrice)) {
+//                return; // do nothing
+//            }
+//
+//            // cancel order with wrong price
+//            var pendingOrderId = pendingOrder.get().orderId();
+//            log.info("pending order price {} over threshold {}. Going to cancel order id={}", pendingOrderPrice, buyPrice, pendingOrderId);
+//            cancelOrder(futuAPIClient, accountId, pendingOrderId);
+//        }
+//
+//        placeOrder(futuAPIClient, accountId, execution, stockCode, BUY, buyPrice);
+    }
+
+    private void handleBuyOrder(FutuAPIClient futuAPIClient, long accountId, Execution execution, List<Order> pendingOrders, String stockCode, double stdDev) {
+        var buyPrice = execution.price / (1 + stdDev * stdDevMultiplier);
+        var pendingOrder = pendingOrders.stream()
+                .filter(o -> o.side() == BUY && o.code().equals(stockCode) && o.quantity() == execution.quantity)
+                .findFirst();
+
+        if (pendingOrder.isPresent()) {
+            var pendingOrderPrice = pendingOrder.get().price();
+            if (priceWithinThreshold(pendingOrderPrice, buyPrice)) {
+                return; // do nothing
             }
 
-            if (placeNewOrder) {
-                log.info("place order: {} {} {}@{}", Side.BUY, stockCode, execution.quantity, buyPrice);
-                var placeOrderResponse = futuAPIClient.placeOrder(accountId, Side.BUY, stockCode, execution.quantity, buyPrice);
-                if (placeOrderResponse.errorCode() > 0) {
-                    log.error("Cannot place order, error cod={}, message={}", placeOrderResponse.errorCode(), placeOrderResponse.message());
-                    return; // stop processing for unexpected error
-                }
-            }
-        } else {
-            // base is sell
+            // cancel order with wrong price
+            var pendingOrderId = pendingOrder.get().orderId();
+            log.info("pending order price {} over threshold {}. Going to cancel order id={}", pendingOrderPrice, buyPrice, pendingOrderId);
+            cancelOrder(futuAPIClient, accountId, pendingOrderId);
+        }
+
+        placeOrder(futuAPIClient, accountId, execution, stockCode, BUY, buyPrice);
+    }
+
+    private void placeOrder(FutuAPIClient futuAPIClient, long accountId, Execution execution, String stockCode, Side side, double buyPrice) {
+        log.info("place order: {} {} {}@{}", BUY, stockCode, execution.quantity, buyPrice);
+        var placeOrderResponse = futuAPIClient.placeOrder(accountId, side, stockCode, execution.quantity, buyPrice);
+
+        if (placeOrderResponse.errorCode() > 0) {
+            log.error("Cannot place order, error cod={}, message={}", placeOrderResponse.errorCode(), placeOrderResponse.message());
+            throw new RuntimeException("Cannot place order");
         }
     }
 
-    public boolean priceOverThreshold(double p1, double p2) {
+    private void cancelOrder(FutuAPIClient futuAPIClient, long accountId, long pendingOrderId) {
+        var cancelOrderResponse = futuAPIClient.cancelOrder(accountId, pendingOrderId);
+
+        if (cancelOrderResponse.errorCode() > 0) {
+            log.error("Cannot cancel order {}, error cod={}, message={}", pendingOrderId, cancelOrderResponse.errorCode(), cancelOrderResponse.message());
+            throw new RuntimeException("Cannot cancel order " + pendingOrderId);
+        }
+    }
+
+    public boolean priceWithinThreshold(double p1, double p2) {
         double difference = Math.abs(p1 - p2);
         double tolerance = Math.max(Math.abs(p1), Math.abs(p2)) * priceThreshold;
-        return difference > tolerance;
+        return difference <= tolerance;
     }
 
     private Optional<Execution> findBaseExecution(List<Execution> buyExecutions, List<Execution> sellExecutions) {
