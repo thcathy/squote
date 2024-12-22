@@ -27,11 +27,20 @@ binance:
 
 syncstockexecutionstask:
   userId: 'ENC(0TMR4CMt1UaDKj0YxVU5WrsLgOo7/+3en6fWwwpu54OdViKdBjImlKP1JLMq7PrRMdbMjegACHEqgL6dKnNoVH9H6gjPMJOICSMmvDqoQI8=)'
-  enabled: false
-  clientConfigsJson: 'ENC(cuG+GCqMSgmw7FgSSZHxgOR9kHw/gehSb4MK0EzpUlr3xRNFAVm2hkhAPNqmc4nH0knQqW2XvUnuhB+i/l90PYfyAcfsqHcfQ/Cup0Se6hW0E8sh1rPXUmTm/aWsXLmG7WCtY0Lq5weXjDxSBT7ed2EQMUQZhEZ02H3vwQGJKks5JZT6uZW9iv60BuiAqbMs2mKxq7/4DVZsQHF2H3EzYekmtaWr/X0T+Hzlp3NGiGipMszIwFJmd0bwM2WRD2Z0o1AMC3It1VOmZ/KB55Jz4Kz77CW8kMQPh1iv7z5PcZ4pVjz3/X1EpGOWuIAvkpn/)'
-  rsakey: '${FUTUOPEND_RSAKEY:dummy}'
+  enabled: true
 
 calculatedailysummarytask:
   enabled: true
   stdDevRange: 20,30
   codes: 2800,3020,2840
+
+stocktradingtask:
+  enabled: false
+  stdDevRange: 20
+  stdDevMultiplier: 0.95
+  fundSymbols:
+    newfund:
+      - 2800
+
+futuOpendRsaKey: '${FUTUOPEND_RSAKEY:dummy}'
+futuClientConfigsJson: 'ENC(1zzpuBjL0Cma99asiL6doVxydXB2+EQ8Yu/shVMwfH+B//WhSb/lxvJK7pfIfBu573BkiFqaCDY/pI/7+QWa4e3A/L1uxQC4x9BxVMdLA75QvJaR3x17t42dSn9XsQnSwkZBA5p5KsCHQ/vHhlnCSRvG+B6CON5e7gpQwBVpCr3IDpbYTjOmmdU8pY9EK+TWhhcWgSFqfby/Aj+ByAJwDNspJw/QlRafzgB8rDDRtZhoEfjFN0COB89e8e67w0rmIEswxAS5SosusV+zj1rDMKGX94lU4AFYz5dzNyXgjlYoB3YlloHM4r2zeF/I/A7fZkDMwEptp/T2dMPcqgZ+mvSG4wErGKX7PJ8GyDjvW86bN4D6Wf5jJjDVen3TyBBgSzFGNdJUTQJIg0u0O1wU9UgBSnPerkjzCgFQHG0woBkNZ1Znj8MUuahnOKy/vkXg)'
