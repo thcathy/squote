@@ -193,7 +193,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 				order.getCode().replaceAll("^0+(?!$)", ""),
 				order.getTrdSide() == TrdCommon.TrdSide.TrdSide_Buy_VALUE ? BUY : SELL,
 				(int) order.getQty(), order.getPrice(),
-				String.valueOf(order.getOrderID()),
+				order.getOrderID(),
 				(int) order.getFillQty(), order.getFillAvgPrice(),
 				new Date((long) order.getCreateTimestamp())
 		);

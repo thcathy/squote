@@ -26,6 +26,7 @@ public class StockTradingTask {
     @Value(value = "${stocktradingtask.stdDevMultiplier}") double stdDevMultiplier;
     @Value(value = "${futuOpendRsaKey}") String rsaKey;
     @Value(value = "${futuClientConfigsJson}") String clientConfigJson;
+    double priceThreshold = 0.002;
 
     final StockTradingTaskProperties properties;
     final DailyAssetSummaryRepository dailyAssetSummaryRepo;
@@ -115,13 +116,45 @@ public class StockTradingTask {
         log.info("base execution: {}", execution);
 
         var pendingOrders = futuAPIClient.getPendingOrders(accountId);
-        // buy order
+        var stockCode = execution.code;
+
+        // placing buy order
         if (execution.side == Side.BUY) {
+            var placeNewOrder = true;
             var buyPrice = execution.price / (1 + stdDev * stdDevMultiplier);
-            if (pendingOrders.isEmpty()) {
-                futuAPIClient.placeOrder(accountId, Side.BUY, execution.code, execution.quantity, buyPrice);
+            var pendingOrder = pendingOrders.stream().filter(o -> o.side() == Side.BUY && o.code().equals(stockCode) && o.quantity() == execution.quantity).findFirst();
+            if (pendingOrder.isPresent()) {
+                var pendingOrderPrice = pendingOrder.get().price();
+                if (priceOverThreshold(pendingOrderPrice, buyPrice)) {
+                    var pendingOrderId = pendingOrder.get().orderId();
+                    log.info("pending order price {} over threshold {}. Going to cancel order id={}", pendingOrderPrice, buyPrice, pendingOrderId);
+                    var cancelOrderResponse = futuAPIClient.cancelOrder(accountId, pendingOrder.get().orderId());
+                    if (cancelOrderResponse.errorCode() > 0) {
+                        log.error("Cannot cancel order {}, error cod={}, message={}", pendingOrderId, cancelOrderResponse.errorCode(), cancelOrderResponse.message());
+                        return; // stop processing for unexpected error
+                    }
+                } else {
+                    placeNewOrder = false;
+                }
             }
+
+            if (placeNewOrder) {
+                log.info("place order: {} {} {}@{}", Side.BUY, stockCode, execution.quantity, buyPrice);
+                var placeOrderResponse = futuAPIClient.placeOrder(accountId, Side.BUY, stockCode, execution.quantity, buyPrice);
+                if (placeOrderResponse.errorCode() > 0) {
+                    log.error("Cannot place order, error cod={}, message={}", placeOrderResponse.errorCode(), placeOrderResponse.message());
+                    return; // stop processing for unexpected error
+                }
+            }
+        } else {
+            // base is sell
         }
+    }
+
+    public boolean priceOverThreshold(double p1, double p2) {
+        double difference = Math.abs(p1 - p2);
+        double tolerance = Math.max(Math.abs(p1), Math.abs(p2)) * priceThreshold;
+        return difference > tolerance;
     }
 
     private Optional<Execution> findBaseExecution(List<Execution> buyExecutions, List<Execution> sellExecutions) {
