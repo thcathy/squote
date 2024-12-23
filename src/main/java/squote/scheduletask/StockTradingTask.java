@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static squote.SquoteConstants.Side.BUY;
+import static squote.SquoteConstants.Side.SELL;
 
 @Component
 public class StockTradingTask {
@@ -35,6 +36,7 @@ public class StockTradingTask {
     final DailyAssetSummaryRepository dailyAssetSummaryRepo;
     final FundRepository fundRepo;
     final HoldingStockRepository holdingStockRepository;
+    final Map<String, Double> tickSizes = Map.of("2800", 0.02, "code1", 0.02);
 
     public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), ip, port, rsaKey, true);
 
@@ -106,9 +108,7 @@ public class StockTradingTask {
                 .toList();
 
         var buyExecutions = createSortedExecutions(holdings, allTodayExecutions, BUY);
-        var sellExecutions = createSortedExecutions(holdings, allTodayExecutions, Side.SELL);
-        printExecutions("Buy executions:", buyExecutions);
-        printExecutions("Sell executions:", sellExecutions);
+        var sellExecutions = createSortedExecutions(holdings, allTodayExecutions, SELL);
 
         findBaseExecution(buyExecutions, sellExecutions)
                 .ifPresent(exec -> processBaseExecution(futuAPIClient, clientConfig.accountId(), stdDev.get(), exec));
@@ -119,58 +119,43 @@ public class StockTradingTask {
         log.info("base execution: {}", execution);
 
         var pendingOrders = futuAPIClient.getPendingOrders(accountId);
-        var stockCode = execution.code;
-
-        handleBuyOrder(futuAPIClient, accountId, execution, pendingOrders, stockCode, stdDev);
-
-        handleSellOrder(futuAPIClient, accountId, execution, pendingOrders, stockCode, stdDev);
+        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, futuAPIClient, accountId);
+        handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, futuAPIClient, accountId);
     }
 
-    private void handleSellOrder(FutuAPIClient futuAPIClient, long accountId, Execution execution, List<Order> pendingOrders, String stockCode, double stdDev) {
-//        var buyPrice = execution.price / (1 + stdDev * stdDevMultiplier);
-//        var pendingOrder = pendingOrders.stream()
-//                .filter(o -> o.side() == BUY && o.code().equals(stockCode) && o.quantity() == execution.quantity)
-//                .findFirst();
-//
-//        if (pendingOrder.isPresent()) {
-//            var pendingOrderPrice = pendingOrder.get().price();
-//            if (priceWithinThreshold(pendingOrderPrice, buyPrice)) {
-//                return; // do nothing
-//            }
-//
-//            // cancel order with wrong price
-//            var pendingOrderId = pendingOrder.get().orderId();
-//            log.info("pending order price {} over threshold {}. Going to cancel order id={}", pendingOrderPrice, buyPrice, pendingOrderId);
-//            cancelOrder(futuAPIClient, accountId, pendingOrderId);
-//        }
-//
-//        placeOrder(futuAPIClient, accountId, execution, stockCode, BUY, buyPrice);
-    }
+    private void handleOrderForBaseExecution(Side pendingOrderSide, Execution baseExec, List<Order> pendingOrders, double stdDev, FutuAPIClient futuAPIClient, long accountId) {
+        if (pendingOrderSide == SELL && baseExec.side == SELL) return;
 
-    private void handleBuyOrder(FutuAPIClient futuAPIClient, long accountId, Execution execution, List<Order> pendingOrders, String stockCode, double stdDev) {
-        var buyPrice = execution.price / (1 + stdDev * stdDevMultiplier);
+        var stockCode = baseExec.code;
+        var targetPrice = calculateTargetPrice(pendingOrderSide, stockCode, baseExec.price, stdDev);
         var pendingOrder = pendingOrders.stream()
-                .filter(o -> o.side() == BUY && o.code().equals(stockCode) && o.quantity() == execution.quantity)
+                .filter(o -> o.side() == pendingOrderSide && o.code().equals(stockCode) && o.quantity() == baseExec.quantity)
                 .findFirst();
-
         if (pendingOrder.isPresent()) {
             var pendingOrderPrice = pendingOrder.get().price();
-            if (priceWithinThreshold(pendingOrderPrice, buyPrice)) {
+            if (priceWithinThreshold(pendingOrderPrice, targetPrice)) {
                 return; // do nothing
             }
 
-            // cancel order with wrong price
             var pendingOrderId = pendingOrder.get().orderId();
-            log.info("pending order price {} over threshold {}. Going to cancel order id={}", pendingOrderPrice, buyPrice, pendingOrderId);
+            log.info("pending order price {} over threshold {}. Going to cancel order id={}", pendingOrderPrice, targetPrice, pendingOrderId);
             cancelOrder(futuAPIClient, accountId, pendingOrderId);
         }
 
-        placeOrder(futuAPIClient, accountId, execution, stockCode, BUY, buyPrice);
+        placeOrder(futuAPIClient, accountId, baseExec, stockCode, pendingOrderSide, targetPrice);
     }
 
-    private void placeOrder(FutuAPIClient futuAPIClient, long accountId, Execution execution, String stockCode, Side side, double buyPrice) {
-        log.info("place order: {} {} {}@{}", BUY, stockCode, execution.quantity, buyPrice);
-        var placeOrderResponse = futuAPIClient.placeOrder(accountId, side, stockCode, execution.quantity, buyPrice);
+    private double calculateTargetPrice(Side side, String code, double basePrice, double stdDev) {
+        var targetPrice = side == SELL ? basePrice * (1 + (stdDev * stdDevMultiplier / 100)) : basePrice / (1 + (stdDev * stdDevMultiplier / 100));
+        var tickSize = tickSizes.getOrDefault(code, 0.01);
+        targetPrice = Math.round(targetPrice / tickSize) * tickSize;
+        targetPrice = side == BUY ? targetPrice - tickSize : targetPrice + tickSize;   // 1 tick size advanced for fee
+        return Math.round(targetPrice/ tickSize) * tickSize;
+    }
+
+    private void placeOrder(FutuAPIClient futuAPIClient, long accountId, Execution execution, String stockCode, Side side, double price) {
+        log.info("place order: {} {} {}@{}", side, stockCode, execution.quantity, price);
+        var placeOrderResponse = futuAPIClient.placeOrder(accountId, side, stockCode, execution.quantity, price);
 
         if (placeOrderResponse.errorCode() > 0) {
             log.error("Cannot place order, error cod={}, message={}", placeOrderResponse.errorCode(), placeOrderResponse.message());
@@ -232,6 +217,7 @@ public class StockTradingTask {
                 .toList();
         executions.addAll(todayExecutions);
         executions.sort(Comparator.comparingDouble(Execution::price));
+        printExecutions(side + " executions:", executions);
         return executions;
     }
 

@@ -62,6 +62,10 @@ class StockTradingTaskTest {
         summary.stdDevs.put(stdDevRange, stdDev);
         when(dailyAssetSummaryRepo.findTopBySymbolOrderByDateDesc(any())).thenReturn(Optional.of(summary));
 
+        when(mockFutuAPIClient.placeOrder(anyLong(), any(), any(), anyInt(), anyDouble())).thenReturn(new FutuAPIClient.PlaceOrderResponse(1L, 0, null));
+        when(mockFutuAPIClient.cancelOrder(anyLong(), anyLong()))
+                .thenReturn(new FutuAPIClient.CancelOrderResponse(0, ""));
+
         properties = new StockTradingTaskProperties();
         properties.fundSymbols = Map.of("FundA", List.of(stockCode));
 
@@ -161,7 +165,7 @@ class StockTradingTaskTest {
     @Test
     void noPendingBuyOrder_willPlaceOrder() {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
-        var expectedPrice = 20.0 / (1 + stdDev * stdDevMultiplier);
+        var expectedPrice = 19.72; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
         when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of());
 
@@ -171,16 +175,14 @@ class StockTradingTaskTest {
     }
 
     @Test
-    void pendingOrderPriceOverThreshold_replaceOrder() {
+    void pendingBuyOrderPriceOverThreshold_replaceOrder() {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
-        var expectedPrice = 20.0 / (1 + stdDev * stdDevMultiplier);
+        var expectedPrice = 19.72; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         var pendingOrderId = 123456L;
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
         when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(
                 Order.newOrder(stockCode, BUY, 4000, expectedPrice * 1.0021, pendingOrderId)
         ));
-        when(mockFutuAPIClient.cancelOrder(anyLong(), anyLong()))
-                .thenReturn(new FutuAPIClient.CancelOrderResponse(0, ""));
 
         stockTradingTask.executeTask();
 
@@ -189,9 +191,9 @@ class StockTradingTaskTest {
     }
 
     @Test
-    void pendingOrderPriceWithinThreshold_dontPlaceOrder() {
+    void pendingBuyOrderPriceWithinThreshold_dontPlaceOrder() {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
-        var expectedPrice = 20.0 / (1 + stdDev * stdDevMultiplier);
+        var expectedPrice = 19.72; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
         when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(
                 Order.newOrder(stockCode, BUY, 4000, expectedPrice * 1.0015, 123456L)
@@ -199,13 +201,13 @@ class StockTradingTaskTest {
 
         stockTradingTask.executeTask();
 
-        verify(mockFutuAPIClient, never()).placeOrder(anyLong(), any(), any(), anyInt(), anyLong());
+        verify(mockFutuAPIClient, never()).placeOrder(anyLong(), eq(BUY), any(), anyInt(), anyDouble());
     }
 
     @Test
     void cancelOrderFailed_stopProcessing() {
         var holding = HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000));
-        var expectedPrice = 20.0 / (1 + stdDev * stdDevMultiplier);
+        var expectedPrice = 19.72; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         var pendingOrderId = 123456L;
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
         when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(
@@ -217,6 +219,61 @@ class StockTradingTaskTest {
         stockTradingTask.executeTask();
 
         verify(mockFutuAPIClient, times(1)).cancelOrder(anyLong(), eq(pendingOrderId));
-        verify(mockFutuAPIClient, never()).placeOrder(anyLong(), any(), any(), anyInt(), anyLong());
+        verify(mockFutuAPIClient, never()).placeOrder(anyLong(), any(), any(), anyInt(), anyDouble());
     }
+
+    @Test
+    void baseIsSellOrder_dontPlaceSellOrder() {
+        var holding = HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000));
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+
+        stockTradingTask.executeTask();
+
+        verify(mockFutuAPIClient, never()).placeOrder(anyLong(), eq(SELL), any(), anyInt(), anyDouble());
+    }
+
+    @Test
+    void noPendingSellOrder_placeOrder() {
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
+        var expectedPrice = 20.28; // 20.0 * (1 + (stdDev * stdDevMultiplier / 100));
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of());
+
+        stockTradingTask.executeTask();
+
+        verify(mockFutuAPIClient, times(1)).placeOrder(anyLong(), eq(SELL), eq(stockCode), eq(4000), eq(expectedPrice));
+    }
+
+    @Test
+    void pendingSellPriceWithinThreshold_doNothing() {
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
+        var expectedPrice = 20.28; // 20.0 * (1 + (stdDev * stdDevMultiplier / 100));
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(
+                Order.newOrder(stockCode, SELL, 4000, expectedPrice / 1.0015, 123456L)
+        ));
+
+        stockTradingTask.executeTask();
+
+        verify(mockFutuAPIClient, never()).placeOrder(anyLong(), eq(SELL), any(), anyInt(), anyDouble());
+    }
+
+    @Test
+    void pendingSellPriceOverThreshold_replaceSellOrder() {
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
+        var expectedPrice = 20.28; // 20.0 * (1 + (stdDev * stdDevMultiplier / 100));
+        var pendingOrderId = 123456L;
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(
+                Order.newOrder(stockCode, BUY, 4000, expectedPrice * 1.0021, pendingOrderId)
+        ));
+
+        stockTradingTask.executeTask();
+
+        verify(mockFutuAPIClient, times(1)).cancelOrder(anyLong(), eq(pendingOrderId));
+        verify(mockFutuAPIClient, times(1)).placeOrder(anyLong(), eq(SELL), eq(stockCode), eq(4000), eq(expectedPrice));
+    }
+
+    @Test
+    void handlePartialFill() {}
 }
