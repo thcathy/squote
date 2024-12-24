@@ -155,7 +155,7 @@ public class RestStockController {
 		return StockTradingTask.enabled;
 	}
 
-	@PostMapping("/enable/{value}")
+	@PostMapping("/trading/enable/{value}")
 	public void setStockTradingTaskEnable(@PathVariable boolean value) {
 		StockTradingTask.enabled = value;
 	}
