@@ -2,10 +2,10 @@ package squote.scheduletask;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.futu.openapi.FTAPI_Conn_Trd;
-import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import squote.SquoteConstants.Side;
 import squote.domain.HoldingStock;
@@ -50,10 +50,7 @@ public class StockTradingTask {
         this.holdingStockRepository = holdingStockRepository;
     }
 
-    @PostConstruct
-    public void init() {executeTask();}
-
-//    @Scheduled(cron = "0 30 16 * * MON-FRI", zone = "Asia/Hong_Kong")
+    @Scheduled(cron = "0 */5 9-17 * * MON-FRI", zone = "Asia/Hong_Kong")
     public void executeTask() {
         if (!enabled) {
             log.info("Task disabled");
@@ -94,36 +91,48 @@ public class StockTradingTask {
     }
 
     private void processSingleSymbol(String code, FutuClientConfig clientConfig, FutuAPIClient futuAPIClient) {
-        var stdDev = dailyAssetSummaryRepo.findTopBySymbolOrderByDateDesc(code)
-                .flatMap(summary -> Optional.ofNullable(summary.stdDevs.get(stdDevRange)));
+        log.info("start process for {} in {}", code, clientConfig.fundName());
+        var stdDev = getStdDev(code);
         if (stdDev.isEmpty()) {
             log.error("Cannot find std dev for {}, range={}", code, stdDevRange);
             return;
         }
 
         var holdings = holdingStockRepository.findByUserIdOrderByDate(clientConfig.fundUserId())
-                .stream().filter(h -> h.getCode().equals(code)).toList();
+                .stream().filter(h -> h.getCode().equals(code) && h.getFundName().equals(clientConfig.fundName()))
+                .toList();
         var allTodayExecutions = futuAPIClient.getHKStockTodayExecutions(clientConfig.accountId()).values().stream()
                 .filter(e -> e.getCode().equals(code))
                 .toList();
-
-        var buyExecutions = createSortedExecutions(holdings, allTodayExecutions, BUY);
-        var sellExecutions = createSortedExecutions(holdings, allTodayExecutions, SELL);
+        log.info("{} holdings, {} T day executions", holdings.size(), allTodayExecutions.size());
+        var buyExecutions = sortExecutions(holdings, allTodayExecutions, BUY);
+        var sellExecutions = sortExecutions(holdings, allTodayExecutions, SELL);
 
         findBaseExecution(buyExecutions, sellExecutions)
                 .ifPresent(exec -> processBaseExecution(futuAPIClient, clientConfig.accountId(), stdDev.get(), exec));
     }
 
+    private Optional<Double> getStdDev(String code) {
+        return dailyAssetSummaryRepo.findTopBySymbolOrderByDateDesc(code)
+                .flatMap(summary -> Optional.ofNullable(summary.stdDevs.get(stdDevRange)));
+    }
+
     private void processBaseExecution(FutuAPIClient futuAPIClient, long accountId, double stdDev, Execution execution) {
         log.info("base price: {}", execution.price);    // used in test case
-        log.info("base execution: {}", execution);
+        log.info("process base execution: {}", execution);
 
         var pendingOrders = futuAPIClient.getPendingOrders(accountId);
+        if (pendingOrders.stream().anyMatch(Order::isPartialFilled)) {
+            log.info("Has partial filled pending order. Skip processing");
+            return;
+        }
+
         handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, futuAPIClient, accountId);
         handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, futuAPIClient, accountId);
     }
 
     private void handleOrderForBaseExecution(Side pendingOrderSide, Execution baseExec, List<Order> pendingOrders, double stdDev, FutuAPIClient futuAPIClient, long accountId) {
+        log.info("handle {} order", pendingOrders);
         if (pendingOrderSide == SELL && baseExec.side == SELL) return;
 
         var stockCode = baseExec.code;
@@ -134,6 +143,7 @@ public class StockTradingTask {
         if (pendingOrder.isPresent()) {
             var pendingOrderPrice = pendingOrder.get().price();
             if (priceWithinThreshold(pendingOrderPrice, targetPrice)) {
+                log.info("pendingOrderPrice {} within threshold. do nothing", pendingOrderPrice);
                 return; // do nothing
             }
 
@@ -150,7 +160,10 @@ public class StockTradingTask {
         var tickSize = tickSizes.getOrDefault(code, 0.01);
         targetPrice = Math.round(targetPrice / tickSize) * tickSize;
         targetPrice = side == BUY ? targetPrice - tickSize : targetPrice + tickSize;   // 1 tick size advanced for fee
-        return Math.round(targetPrice/ tickSize) * tickSize;
+        targetPrice = Math.round(targetPrice/ tickSize) * tickSize;
+        targetPrice = (double) Math.round(targetPrice * 1000) / 1000;
+        log.info("{}: targetPrice={}, basePrice={}, stdDev={}", side, targetPrice, basePrice, stdDev);
+        return targetPrice;
     }
 
     private void placeOrder(FutuAPIClient futuAPIClient, long accountId, Execution execution, String stockCode, Side side, double price) {
@@ -207,9 +220,9 @@ public class StockTradingTask {
         executions.forEach(execution -> log.info("{}@{}", execution.quantity, execution.price));
     }
 
-    private List<Execution> createSortedExecutions(List<HoldingStock> holdings,
-                                                   List<squote.domain.Execution> allTodayExecutions,
-                                                   Side side) {
+    private List<Execution> sortExecutions(List<HoldingStock> holdings,
+                                           List<squote.domain.Execution> allTodayExecutions,
+                                           Side side) {
         List<Execution> executions = getExecutionsBySide(holdings, side);
         List<Execution> todayExecutions = allTodayExecutions.stream()
                 .filter(e -> e.getSide() == side)

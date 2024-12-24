@@ -10,4 +10,8 @@ public record Order(String code, SquoteConstants.Side side, int quantity, double
     public static Order newOrder(String code, SquoteConstants.Side side, int quantity, double price, long orderId) {
         return new Order(code, side, quantity, price, orderId, 0, 0, new Date());
     }
+
+    public boolean isPartialFilled() {
+        return filledQuantity > 0 && filledQuantity < quantity;
+    }
 }

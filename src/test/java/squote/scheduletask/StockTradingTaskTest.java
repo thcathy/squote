@@ -275,5 +275,19 @@ class StockTradingTaskTest {
     }
 
     @Test
-    void handlePartialFill() {}
+    void hasPartialFill_doNothing() {
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(
+                new Order(stockCode, BUY, 4000, 20.5, 123456L, 1000, 20.48, new Date()),
+                Order.newOrder(stockCode, SELL, 4000, 19.5, 123456L)
+        ));
+
+        stockTradingTask.executeTask();
+
+        verify(mockFutuAPIClient, never()).placeOrder(anyLong(), any(), any(), anyInt(), anyDouble());
+        var logMatched = listAppender.list.stream().anyMatch(
+                l -> l.getFormattedMessage().startsWith("Has partial filled pending order"));
+        assertThat(logMatched).isTrue();
+    }
 }

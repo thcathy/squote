@@ -27,7 +27,7 @@ binance:
 
 syncstockexecutionstask:
   userId: 'ENC(0TMR4CMt1UaDKj0YxVU5WrsLgOo7/+3en6fWwwpu54OdViKdBjImlKP1JLMq7PrRMdbMjegACHEqgL6dKnNoVH9H6gjPMJOICSMmvDqoQI8=)'
-  enabled: true
+  enabled: false
 
 calculatedailysummarytask:
   enabled: true

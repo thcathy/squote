@@ -28,6 +28,16 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 	private Map<Integer, WeakReference<Object>> resultMap = new ConcurrentHashMap<>();
 
 	int timeoutSeconds = 30;
+	List<Integer> pendingOrderStatuses = List.of(
+			TrdCommon.OrderStatus.OrderStatus_Unsubmitted_VALUE,
+			TrdCommon.OrderStatus.OrderStatus_WaitingSubmit_VALUE,
+			TrdCommon.OrderStatus.OrderStatus_Submitting_VALUE,
+			TrdCommon.OrderStatus.OrderStatus_Submitted_VALUE,
+			TrdCommon.OrderStatus.OrderStatus_Filled_Part_VALUE,
+			TrdCommon.OrderStatus.OrderStatus_Filled_All_VALUE,
+			TrdCommon.OrderStatus.OrderStatus_Cancelling_Part_VALUE,
+			TrdCommon.OrderStatus.OrderStatus_Cancelling_All_VALUE
+	);
 
 	public FutuAPIClient(@NotNull FTAPI_Conn_Trd futuConnTrd, String ip, short port, String rsaKey, boolean waitConnected) {
 		FTAPI.init();
@@ -181,7 +191,9 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 		var result = (List<TrdCommon.Order>) getResult(seq);
 		if (result == null) return Collections.emptyList();
 
-		return result.stream().map(this::toOrder).toList();
+		return result.stream()
+				.filter(o -> pendingOrderStatuses.contains(o.getOrderStatus()))
+				.map(this::toOrder).toList();
 	}
 
 	public record PlaceOrderResponse(long orderId, long errorCode, String message) {}

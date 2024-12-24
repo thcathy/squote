@@ -1,2 +1,5 @@
 syncstockexecutionstask:
   enabled: true
+
+stocktradingtask:
+  enabled: true
