@@ -47,6 +47,12 @@ public class HoldingStock {
 		this.side = side;
 	}
 
+	public static HoldingStock simple(String code, Side side, int quantity, BigDecimal gross, String fundName) {
+		var holding = new HoldingStock(null, code, side, quantity, gross, null, null);
+		holding.fundName = fundName;
+		return holding;
+	}
+
 	public static HoldingStock from(StockExecutionMessage message, String userId, BigDecimal hscei) {
 		return new HoldingStock(
 				userId,

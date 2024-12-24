@@ -50,14 +50,12 @@ public class SyncStockExecutionsTask {
         }
     }
 
-    record ClientConfig(String ip, short port, String fundName, long accountId) {}
-
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
     @Value(value = "${syncstockexecutionstask.enabled}") boolean enabled;
-    @Value(value = "${syncstockexecutionstask.clientConfigsJson}") String clientConfigJson;
     @Value(value = "${syncstockexecutionstask.userId}") String userId;
-    @Value(value = "${syncstockexecutionstask.rsakey}") String rsaKey;
+    @Value(value = "${futuOpendRsaKey}") String rsaKey;
+    @Value(value = "${futuClientConfigsJson}") String clientConfigJson;
 
     @Autowired HoldingStockRepository holdingRepo;
     @Autowired TaskConfigRepository taskConfigRepo;
@@ -69,7 +67,7 @@ public class SyncStockExecutionsTask {
 
     public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), ip, port, rsaKey, true);
 
-    @Scheduled(cron = "0 30 5,16 * * MON-SAT", zone = "Asia/Hong_Kong")
+    @Scheduled(cron = "0 30 16 * * MON-SAT", zone = "Asia/Hong_Kong")
     public void executeTask() {
         if (!enabled || StringUtils.isEmpty(clientConfigJson)) {
             log.info("Task Disabled");
@@ -80,16 +78,16 @@ public class SyncStockExecutionsTask {
         StringBuilder logs = new StringBuilder("Start SyncStockExecutionsTask\n\n");
         FutuAPIClient futuAPIClient = null;
         try {
-            var clientConfigs = mapper.readValue(clientConfigJson, ClientConfig[].class);
+            var clientConfigs = mapper.readValue(clientConfigJson, FutuClientConfig[].class);
             var fromDate = getFromDate();
 
             for (var config : clientConfigs) {
                 logs.append("Process config=").append(config).append("\n\n");
-                logs.append("Fund snapshot before:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName)).append("\n\n");
-                futuAPIClient = futuAPIClientFactory.build(config.ip, config.port);
+                logs.append("Fund snapshot before:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName())).append("\n\n");
+                futuAPIClient = futuAPIClientFactory.build(config.ip(), config.port());
 
-                logs.append("Get executions for accountId=").append(config.accountId).append(" since ").append(fromDate).append("\n\n");
-                var executions = futuAPIClient.getHKStockExecutions(config.accountId, fromDate);
+                logs.append("Get executions for accountId=").append(config.accountId()).append(" since ").append(fromDate).append("\n\n");
+                var executions = futuAPIClient.getHKStockExecutions(config.accountId(), fromDate);
                 for (var exec : executions.values()) {
                     logs.append("\n").append("Process execution=").append(exec).append("\n");
                     if (holdingRepo.existsByFillIdsLike(exec.getFillIds())) {
@@ -100,22 +98,20 @@ public class SyncStockExecutionsTask {
                     var holding = HoldingStock.from(exec, userId);
                     holding = holdingRepo.save(holding);
                     var fees = feeCalculator.totalFee(holding.getGross(), false, Broker.FUTU.calculateCommission);
-                    var fund = updateFundService.updateFundByHolding(userId, config.fundName, holding, fees);
+                    var fund = updateFundService.updateFundByHolding(userId, config.fundName(), holding, fees);
                     fundRepo.save(fund);
                     holdingRepo.save(holding);
 
                     logs.append("created holding=").append(holding).append("\n");
                     logs.append("update with holding to fund ")
-                            .append(userId).append(":").append(config.fundName)
+                            .append(userId).append(":").append(config.fundName())
                             .append(" with fee ").append(fees).append("\n");
                     logs.append("updated fund profit=").append(fund.getProfit()).append("\n\n");
                 }
                 futuAPIClient.close();
 
-                var updatedDate = saveLastExecutionTime(fromDate, executions);
-                log.info("Saved last execution time: {}", updatedDate);
-                logs.append("Saved last execution time: ").append(updatedDate).append("\n\n");
-                logs.append("Fund snapshot after:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName)).append("\n\n");
+                saveLastExecutionTime(logs, fromDate, executions);
+                logs.append("Fund snapshot after:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName())).append("\n\n");
             }
         } catch (Exception e) {
             logs.append("ERROR, stop execute\n\n").append(ExceptionUtils.getStackTrace(e));
@@ -128,8 +124,11 @@ public class SyncStockExecutionsTask {
         }
     }
 
-    private Date saveLastExecutionTime(Date fromDate, HashMap<String, Execution> executions) {
-        if (executions.isEmpty()) return fromDate;
+    private void saveLastExecutionTime(StringBuilder logs, Date fromDate, HashMap<String, Execution> executions) {
+        if (executions.isEmpty()) {
+            log.info("Do not update last execution time when no executions proceed");
+            return;
+        }
 
         long maxTime = executions.values().stream()
                 .mapToLong(Execution::getTime)
@@ -137,7 +136,8 @@ public class SyncStockExecutionsTask {
         var date = new Date(Math.max(maxTime, fromDate.getTime()));
         var jsonConfig = SyncStockExecutionsTaskConfig.toJson(new SyncStockExecutionsTaskConfig(date));
         taskConfigRepo.save(new TaskConfig(this.getClass().toString(), jsonConfig));
-        return fromDate;
+        log.info("Saved last execution time: {}", date);
+        logs.append("Saved last execution time: ").append(date).append("\n\n");
     }
 
     private Date getFromDate() {
