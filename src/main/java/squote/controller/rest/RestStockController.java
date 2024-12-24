@@ -14,6 +14,7 @@ import squote.domain.repository.DailyAssetSummaryRepository;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.StockQueryRepository;
+import squote.scheduletask.StockTradingTask;
 import squote.security.AuthenticationService;
 import squote.service.BinanceAPIService;
 import squote.service.MarketReportService;
@@ -147,6 +148,16 @@ public class RestStockController {
 		}
 
 		return ResponseEntity.ok(summaryMap);
+	}
+
+	@GetMapping("/trading/enable")
+	public boolean getStockTradingTaskEnable() {
+		return StockTradingTask.enabled;
+	}
+
+	@PostMapping("/enable/{value}")
+	public void setStockTradingTaskEnable(@PathVariable boolean value) {
+		StockTradingTask.enabled = value;
 	}
 
 	Map<String, StockQuote> collectAllStockQuotes(

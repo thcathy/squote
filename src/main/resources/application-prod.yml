@@ -2,4 +2,4 @@ syncstockexecutionstask:
   enabled: true
 
 stocktradingtask:
-  enabled: true
+  enabled: false
