@@ -86,35 +86,35 @@ class StockTradingTaskTest {
         return Stream.of(
                 // single buy, pick that one
                 new TestFindBasePriceData(List.of(
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000))
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA")
                 ), "base price: 20.0"),
                 // multi buy, pick the lowest price
                 new TestFindBasePriceData(List.of(
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000)),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(88000))
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA"),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(88000), "FundA")
                 ), "base price: 20.0"),
                 // no buy, 1 sell, pick sell price
                 new TestFindBasePriceData(List.of(
-                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000))
+                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000), "FundA")
                 ), "base price: 20.0"),
                 // 1 buy, 1 sell, pick sell price
                 new TestFindBasePriceData(List.of(
-                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(88000)),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000))
+                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(88000), "FundA"),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA")
                 ), "base price: 22.0"),
                 // n buy, 1 sell, pick n-1 buy price
                 new TestFindBasePriceData(List.of(
-                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(88000)),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000)),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(88000))
+                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(88000), "FundA"),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA"),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(88000), "FundA")
                 ), "base price: 22.0"),
                 // n buy, m sell, pick n-m buy price
                 new TestFindBasePriceData(List.of(
-                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(88000)),
-                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(98000)),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000)),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(90000)),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(100000))
+                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(88000), "FundA"),
+                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(98000), "FundA"),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA"),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(90000), "FundA"),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(100000), "FundA")
                 ), "base price: 25.0")
         );
     }
@@ -135,8 +135,8 @@ class StockTradingTaskTest {
     void testFindBasePriceErrorCase() {
         when(holdingStockRepository.findByUserIdOrderByDate("UserA"))
                 .thenReturn(List.of(
-                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000)),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(88000))
+                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000), "FundA"),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(88000), "FundA")
                 ));
         stockTradingTask.executeTask();
         var logMatched = listAppender.list.stream().anyMatch(
@@ -164,7 +164,7 @@ class StockTradingTaskTest {
 
     @Test
     void noPendingBuyOrder_willPlaceOrder() {
-        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         var expectedPrice = 19.72; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
         when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of());
@@ -176,7 +176,7 @@ class StockTradingTaskTest {
 
     @Test
     void pendingBuyOrderPriceOverThreshold_replaceOrder() {
-        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         var expectedPrice = 19.72; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         var pendingOrderId = 123456L;
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
@@ -192,7 +192,7 @@ class StockTradingTaskTest {
 
     @Test
     void pendingBuyOrderPriceWithinThreshold_dontPlaceOrder() {
-        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         var expectedPrice = 19.72; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
         when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(
@@ -206,7 +206,7 @@ class StockTradingTaskTest {
 
     @Test
     void cancelOrderFailed_stopProcessing() {
-        var holding = HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000));
+        var holding = HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000), "FundA");
         var expectedPrice = 19.72; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         var pendingOrderId = 123456L;
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
@@ -224,7 +224,7 @@ class StockTradingTaskTest {
 
     @Test
     void baseIsSellOrder_dontPlaceSellOrder() {
-        var holding = HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000));
+        var holding = HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000), "FundA");
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
 
         stockTradingTask.executeTask();
@@ -234,7 +234,7 @@ class StockTradingTaskTest {
 
     @Test
     void noPendingSellOrder_placeOrder() {
-        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         var expectedPrice = 20.28; // 20.0 * (1 + (stdDev * stdDevMultiplier / 100));
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
         when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of());
@@ -246,7 +246,7 @@ class StockTradingTaskTest {
 
     @Test
     void pendingSellPriceWithinThreshold_doNothing() {
-        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         var expectedPrice = 20.28; // 20.0 * (1 + (stdDev * stdDevMultiplier / 100));
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
         when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(
@@ -260,7 +260,7 @@ class StockTradingTaskTest {
 
     @Test
     void pendingSellPriceOverThreshold_replaceSellOrder() {
-        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         var expectedPrice = 20.28; // 20.0 * (1 + (stdDev * stdDevMultiplier / 100));
         var pendingOrderId = 123456L;
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
@@ -276,7 +276,7 @@ class StockTradingTaskTest {
 
     @Test
     void hasPartialFill_doNothing() {
-        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000));
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
         when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(
                 new Order(stockCode, BUY, 4000, 20.5, 123456L, 1000, 20.48, new Date()),
