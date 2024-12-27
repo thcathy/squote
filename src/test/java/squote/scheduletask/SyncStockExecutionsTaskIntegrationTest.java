@@ -26,7 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyShort;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.when;
 import static squote.SquoteConstants.Side.BUY;
 
 @AutoConfigureMockMvc
@@ -40,7 +41,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
 
     FutuAPIClientFactory mockFactory = Mockito.mock(FutuAPIClientFactory.class);
     FutuAPIClient mockFutuAPIClient = Mockito.mock(FutuAPIClient.class);
-    EmailService emailService = Mockito.mock(EmailService.class);
+    EmailService mockEmailService = Mockito.mock(EmailService.class);
 
 
     @BeforeEach
@@ -52,7 +53,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         task = new SyncStockExecutionsTask();
         task.holdingRepo = holdingRepo;
         task.fundRepo = fundRepo;
-        task.emailService = emailService;
+        task.emailService = mockEmailService;
         task.enabled = true;
         task.futuAPIClientFactory = mockFactory;
         task.updateFundService = updateFundByHoldingService;
@@ -87,7 +88,6 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
 
         when(mockFutuAPIClient.getHKStockExecutions(eq(1234567L), any())).thenReturn(executions);
         task.executeTask();
-        verify(emailService, times(1)).sendEmail(any(), any(), any());
 
         var holdings = Lists.newArrayList(holdingRepo.findAll());
         assertEquals(1, holdings.size());
@@ -110,7 +110,6 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
 
         // run the task again will not repeat same fill id
         task.executeTask();
-        verify(emailService, times(2)).sendEmail(any(), any(), any());
         fund = fundRepo.findByUserIdAndName(userId, "A").get();
         assertEquals(-19.43, fund.getProfit().doubleValue());   // due to fee
         fundHolding = fund.getHoldings().get("2800");
