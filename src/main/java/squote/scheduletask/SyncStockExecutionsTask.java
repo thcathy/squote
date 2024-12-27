@@ -56,6 +56,7 @@ public class SyncStockExecutionsTask {
     @Value(value = "${syncstockexecutionstask.userId}") String userId;
     @Value(value = "${futuOpendRsaKey}") String rsaKey;
     @Value(value = "${futuClientConfigsJson}") String clientConfigJson;
+    @Value(value = "${syncstockexecutionstask.summaryEmailAddress}") String summaryEmailAddress;
 
     @Autowired HoldingStockRepository holdingRepo;
     @Autowired TaskConfigRepository taskConfigRepo;
@@ -120,8 +121,13 @@ public class SyncStockExecutionsTask {
 
             var logsString = logs.toString();
             log.info(logsString);
-            emailService.sendEmail("thcathy@gmail.com", "SyncStockExecutionsTask Executed", logsString);
+            sendSummaryEmail(logsString);
         }
+    }
+
+    private void sendSummaryEmail(String logsString) {
+        if (StringUtils.isNotBlank(summaryEmailAddress))
+            emailService.sendEmail(summaryEmailAddress, "SyncStockExecutionsTask Executed", logsString);
     }
 
     private void saveLastExecutionTime(StringBuilder logs, Date fromDate, HashMap<String, Execution> executions) {

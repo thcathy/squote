@@ -1,5 +1,6 @@
 syncstockexecutionstask:
   enabled: true
+  summaryEmailAddress: ENC(AlQnrH48m6wmKpP65d4m5K+TBybBl8n++bbUoux4Dgk1Ta2TGLUXng/jxx/12GOcR0B01+y0Z5zS0HBCRPiGEg==)
 
 stocktradingtask:
   enabled: false

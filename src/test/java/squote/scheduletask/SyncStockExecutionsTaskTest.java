@@ -96,4 +96,18 @@ class SyncStockExecutionsTaskTest {
         var date = argumentCaptor.getValue();
         assertEquals(formatter.parse("2024-11-02 00:00:00"), date);
     }
+
+    @Test
+    void executeTask_sendSummaryToEmail() {
+        task.summaryEmailAddress = "tester@test.com";
+        task.executeTask();
+        verify(emailService, times(1)).sendEmail(any(), any(), any());
+    }
+
+    @Test
+    void executeTask_wontSendEmailIfNoSetup() {
+        task.summaryEmailAddress = "";
+        task.executeTask();
+        verify(emailService, never()).sendEmail(any(), any(), any());
+    }
 }
