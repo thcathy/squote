@@ -46,6 +46,7 @@ public class RestStockController {
 	@Autowired AuthenticationService authenticationService;
 	@Autowired BinanceAPIService binanceAPIService;
 	@Autowired DailyAssetSummaryRepository dailyAssetSummaryRepository;
+	@Autowired StockTradingTask stockTradingTask;
 
 	@RequestMapping("/holding/list")
 	public Iterable<HoldingStock> listHolding() {
@@ -152,12 +153,12 @@ public class RestStockController {
 
 	@GetMapping("/trading/enable")
 	public boolean getStockTradingTaskEnable() {
-		return StockTradingTask.enabled;
+		return stockTradingTask.enabled;
 	}
 
 	@PostMapping("/trading/enable/{value}")
 	public void setStockTradingTaskEnable(@PathVariable boolean value) {
-		StockTradingTask.enabled = value;
+		stockTradingTask.enabled = value;
 	}
 
 	Map<String, StockQuote> collectAllStockQuotes(

@@ -25,7 +25,7 @@ import static squote.SquoteConstants.Side.SELL;
 public class StockTradingTask {
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Value(value = "${stocktradingtask.enabled}") public static boolean enabled;
+    @Value(value = "${stocktradingtask.enabled}") public boolean enabled = false;
     @Value(value = "${stocktradingtask.stdDevRange}") int stdDevRange;
     @Value(value = "${stocktradingtask.stdDevMultiplier}") double stdDevMultiplier;
     @Value(value = "${futuOpendRsaKey}") String rsaKey;
