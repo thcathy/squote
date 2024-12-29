@@ -45,3 +45,8 @@ stocktradingtask:
 
 futuOpendRsaKey: '${FUTUOPEND_RSAKEY:dummy}'
 futuClientConfigsJson: 'ENC(1zzpuBjL0Cma99asiL6doVxydXB2+EQ8Yu/shVMwfH+B//WhSb/lxvJK7pfIfBu573BkiFqaCDY/pI/7+QWa4e3A/L1uxQC4x9BxVMdLA75QvJaR3x17t42dSn9XsQnSwkZBA5p5KsCHQ/vHhlnCSRvG+B6CON5e7gpQwBVpCr3IDpbYTjOmmdU8pY9EK+TWhhcWgSFqfby/Aj+ByAJwDNspJw/QlRafzgB8rDDRtZhoEfjFN0COB89e8e67w0rmIEswxAS5SosusV+zj1rDMKGX94lU4AFYz5dzNyXgjlYoB3YlloHM4r2zeF/I/A7fZkDMwEptp/T2dMPcqgZ+mvSG4wErGKX7PJ8GyDjvW86bN4D6Wf5jJjDVen3TyBBgSzFGNdJUTQJIg0u0O1wU9UgBSnPerkjzCgFQHG0woBkNZ1Znj8MUuahnOKy/vkXg)'
+
+telegramAPIClient:
+  botToken: ENC(UcXr2IG+Ij+ET6kOP2JOf2NlUMETwiwTkV2NXTfWx4035pjY6Db92qeokpjUCLOt53m0NLK4JGLGFspSG13YjykWm7YD4uGRS4PlvY2JGlI=)
+  chatIds:
+    - ENC(Hqv++0fyCZl+3pbMUGneTb37UJI681LdGHhixqRnHpvpEIbtMnY0GVVRUQdp1osA)

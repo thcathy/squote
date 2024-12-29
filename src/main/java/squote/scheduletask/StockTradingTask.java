@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.futu.openapi.FTAPI_Conn_Trd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,7 @@ import squote.domain.repository.DailyAssetSummaryRepository;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.service.FutuAPIClient;
+import squote.service.TelegramAPIClient;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,17 +38,21 @@ public class StockTradingTask {
     final DailyAssetSummaryRepository dailyAssetSummaryRepo;
     final FundRepository fundRepo;
     final HoldingStockRepository holdingStockRepository;
+    final TelegramAPIClient telegramAPIClient;
     final Map<String, Double> tickSizes = Map.of("2800", 0.02, "code1", 0.02);
 
     public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), ip, port, rsaKey, true);
 
+    @Autowired
     public StockTradingTask(DailyAssetSummaryRepository dailyAssetSummaryRepo,
                             FundRepository fundRepo,
                             HoldingStockRepository holdingStockRepository,
+                            TelegramAPIClient telegramAPIClient,
                             StockTradingTaskProperties properties) {
         this.dailyAssetSummaryRepo = dailyAssetSummaryRepo;
         this.properties = properties;
         this.fundRepo = fundRepo;
+        this.telegramAPIClient = telegramAPIClient;
         this.holdingStockRepository = holdingStockRepository;
     }
 
@@ -167,22 +173,37 @@ public class StockTradingTask {
     }
 
     private void placeOrder(FutuAPIClient futuAPIClient, long accountId, Execution execution, String stockCode, Side side, double price) {
-        log.info("place order: {} {} {}@{}", side, stockCode, execution.quantity, price);
         var placeOrderResponse = futuAPIClient.placeOrder(accountId, side, stockCode, execution.quantity, price);
 
         if (placeOrderResponse.errorCode() > 0) {
             log.error("Cannot place order, error cod={}, message={}", placeOrderResponse.errorCode(), placeOrderResponse.message());
             throw new RuntimeException("Cannot place order");
         }
+
+        String placedMessage = String.format("placed order: %s %s %d@%f",
+                side,
+                stockCode,
+                execution.quantity,
+                price);
+        log.info(placedMessage);
+        telegramAPIClient.sendMessage(placedMessage).blockFirst();
     }
 
     private void cancelOrder(FutuAPIClient futuAPIClient, long accountId, long pendingOrderId) {
         var cancelOrderResponse = futuAPIClient.cancelOrder(accountId, pendingOrderId);
 
         if (cancelOrderResponse.errorCode() > 0) {
-            log.error("Cannot cancel order {}, error cod={}, message={}", pendingOrderId, cancelOrderResponse.errorCode(), cancelOrderResponse.message());
-            throw new RuntimeException("Cannot cancel order " + pendingOrderId);
+            String errorMessage = String.format("Cannot cancel order %s, error code=%s, message=%s",
+                    pendingOrderId,
+                    cancelOrderResponse.errorCode(),
+                    cancelOrderResponse.message());
+
+            log.error(errorMessage);
+            telegramAPIClient.sendMessage(errorMessage).blockFirst();
+            throw new RuntimeException(errorMessage);
         }
+
+        telegramAPIClient.sendMessage(String.format("acc [%s]: order %s cancelled", accountId, pendingOrderId)).blockFirst();
     }
 
     public boolean priceWithinThreshold(double p1, double p2) {

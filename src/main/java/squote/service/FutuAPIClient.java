@@ -2,7 +2,6 @@ package squote.service;
 
 import com.futu.openapi.*;
 import com.futu.openapi.pb.*;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import squote.SquoteConstants;
@@ -39,7 +38,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 			TrdCommon.OrderStatus.OrderStatus_Cancelling_All_VALUE
 	);
 
-	public FutuAPIClient(@NotNull FTAPI_Conn_Trd futuConnTrd, String ip, short port, String rsaKey, boolean waitConnected) {
+	public FutuAPIClient(FTAPI_Conn_Trd futuConnTrd, String ip, short port, String rsaKey, boolean waitConnected) {
 		FTAPI.init();
 
 		byte[] decodedBytes = Base64.getDecoder().decode(rsaKey);

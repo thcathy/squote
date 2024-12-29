@@ -18,10 +18,7 @@ import squote.domain.TaskConfig;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.TaskConfigRepository;
-import squote.service.EmailService;
-import squote.service.FutuAPIClient;
-import squote.service.HKEXMarketFeesCalculator;
-import squote.service.UpdateFundByHoldingService;
+import squote.service.*;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -63,6 +60,7 @@ public class SyncStockExecutionsTask {
     @Autowired FundRepository fundRepo;
     @Autowired UpdateFundByHoldingService updateFundService;
     @Autowired EmailService emailService;
+    @Autowired TelegramAPIClient telegramAPIClient;
 
     HKEXMarketFeesCalculator feeCalculator = new HKEXMarketFeesCalculator();
 

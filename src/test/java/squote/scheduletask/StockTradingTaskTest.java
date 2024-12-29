@@ -9,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
 import squote.domain.DailyAssetSummary;
 import squote.domain.HoldingStock;
 import squote.domain.Order;
@@ -16,6 +17,7 @@ import squote.domain.repository.DailyAssetSummaryRepository;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.service.FutuAPIClient;
+import squote.service.TelegramAPIClient;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -30,12 +32,12 @@ import static squote.SquoteConstants.Side.BUY;
 import static squote.SquoteConstants.Side.SELL;
 
 class StockTradingTaskTest {
-
-        DailyAssetSummaryRepository dailyAssetSummaryRepo = Mockito.mock(DailyAssetSummaryRepository.class);
+    DailyAssetSummaryRepository dailyAssetSummaryRepo = Mockito.mock(DailyAssetSummaryRepository.class);
     FundRepository fundRepo = Mockito.mock(FundRepository.class);
     HoldingStockRepository holdingStockRepository = Mockito.mock(HoldingStockRepository.class);
     FutuAPIClientFactory mockFactory = Mockito.mock(FutuAPIClientFactory.class);
     FutuAPIClient mockFutuAPIClient = Mockito.mock(FutuAPIClient.class);
+    TelegramAPIClient mockTelegramAPIClient = Mockito.mock(TelegramAPIClient.class);
 
     private StockTradingTaskProperties properties;
     private StockTradingTask stockTradingTask;
@@ -57,7 +59,6 @@ class StockTradingTaskTest {
 
         when(mockFactory.build(any(), anyShort())).thenReturn(mockFutuAPIClient);
 
-        var stdDevRange = 20;
         var summary = new DailyAssetSummary(stockCode, new Date());
         summary.stdDevs.put(stdDevRange, stdDev);
         when(dailyAssetSummaryRepo.findTopBySymbolOrderByDateDesc(any())).thenReturn(Optional.of(summary));
@@ -65,11 +66,12 @@ class StockTradingTaskTest {
         when(mockFutuAPIClient.placeOrder(anyLong(), any(), any(), anyInt(), anyDouble())).thenReturn(new FutuAPIClient.PlaceOrderResponse(1L, 0, null));
         when(mockFutuAPIClient.cancelOrder(anyLong(), anyLong()))
                 .thenReturn(new FutuAPIClient.CancelOrderResponse(0, ""));
+        when(mockTelegramAPIClient.sendMessage(any(String.class))).thenReturn(Flux.just("Message sent"));
 
         properties = new StockTradingTaskProperties();
         properties.fundSymbols = Map.of("FundA", List.of(stockCode));
 
-        stockTradingTask = new StockTradingTask(dailyAssetSummaryRepo, fundRepo, holdingStockRepository, properties);
+        stockTradingTask = new StockTradingTask(dailyAssetSummaryRepo, fundRepo, holdingStockRepository, mockTelegramAPIClient, properties);
         stockTradingTask.futuAPIClientFactory = mockFactory;
         stockTradingTask.enabled = true;  // Enable the task for testing
         stockTradingTask.stdDevRange = stdDevRange;
@@ -172,6 +174,7 @@ class StockTradingTaskTest {
         stockTradingTask.executeTask();
 
         verify(mockFutuAPIClient, times(1)).placeOrder(anyLong(), eq(BUY), eq(stockCode), eq(4000), eq(expectedPrice));
+        verify(mockTelegramAPIClient, times(1)).sendMessage(contains("placed order: BUY"));
     }
 
     @Test
@@ -187,7 +190,9 @@ class StockTradingTaskTest {
         stockTradingTask.executeTask();
 
         verify(mockFutuAPIClient, times(1)).cancelOrder(anyLong(), eq(pendingOrderId));
+        verify(mockTelegramAPIClient, times(1)).sendMessage(contains(" cancelled"));
         verify(mockFutuAPIClient, times(1)).placeOrder(anyLong(), eq(BUY), eq(stockCode), eq(4000), eq(expectedPrice));
+        verify(mockTelegramAPIClient, times(1)).sendMessage(contains("placed order: BUY"));
     }
 
     @Test
@@ -202,6 +207,7 @@ class StockTradingTaskTest {
         stockTradingTask.executeTask();
 
         verify(mockFutuAPIClient, never()).placeOrder(anyLong(), eq(BUY), any(), anyInt(), anyDouble());
+        verify(mockTelegramAPIClient, never()).sendMessage(contains("placed order: BUY"));
     }
 
     @Test
@@ -219,6 +225,7 @@ class StockTradingTaskTest {
         stockTradingTask.executeTask();
 
         verify(mockFutuAPIClient, times(1)).cancelOrder(anyLong(), eq(pendingOrderId));
+        verify(mockTelegramAPIClient, times(1)).sendMessage(contains("Cannot cancel order"));
         verify(mockFutuAPIClient, never()).placeOrder(anyLong(), any(), any(), anyInt(), anyDouble());
     }
 
@@ -271,6 +278,7 @@ class StockTradingTaskTest {
         stockTradingTask.executeTask();
 
         verify(mockFutuAPIClient, times(1)).cancelOrder(anyLong(), eq(pendingOrderId));
+        verify(mockTelegramAPIClient, times(1)).sendMessage(contains("cancelled"));
         verify(mockFutuAPIClient, times(1)).placeOrder(anyLong(), eq(SELL), eq(stockCode), eq(4000), eq(expectedPrice));
     }
 
