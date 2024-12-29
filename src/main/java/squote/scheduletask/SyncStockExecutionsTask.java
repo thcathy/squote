@@ -11,15 +11,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import squote.domain.Broker;
-import squote.domain.Execution;
-import squote.domain.HoldingStock;
-import squote.domain.TaskConfig;
+import squote.domain.*;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.TaskConfigRepository;
 import squote.service.*;
 
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
@@ -101,11 +99,7 @@ public class SyncStockExecutionsTask {
                     fundRepo.save(fund);
                     holdingRepo.save(holding);
 
-                    logs.append("created holding=").append(holding).append("\n");
-                    logs.append("update with holding to fund ")
-                            .append(userId).append(":").append(config.fundName())
-                            .append(" with fee ").append(fees).append("\n");
-                    logs.append("updated fund profit=").append(fund.getProfit()).append("\n\n");
+                    logHoldingProcessed(config, logs, holding, fees, fund);
                 }
                 futuAPIClient.close();
 
@@ -113,7 +107,9 @@ public class SyncStockExecutionsTask {
                 logs.append("Fund snapshot after:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName())).append("\n\n");
             }
         } catch (Exception e) {
-            logs.append("ERROR, stop execute\n\n").append(ExceptionUtils.getStackTrace(e));
+            var message = String.format("SyncStockExecutionsTask: Unexpected exception: %s \n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
+            logs.append("ERROR, stop execute\n\n").append(message);
+            telegramAPIClient.sendMessage(message).blockFirst();
         } finally {
             if (futuAPIClient != null) futuAPIClient.close();
 
@@ -121,6 +117,22 @@ public class SyncStockExecutionsTask {
             log.info(logsString);
             sendSummaryEmail(logsString);
         }
+    }
+
+    private void logHoldingProcessed(FutuClientConfig config, StringBuilder logs, HoldingStock holding, BigDecimal fees, Fund fund) {
+        logs.append("created holding=").append(holding).append("\n");
+        logs.append("update with holding to fund ")
+                .append(userId).append(":").append(config.fundName())
+                .append(" with fee ").append(fees).append("\n");
+        logs.append("updated fund profit=").append(fund.getProfit()).append("\n\n");
+
+        var messaage = String.format("""
+Created holding: %s %s %d@%.2f (%.2f)
+Updated fund: %s, fee=%.2f, profit=%.2f""",
+                holding.getSide(), holding.getCode(), holding.getQuantity(),
+                holding.getPrice(), holding.getGross(),
+                fund.name, fees, fund.getProfit());
+        telegramAPIClient.sendMessage(messaage).blockFirst();
     }
 
     private void sendSummaryEmail(String logsString) {

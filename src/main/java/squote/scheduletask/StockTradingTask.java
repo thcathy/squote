@@ -2,6 +2,7 @@ package squote.scheduletask;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.futu.openapi.FTAPI_Conn_Trd;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +68,8 @@ public class StockTradingTask {
             innerExecute();
         } catch (Exception e) {
             log.error("Unexpected exception!" ,e);
+            var message = String.format("StockTradingTask: Unexpected exception: %s \n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
+            telegramAPIClient.sendMessage(message).blockFirst();
         }
     }
 

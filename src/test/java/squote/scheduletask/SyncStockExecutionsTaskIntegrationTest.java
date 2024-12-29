@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import reactor.core.publisher.Flux;
 import squote.IntegrationTest;
 import squote.domain.Execution;
 import squote.domain.Fund;
@@ -15,6 +16,7 @@ import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.TaskConfigRepository;
 import squote.service.EmailService;
 import squote.service.FutuAPIClient;
+import squote.service.TelegramAPIClient;
 import squote.service.UpdateFundByHoldingService;
 
 import java.math.BigDecimal;
@@ -26,8 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyShort;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static squote.SquoteConstants.Side.BUY;
 
 @AutoConfigureMockMvc
@@ -42,18 +43,21 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
     FutuAPIClientFactory mockFactory = Mockito.mock(FutuAPIClientFactory.class);
     FutuAPIClient mockFutuAPIClient = Mockito.mock(FutuAPIClient.class);
     EmailService mockEmailService = Mockito.mock(EmailService.class);
+    TelegramAPIClient mockTelegramAPIClient = Mockito.mock(TelegramAPIClient.class);
 
 
     @BeforeEach
-    void init() {
+    void setup() {
         holdingRepo.deleteAll();
         fundRepo.deleteAll();
         when(mockFactory.build(any(), anyShort())).thenReturn(mockFutuAPIClient);
+        when(mockTelegramAPIClient.sendMessage(any(String.class))).thenReturn(Flux.just("Message sent"));
 
         task = new SyncStockExecutionsTask();
         task.holdingRepo = holdingRepo;
         task.fundRepo = fundRepo;
         task.emailService = mockEmailService;
+        task.telegramAPIClient = mockTelegramAPIClient;
         task.enabled = true;
         task.futuAPIClientFactory = mockFactory;
         task.updateFundService = updateFundByHoldingService;
@@ -97,6 +101,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         assertEquals("A", holding.getFundName());
         assertEquals(1000, holding.getQuantity());
         assertEquals(execDate, holding.getDate());
+        verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Created holding:"));
 
         var fund = fundRepo.findByUserIdAndName(userId, "A").get();
         assertEquals(-19.43, fund.getProfit().doubleValue());   // due to fee
