@@ -200,9 +200,6 @@ public class StockTradingTask {
                     pendingOrderId,
                     cancelOrderResponse.errorCode(),
                     cancelOrderResponse.message());
-
-            log.error(errorMessage);
-            telegramAPIClient.sendMessage(errorMessage).blockFirst();
             throw new RuntimeException(errorMessage);
         }
 
