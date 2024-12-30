@@ -165,6 +165,16 @@ class StockTradingTaskTest {
     }
 
     @Test
+    void executeTask_willCloseFutuConnection() {
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+
+        stockTradingTask.executeTask();
+
+        verify(mockFutuAPIClient, times(1)).close();
+    }
+
+    @Test
     void noPendingBuyOrder_willPlaceOrder() {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         var expectedPrice = 19.72; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));

@@ -4,15 +4,16 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.lang.Collections;
+import jakarta.servlet.ServletException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.filter.GenericFilterBean;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.PublicKey;
@@ -23,7 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class JWTAuthorizationFilter extends GenericFilterBean {
+public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
     public static final String CLAIM_ROLE_KEY = "https://squote.funfunspell.com/roles";
 
     private static Logger log = LoggerFactory.getLogger(JWTAuthorizationFilter.class);
@@ -31,7 +32,9 @@ public class JWTAuthorizationFilter extends GenericFilterBean {
     private PublicKey key;
     private String expectedAudiance;
 
-    public JWTAuthorizationFilter(String certificatePath, String expectedAudiance) {
+    public JWTAuthorizationFilter(AuthenticationManager authManager, String certificatePath, String expectedAudiance) {
+        super(authManager);
+
         try {
             CertificateFactory fact = null;
             fact = CertificateFactory.getInstance("X.509");
@@ -44,23 +47,24 @@ public class JWTAuthorizationFilter extends GenericFilterBean {
         }
     }
 
+
     @Override
-    public void doFilter(jakarta.servlet.ServletRequest req, jakarta.servlet.ServletResponse res, jakarta.servlet.FilterChain chain) throws IOException, jakarta.servlet.ServletException {
-        HttpServletRequest httpRequest = (HttpServletRequest) req;
-        String header = httpRequest.getHeader("Authorization");
+    protected void doFilterInternal(jakarta.servlet.http.HttpServletRequest req, jakarta.servlet.http.HttpServletResponse res,
+                                    jakarta.servlet.FilterChain chain) throws IOException, ServletException {
+        String header = req.getHeader("Authorization");
 
         if (header == null || !header.startsWith("Bearer")) {
             chain.doFilter(req, res);
             return;
         }
 
-        UsernamePasswordAuthenticationToken authentication = getAuthentication(httpRequest);
+        UsernamePasswordAuthenticationToken authentication = getAuthentication(req);
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         chain.doFilter(req, res);
     }
 
-    private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
+    private UsernamePasswordAuthenticationToken getAuthentication(jakarta.servlet.http.HttpServletRequest request) {
         try {
             String token = request.getHeader("Authorization");
             if (token != null) {

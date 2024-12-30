@@ -89,6 +89,7 @@ public class StockTradingTask {
             for (var code : tradeSymbols.getValue()) {
                 processSingleSymbol(code, clientConfig, futuAPIClient);
             }
+            futuAPIClient.close();
         }
     }
 
