@@ -26,7 +26,7 @@ public class TelegramAPIClientTest {
 
         telegramAPIClient = new TelegramAPIClient(WebClient.builder(), baseUrl);
         telegramAPIClient.botToken = "testBotToken";
-        telegramAPIClient.chatIds = List.of("chatId1", "chatId2", "chatId3");
+        telegramAPIClient.chatIds = "chatId1,chatId2,chatId3";
     }
 
     @AfterEach

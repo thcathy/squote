@@ -11,14 +11,15 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
+import java.util.Arrays;
 
 @Service
 public class TelegramAPIClient {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
+	final String CHATID_SEPARATOR = ",";
 
     @Value("${telegramAPIClient.botToken}") String botToken;
-	@Value("${telegramAPIClient.chatIds}") List<String> chatIds;
+	@Value("${telegramAPIClient.chatIds}") String chatIds;
 	private final WebClient webClient;
 	public final static String BASE_URL = "https://api.telegram.org/";
 
@@ -34,7 +35,7 @@ public class TelegramAPIClient {
 	}
 
 	public Flux<String> sendMessage(String message) {
-		return Flux.fromIterable(chatIds)
+		return Flux.fromIterable(Arrays.stream(chatIds.split(CHATID_SEPARATOR)).toList())
 				.flatMap(chatId -> sendMessage(chatId, message));
 	}
 

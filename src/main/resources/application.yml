@@ -49,5 +49,4 @@ futuClientConfigsJson: 'ENC(NzIUHcdkAZnjlswvYxGiiEZNOdF+4znKwx3T2TvjphwVvxR9x4/U
 
 telegramAPIClient:
   botToken: 'ENC(UcXr2IG+Ij+ET6kOP2JOf2NlUMETwiwTkV2NXTfWx4035pjY6Db92qeokpjUCLOt53m0NLK4JGLGFspSG13YjykWm7YD4uGRS4PlvY2JGlI=)'
-  chatIds:
-    - 'ENC(Hqv++0fyCZl+3pbMUGneTb37UJI681LdGHhixqRnHpvpEIbtMnY0GVVRUQdp1osA)'
+  chatIds: 'ENC(Hqv++0fyCZl+3pbMUGneTb37UJI681LdGHhixqRnHpvpEIbtMnY0GVVRUQdp1osA)'
