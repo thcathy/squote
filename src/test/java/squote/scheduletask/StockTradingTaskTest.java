@@ -9,7 +9,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
 import squote.domain.DailyAssetSummary;
 import squote.domain.HoldingStock;
 import squote.domain.Order;
@@ -66,7 +65,7 @@ class StockTradingTaskTest {
         when(mockFutuAPIClient.placeOrder(anyLong(), any(), any(), anyInt(), anyDouble())).thenReturn(new FutuAPIClient.PlaceOrderResponse(1L, 0, null));
         when(mockFutuAPIClient.cancelOrder(anyLong(), anyLong()))
                 .thenReturn(new FutuAPIClient.CancelOrderResponse(0, ""));
-        when(mockTelegramAPIClient.sendMessage(any())).thenReturn(Flux.just("Message sent"));
+        when(mockTelegramAPIClient.sendMessage(any())).thenReturn(List.of("Message sent"));
         when(mockFutuAPIClient.unlockTrade(any())).thenReturn(true);
 
         properties = new StockTradingTaskProperties();

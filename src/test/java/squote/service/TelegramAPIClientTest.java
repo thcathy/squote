@@ -5,8 +5,6 @@ import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,7 +22,7 @@ public class TelegramAPIClientTest {
         mockWebServer.start();
         String baseUrl = mockWebServer.url("/").toString();
 
-        telegramAPIClient = new TelegramAPIClient(WebClient.builder(), baseUrl);
+        telegramAPIClient = new TelegramAPIClient(baseUrl);
         telegramAPIClient.botToken = "testBotToken";
         telegramAPIClient.chatIds = "chatId1,chatId2,chatId3";
     }
@@ -44,7 +42,7 @@ public class TelegramAPIClientTest {
                 .setBody(mockResponse)
                 .addHeader("Content-Type", "application/json"));
 
-        String response = telegramAPIClient.sendMessage(chatId, message).block();
+        String response = telegramAPIClient.sendMessage(chatId, message);
         assertThat(mockResponse).isEqualTo(response);
     }
 
@@ -54,7 +52,7 @@ public class TelegramAPIClientTest {
                 .setBody("{\"ok\": false, \"error_code\": 401, \"description\": \"Unauthorized\"}")
                 .addHeader("Content-Type", "application/json"));
 
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> telegramAPIClient.sendMessage("123456", "Hello").block());
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> telegramAPIClient.sendMessage("123456", "Hello"));
         assertThat(thrown).hasMessage("Unauthorized");
     }
 
@@ -64,7 +62,7 @@ public class TelegramAPIClientTest {
                 .setBody("{\"ok\": false, \"error_code\": 400, \"description\": \"Bad Request: chat not found\"}")
                 .addHeader("Content-Type", "application/json"));
 
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> telegramAPIClient.sendMessage("invalid_chat_id", "Hello").block());
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> telegramAPIClient.sendMessage("invalid_chat_id", "Hello"));
         assertThat(thrown).hasMessage("Bad Request: chat not found");
     }
 
@@ -74,7 +72,7 @@ public class TelegramAPIClientTest {
                 .setBody("{\"ok\": false, \"error_code\": 400, \"description\": \"Bad Request: message text is empty\"}")
                 .addHeader("Content-Type", "application/json"));
 
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> telegramAPIClient.sendMessage("123456", "").block());
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> telegramAPIClient.sendMessage("123456", ""));
         assertThat(thrown).hasMessage("Bad Request: message text is empty");
     }
 
@@ -89,8 +87,7 @@ public class TelegramAPIClientTest {
                     .addHeader("Content-Type", "application/json"));
         }
 
-        Flux<String> responseFlux = telegramAPIClient.sendMessage(message);
-        List<String> responses = responseFlux.collectList().block();
+        List<String> responses = telegramAPIClient.sendMessage(message);
         assertThat(responses).hasSize(3);
         assertThat(responses).containsExactly(mockResponse, mockResponse, mockResponse);
     }

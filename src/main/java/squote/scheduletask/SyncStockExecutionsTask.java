@@ -109,7 +109,7 @@ public class SyncStockExecutionsTask {
         } catch (Exception e) {
             var message = String.format("SyncStockExecutionsTask: Unexpected exception: %s \n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
             logs.append("ERROR, stop execute\n\n").append(message);
-            telegramAPIClient.sendMessage(message).blockFirst();
+            telegramAPIClient.sendMessage(message);
         } finally {
             if (futuAPIClient != null) futuAPIClient.close();
 
@@ -132,7 +132,7 @@ Updated fund: %s, fee=%.2f, profit=%.2f""",
                 holding.getSide(), holding.getCode(), holding.getQuantity(),
                 holding.getPrice(), holding.getGross(),
                 fund.name, fees, fund.getProfit());
-        telegramAPIClient.sendMessage(messaage).blockFirst();
+        telegramAPIClient.sendMessage(messaage);
     }
 
     private void sendSummaryEmail(String logsString) {

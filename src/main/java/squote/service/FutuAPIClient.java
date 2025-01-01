@@ -2,7 +2,6 @@ package squote.service;
 
 import com.futu.openapi.*;
 import com.futu.openapi.pb.*;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import squote.SquoteConstants;
@@ -150,12 +149,11 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 	public void onReply_UnlockTrade(FTAPI_Conn client, int seq, TrdUnlockTrade.Response response) {
 		if (response.getRetType() != 0) {
 			log.error("UnlockTrade failed: {}", response.getRetMsg());
-			resultMap.put(seq, new WeakReference<>(null));
+			resultMap.put(seq, new WeakReference<>(false));
 		}
 
-		String json = response.getRetMsg();
-		log.info("Seq[{}] unlock trade result={}", seq, json);
-		resultMap.put(seq, new WeakReference<>(json));
+		log.info("Seq[{}] unlock trade result={}", seq, response.getRetMsg());
+		resultMap.put(seq, new WeakReference<>(true));
 	}
 
 	public boolean unlockTrade(String code) {
@@ -168,8 +166,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 		int seq = futuConnTrd.unlockTrade(req);
 		log.info("Seq[{}] Send unlockTrade", seq);
 
-		var result = (String) getResult(seq);
-		return StringUtils.isNotBlank(result);
+		return (boolean) getResult(seq);
 	}
 
 	public HashMap<String, Execution> getHKStockTodayExecutions(long accountId) {

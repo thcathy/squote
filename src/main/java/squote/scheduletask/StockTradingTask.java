@@ -69,7 +69,7 @@ public class StockTradingTask {
         } catch (Exception e) {
             log.error("Unexpected exception!" ,e);
             var message = String.format("StockTradingTask: Unexpected exception: %s \n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
-            telegramAPIClient.sendMessage(message).blockFirst();
+            telegramAPIClient.sendMessage(message);
         }
     }
 
@@ -197,7 +197,7 @@ public class StockTradingTask {
                 execution.quantity,
                 price);
         log.info(placedMessage);
-        telegramAPIClient.sendMessage(placedMessage).blockFirst();
+        telegramAPIClient.sendMessage(placedMessage);
     }
 
     private void cancelOrder(FutuAPIClient futuAPIClient, long accountId, long pendingOrderId) {
@@ -211,7 +211,7 @@ public class StockTradingTask {
             throw new RuntimeException(errorMessage);
         }
 
-        telegramAPIClient.sendMessage(String.format("acc [%s]: order %s cancelled", accountId, pendingOrderId)).blockFirst();
+        telegramAPIClient.sendMessage(String.format("acc [%s]: order %s cancelled", accountId, pendingOrderId));
     }
 
     public boolean priceWithinThreshold(double p1, double p2) {

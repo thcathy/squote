@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import reactor.core.publisher.Flux;
 import squote.IntegrationTest;
 import squote.domain.Execution;
 import squote.domain.Fund;
@@ -22,6 +21,7 @@ import squote.service.UpdateFundByHoldingService;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -51,7 +51,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         holdingRepo.deleteAll();
         fundRepo.deleteAll();
         when(mockFactory.build(any(), anyShort())).thenReturn(mockFutuAPIClient);
-        when(mockTelegramAPIClient.sendMessage(any(String.class))).thenReturn(Flux.just("Message sent"));
+        when(mockTelegramAPIClient.sendMessage(any(String.class))).thenReturn(List.of("Message sent"));
 
         task = new SyncStockExecutionsTask();
         task.holdingRepo = holdingRepo;
