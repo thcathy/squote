@@ -86,10 +86,17 @@ public class StockTradingTask {
             }
             FutuAPIClient futuAPIClient = futuAPIClientFactory.build(clientConfig.ip(), clientConfig.port());
 
+            unlockTrade(futuAPIClient, clientConfig.unlockCode());
             for (var code : tradeSymbols.getValue()) {
                 processSingleSymbol(code, clientConfig, futuAPIClient);
             }
             futuAPIClient.close();
+        }
+    }
+
+    public void unlockTrade(FutuAPIClient futuAPIClient, String code) {
+        if (!futuAPIClient.unlockTrade(code)) {
+            throw new RuntimeException("unlock trade failed");
         }
     }
 

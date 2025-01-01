@@ -2,6 +2,7 @@ package squote.service;
 
 import com.futu.openapi.*;
 import com.futu.openapi.pb.*;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import squote.SquoteConstants;
@@ -143,6 +144,32 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 			log.error("TrdModifyOrder failed: {}", response.getRetMsg());
 		}
 		resultMap.put(seq, new WeakReference<>(result));
+	}
+
+	@Override
+	public void onReply_UnlockTrade(FTAPI_Conn client, int seq, TrdUnlockTrade.Response response) {
+		if (response.getRetType() != 0) {
+			log.error("UnlockTrade failed: {}", response.getRetMsg());
+			resultMap.put(seq, new WeakReference<>(null));
+		}
+
+		String json = response.getRetMsg();
+		log.info("Seq[{}] unlock trade result={}", seq, json);
+		resultMap.put(seq, new WeakReference<>(json));
+	}
+
+	public boolean unlockTrade(String code) {
+		TrdUnlockTrade.C2S c2s = TrdUnlockTrade.C2S.newBuilder()
+				.setPwdMD5(code)
+				.setUnlock(true)
+				.setSecurityFirm(TrdCommon.SecurityFirm.SecurityFirm_FutuSecurities_VALUE)
+				.build();
+		TrdUnlockTrade.Request req = TrdUnlockTrade.Request.newBuilder().setC2S(c2s).build();
+		int seq = futuConnTrd.unlockTrade(req);
+		log.info("Seq[{}] Send unlockTrade", seq);
+
+		var result = (String) getResult(seq);
+		return StringUtils.isNotBlank(result);
 	}
 
 	public HashMap<String, Execution> getHKStockTodayExecutions(long accountId) {

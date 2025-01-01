@@ -66,7 +66,8 @@ class StockTradingTaskTest {
         when(mockFutuAPIClient.placeOrder(anyLong(), any(), any(), anyInt(), anyDouble())).thenReturn(new FutuAPIClient.PlaceOrderResponse(1L, 0, null));
         when(mockFutuAPIClient.cancelOrder(anyLong(), anyLong()))
                 .thenReturn(new FutuAPIClient.CancelOrderResponse(0, ""));
-        when(mockTelegramAPIClient.sendMessage(any(String.class))).thenReturn(Flux.just("Message sent"));
+        when(mockTelegramAPIClient.sendMessage(any())).thenReturn(Flux.just("Message sent"));
+        when(mockFutuAPIClient.unlockTrade(any())).thenReturn(true);
 
         properties = new StockTradingTaskProperties();
         properties.fundSymbols = Map.of("FundA", List.of(stockCode));
@@ -78,8 +79,8 @@ class StockTradingTaskTest {
         stockTradingTask.stdDevMultiplier = stdDevMultiplier;
         stockTradingTask.clientConfigJson = """
                     [
-                        {"fundName": "FundA", "fundUserId": "UserA", "accountId": 1, "ip": "192.0.0.1", "port": 80},
-                        {"fundName": "FundB", "fundUserId": "UserB", "accountId": 2, "ip": "192.0.0.1", "port": 80}
+                        {"fundName": "FundA", "fundUserId": "UserA", "accountId": 1, "ip": "192.0.0.1", "port": 80, "unlockCode": "dummy code"},
+                        {"fundName": "FundB", "fundUserId": "UserB", "accountId": 2, "ip": "192.0.0.1", "port": 80, "unlockCode": "dummy code"}
                     ]
                 """;
     }
@@ -307,5 +308,26 @@ class StockTradingTaskTest {
         var logMatched = listAppender.list.stream().anyMatch(
                 l -> l.getFormattedMessage().startsWith("Has partial filled pending order"));
         assertThat(logMatched).isTrue();
+    }
+
+    @Test
+    void executeTask_willUnlockTrade() {
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+
+        stockTradingTask.executeTask();
+
+        verify(mockFutuAPIClient, times(1)).unlockTrade(any());
+    }
+
+    @Test
+    void unlockTradeFailed_willSendMessage() {
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockFutuAPIClient.unlockTrade(any())).thenReturn(false);
+
+        stockTradingTask.executeTask();
+
+        verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("StockTradingTask: Unexpected exception: unlock trade failed"));
     }
 }

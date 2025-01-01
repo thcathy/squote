@@ -17,8 +17,8 @@ import java.util.List;
 public class TelegramAPIClient {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Value("telegramAPIClient.botToken") String botToken;
-	@Value("telegramAPIClient.chatIds") List<String> chatIds;
+    @Value("${telegramAPIClient.botToken}") String botToken;
+	@Value("${telegramAPIClient.chatIds}") List<String> chatIds;
 	private final WebClient webClient;
 	public final static String BASE_URL = "https://api.telegram.org/";
 
@@ -27,6 +27,7 @@ public class TelegramAPIClient {
 		this(webClientBuilder, BASE_URL);
 	}
 
+	// for testing
 	public TelegramAPIClient(WebClient.Builder webClientBuilder, String baseUrl) {
 		if (StringUtils.isBlank(baseUrl)) baseUrl = BASE_URL;
         this.webClient = webClientBuilder.baseUrl(baseUrl).build();
