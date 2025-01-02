@@ -32,6 +32,12 @@ public class BinanceAPIService {
 	private final TradeService tradeService;
 	private final MarketDataService marketDataService;
 
+	public BinanceAPIService() {
+		Exchange exchange = ExchangeFactory.INSTANCE.createExchange(BinanceExchange.class);
+		tradeService = exchange.getTradeService();
+		marketDataService = exchange.getMarketDataService();
+	}
+
 	public BinanceAPIService(String apiKey, String secret) {
 		ExchangeSpecification exSpec = new BinanceExchange().getDefaultExchangeSpecification();
 		exSpec.setApiKey(apiKey);
