@@ -32,10 +32,10 @@ public class BinanceAPIService {
 	private final TradeService tradeService;
 	private final MarketDataService marketDataService;
 
+	// for testing
 	public BinanceAPIService() {
-		Exchange exchange = ExchangeFactory.INSTANCE.createExchange(BinanceExchange.class);
-		tradeService = exchange.getTradeService();
-		marketDataService = exchange.getMarketDataService();
+		tradeService = null;
+		marketDataService = null;
 	}
 
 	public BinanceAPIService(String apiKey, String secret) {
