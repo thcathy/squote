@@ -26,8 +26,6 @@ jobs:
         java-version: '21'
         distribution: 'adopt'
         cache: maven
-    - name: Install Binance API
-      run: mvn org.apache.maven.plugins:maven-install-plugin:3.0.0-M1:install-file -Dfile=lib/binance-api-client-1.0.1.jar
     - name: Start MongoDB
       uses: supercharge/mongodb-github-action@1.8.0
     - name: Build with Maven

@@ -17,7 +17,6 @@ pipeline {
     stage('resolve dependency') {
       steps {
         sh 'chmod +x mvnw'
-        sh './mvnw org.apache.maven.plugins:maven-install-plugin:3.0.0-M1:install-file -Dfile=lib/binance-api-client-1.0.1.jar'
         sh './mvnw dependency:go-offline'
       }
     }
