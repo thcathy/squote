@@ -33,7 +33,6 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 			TrdCommon.OrderStatus.OrderStatus_Submitting_VALUE,
 			TrdCommon.OrderStatus.OrderStatus_Submitted_VALUE,
 			TrdCommon.OrderStatus.OrderStatus_Filled_Part_VALUE,
-			TrdCommon.OrderStatus.OrderStatus_Filled_All_VALUE,
 			TrdCommon.OrderStatus.OrderStatus_Cancelling_Part_VALUE,
 			TrdCommon.OrderStatus.OrderStatus_Cancelling_All_VALUE
 	);
