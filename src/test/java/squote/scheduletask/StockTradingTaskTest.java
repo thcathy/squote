@@ -38,7 +38,6 @@ class StockTradingTaskTest {
     FutuAPIClient mockFutuAPIClient = Mockito.mock(FutuAPIClient.class);
     TelegramAPIClient mockTelegramAPIClient = Mockito.mock(TelegramAPIClient.class);
 
-    private StockTradingTaskProperties properties;
     private StockTradingTask stockTradingTask;
     private ListAppender<ILoggingEvent> listAppender;
 
@@ -48,7 +47,7 @@ class StockTradingTaskTest {
     double stdDevMultiplier = 0.95;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         listAppender = new ListAppender<>();
         listAppender.setName("testAppender");
         listAppender.start();
@@ -68,7 +67,7 @@ class StockTradingTaskTest {
         when(mockTelegramAPIClient.sendMessage(any())).thenReturn(List.of("Message sent"));
         when(mockFutuAPIClient.unlockTrade(any())).thenReturn(true);
 
-        properties = new StockTradingTaskProperties();
+        StockTradingTaskProperties properties = new StockTradingTaskProperties();
         properties.fundSymbols = Map.of("FundA", List.of(stockCode));
 
         stockTradingTask = new StockTradingTask(dailyAssetSummaryRepo, fundRepo, holdingStockRepository, mockTelegramAPIClient, properties);
