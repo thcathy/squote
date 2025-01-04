@@ -28,6 +28,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 
 	int timeoutSeconds = 30;
 	List<Integer> pendingOrderStatuses = List.of(
+			TrdCommon.OrderStatus.OrderStatus_Unknown_VALUE,
 			TrdCommon.OrderStatus.OrderStatus_Unsubmitted_VALUE,
 			TrdCommon.OrderStatus.OrderStatus_WaitingSubmit_VALUE,
 			TrdCommon.OrderStatus.OrderStatus_Submitting_VALUE,
@@ -212,8 +213,8 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 
 		var result = (List<TrdCommon.Order>) getResult(seq);
 		if (result == null) return Collections.emptyList();
-
 		return result.stream()
+				.peek(o -> log.info("order received [{}]", o.toString().replaceAll("\n", " ")))
 				.filter(o -> pendingOrderStatuses.contains(o.getOrderStatus()))
 				.map(this::toOrder).toList();
 	}
