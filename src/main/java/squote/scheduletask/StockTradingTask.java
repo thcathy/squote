@@ -33,7 +33,7 @@ public class StockTradingTask {
     @Value(value = "${stocktradingtask.stdDevMultiplier}") double stdDevMultiplier;
     @Value(value = "${futuOpendRsaKey}") String rsaKey;
     @Value(value = "${futuClientConfigsJson}") String clientConfigJson;
-    double priceThreshold = 0.002;
+    double priceThreshold = 0.0005;
 
     final StockTradingTaskProperties properties;
     final DailyAssetSummaryRepository dailyAssetSummaryRepo;

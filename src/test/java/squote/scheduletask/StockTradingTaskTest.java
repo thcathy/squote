@@ -211,7 +211,7 @@ class StockTradingTaskTest {
         var expectedPrice = 19.72; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
         when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(
-                Order.newOrder(stockCode, BUY, 4000, expectedPrice * 1.0015, 123456L)
+                Order.newOrder(stockCode, BUY, 4000, expectedPrice * 1.0002, 123456L)   // price within threshold
         ));
 
         stockTradingTask.executeTask();
@@ -267,7 +267,7 @@ class StockTradingTaskTest {
         var expectedPrice = 20.28; // 20.0 * (1 + (stdDev * stdDevMultiplier / 100));
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
         when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(
-                Order.newOrder(stockCode, SELL, 4000, expectedPrice / 1.0015, 123456L)
+                Order.newOrder(stockCode, SELL, 4000, expectedPrice / 1.0001, 123456L)
         ));
 
         stockTradingTask.executeTask();
