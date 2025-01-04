@@ -52,6 +52,7 @@ public class SyncStockExecutionsTask {
     @Value(value = "${futuOpendRsaKey}") String rsaKey;
     @Value(value = "${futuClientConfigsJson}") String clientConfigJson;
     @Value(value = "${syncstockexecutionstask.summaryEmailAddress}") String summaryEmailAddress;
+    @Value(value = "${syncstockexecutionstask.sendTelegram}") boolean sendTelegram;
 
     @Autowired HoldingStockRepository holdingRepo;
     @Autowired TaskConfigRepository taskConfigRepo;
@@ -109,7 +110,7 @@ public class SyncStockExecutionsTask {
         } catch (Exception e) {
             var message = String.format("SyncStockExecutionsTask: Unexpected exception: %s \n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
             logs.append("ERROR, stop execute\n\n").append(message);
-            telegramAPIClient.sendMessage(message);
+            sendTelegram(message);
         } finally {
             if (futuAPIClient != null) futuAPIClient.close();
 
@@ -132,7 +133,13 @@ Updated fund: %s, fee=%.2f, profit=%.2f""",
                 holding.getSide(), holding.getCode(), holding.getQuantity(),
                 holding.getPrice(), holding.getGross(),
                 fund.name, fees, fund.getProfit());
-        telegramAPIClient.sendMessage(messaage);
+        sendTelegram(messaage);
+    }
+
+    private void sendTelegram(String messaage) {
+        if (sendTelegram) {
+            telegramAPIClient.sendMessage(messaage);
+        }
     }
 
     private void sendSummaryEmail(String logsString) {

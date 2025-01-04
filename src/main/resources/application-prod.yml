@@ -1,5 +1,6 @@
 syncstockexecutionstask:
   enabled: true
+  sendTelegram: true
 
 stocktradingtask:
   enabled: true

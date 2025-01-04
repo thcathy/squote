@@ -44,8 +44,8 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn {
 //        getAccounts();
 //       getTrades();
 //        getTodayFills();
-//        getPendingOrders();
-        unlockTrade();
+        getPendingOrders();
+//        unlockTrade();
 //        placeOrder();
 //        cancelOrder();
     }
@@ -230,9 +230,9 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn {
         else {
             try {
                 String json = JsonFormat.printer().print(rsp);
-                System.out.printf("Receive TrdGetOrderList: %s", json);
+                System.out.printf("Receive TrdGetOrderList: %s \n", json);
                 var pendingOrders = rsp.getS2C().getOrderListList();
-                System.out.println(pendingOrders);
+                pendingOrders.forEach(o -> System.out.println(o.toString().replaceAll("\n", " ")));
             } catch (InvalidProtocolBufferException e) {
                 e.printStackTrace();
             }

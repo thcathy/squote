@@ -58,6 +58,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         task.fundRepo = fundRepo;
         task.emailService = mockEmailService;
         task.telegramAPIClient = mockTelegramAPIClient;
+        task.sendTelegram = true;
         task.enabled = true;
         task.futuAPIClientFactory = mockFactory;
         task.updateFundService = updateFundByHoldingService;
@@ -152,5 +153,13 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         var configEntity = taskConfigRepo.findById(SyncStockExecutionsTask.class.toString()).orElseThrow();
         var config = SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.fromJson(configEntity.jsonConfig());
         assertTrue(configDate.getTime() < config.lastExecutionTime().getTime());
+    }
+
+    @Test
+    void sendTelegramFalse_willNotSendMessage() {
+        task.sendTelegram = false;
+        task.clientConfigJson = "not a json"; // trigger exception
+        task.executeTask();
+        verify(mockTelegramAPIClient, never()).sendMessage(any());
     }
 }
