@@ -24,7 +24,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	private final FTAPI_Conn_Trd futuConnTrd;
 	private long errorCode = -1;
-	private Map<Integer, WeakReference<Object>> resultMap = new ConcurrentHashMap<>();
+	private final Map<Integer, WeakReference<Object>> resultMap = new ConcurrentHashMap<>();
 
 	int timeoutSeconds = 30;
 	List<Integer> pendingOrderStatuses = List.of(
