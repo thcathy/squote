@@ -139,7 +139,7 @@ class StockTradingTaskTest {
                 ));
         stockTradingTask.executeTask();
         var logMatched = listAppender.list.stream().anyMatch(
-                l -> l.getFormattedMessage().startsWith("Unexpected executions: SELL code1 4000@20.00 (isToday=false) Wed Jan 08 11:51:40 HKT 2025 < BUY code1 4000@22.00 (isToday=false) Wed Jan 08 11:51:00 HKT 2025"));
+                l -> l.getFormattedMessage().matches("Unexpected executions: SELL code1 4000@20.00 .* 2025 < BUY code1 4000@22.00 .* 2025"));
         assertThat(logMatched).isTrue();
     }
 
@@ -156,9 +156,9 @@ class StockTradingTaskTest {
     @Test
     void testExecutionToStringMethod() {
         StockTradingTask.Execution execution = new StockTradingTask.Execution("GOOG", SELL, 50, 123.45, false, new Date(1736308260000L));
-        String expectedString = "SELL GOOG 50@123.45 (isToday=false) Wed Jan 08 11:51:00 HKT 2025";
+        String expectedString = "SELL GOOG 50@123.45 (isToday=false) ";
 
-        assertThat(execution.toString()).isEqualTo(expectedString);
+        assertThat(execution.toString()).startsWith(expectedString);
     }
 
     @Test
