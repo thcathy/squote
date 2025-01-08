@@ -53,6 +53,12 @@ public class HoldingStock {
 		return holding;
 	}
 
+	public static HoldingStock simple(String code, Side side, int quantity, BigDecimal gross, String fundName, Date date) {
+		var holding = simple(code, side, quantity, gross, fundName);
+		holding.date = date;
+		return holding;
+	}
+
 	public static HoldingStock from(StockExecutionMessage message, String userId, BigDecimal hscei) {
 		return new HoldingStock(
 				userId,

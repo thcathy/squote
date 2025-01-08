@@ -10,6 +10,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 import squote.domain.DailyAssetSummary;
+import squote.domain.Execution;
 import squote.domain.HoldingStock;
 import squote.domain.Order;
 import squote.domain.repository.DailyAssetSummaryRepository;
@@ -19,10 +20,7 @@ import squote.service.FutuAPIClient;
 import squote.service.TelegramAPIClient;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -87,35 +85,35 @@ class StockTradingTaskTest {
         return Stream.of(
                 // single buy, pick that one
                 new TestFindBasePriceData(List.of(
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA")
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA", new Date())
                 ), "base price: 20.0"),
                 // multi buy, pick the lowest price
                 new TestFindBasePriceData(List.of(
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA"),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(88000), "FundA")
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA", new Date()),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(88000), "FundA", new Date())
                 ), "base price: 20.0"),
                 // no buy, 1 sell, pick sell price
                 new TestFindBasePriceData(List.of(
-                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000), "FundA")
+                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000), "FundA", new Date())
                 ), "base price: 20.0"),
-                // 1 buy, 1 sell, pick sell price
+                // 1 buy, 1 sell after buy, pick sell price
                 new TestFindBasePriceData(List.of(
-                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(88000), "FundA"),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA")
+                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(88000), "FundA", new Date(1736308300000L)),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA", new Date(1736308200000L))
                 ), "base price: 22.0"),
                 // n buy, 1 sell, pick n-1 buy price
                 new TestFindBasePriceData(List.of(
-                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(88000), "FundA"),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA"),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(88000), "FundA")
+                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(88000), "FundA", new Date(1736308300000L)),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA", new Date(1736308200000L)),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(88000), "FundA", new Date(1736308210000L))
                 ), "base price: 22.0"),
                 // n buy, m sell, pick n-m buy price
                 new TestFindBasePriceData(List.of(
-                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(88000), "FundA"),
-                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(98000), "FundA"),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA"),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(90000), "FundA"),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(100000), "FundA")
+                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(88000), "FundA", new Date(1736308450000L)),
+                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(98000), "FundA", new Date(1736308350000L)),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA", new Date(1736308400000L)),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(90000), "FundA", new Date(1736308300000L)),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(100000), "FundA", new Date(1736308200000L))
                 ), "base price: 25.0")
         );
     }
@@ -136,12 +134,12 @@ class StockTradingTaskTest {
     void testFindBasePriceErrorCase() {
         when(holdingStockRepository.findByUserIdOrderByDate("UserA"))
                 .thenReturn(List.of(
-                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000), "FundA"),
-                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(88000), "FundA")
+                        HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000), "FundA", new Date(1736308300000L)),
+                        HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(88000), "FundA", new Date(1736308260000L))
                 ));
         stockTradingTask.executeTask();
         var logMatched = listAppender.list.stream().anyMatch(
-                l -> l.getFormattedMessage().startsWith("Unexpected executions: SELL code1 4000@20.00 (isToday=false) < BUY code1 4000@22.00 (isToday=false)"));
+                l -> l.getFormattedMessage().startsWith("Unexpected executions: SELL code1 4000@20.00 (isToday=false) Wed Jan 08 11:51:40 HKT 2025 < BUY code1 4000@22.00 (isToday=false) Wed Jan 08 11:51:00 HKT 2025"));
         assertThat(logMatched).isTrue();
     }
 
@@ -157,8 +155,8 @@ class StockTradingTaskTest {
 
     @Test
     void testExecutionToStringMethod() {
-        StockTradingTask.Execution execution = new StockTradingTask.Execution("GOOG", SELL, 50, 123.45, false);
-        String expectedString = "SELL GOOG 50@123.45 (isToday=false)";
+        StockTradingTask.Execution execution = new StockTradingTask.Execution("GOOG", SELL, 50, 123.45, false, new Date(1736308260000L));
+        String expectedString = "SELL GOOG 50@123.45 (isToday=false) Wed Jan 08 11:51:00 HKT 2025";
 
         assertThat(execution.toString()).isEqualTo(expectedString);
     }
@@ -327,5 +325,58 @@ class StockTradingTaskTest {
         stockTradingTask.executeTask();
 
         verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("StockTradingTask: Unexpected exception: unlock trade failed"));
+    }
+
+    @Test
+    void testFindBasePriceWithTDayExecutions() {
+        List<HoldingStock> holdings = List.of(
+                HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(77920), "FundA", new Date(1736233800000L)),
+                HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(78800), "FundA", new Date(1736230200000L)));
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(holdings);
+        var sellExecutionAtT1 = new Execution();
+        sellExecutionAtT1.setCode(stockCode);
+        sellExecutionAtT1.setSide(SELL);
+        sellExecutionAtT1.setOrderId("sell order 1");
+        sellExecutionAtT1.setPrice(new BigDecimal("19.68"));
+        sellExecutionAtT1.setQuantity(new BigDecimal("4000"));
+        sellExecutionAtT1.setTime(1736300520000L);
+        var buyExecutionAtT1 = new Execution();
+        buyExecutionAtT1.setSide(BUY);
+        buyExecutionAtT1.setCode(stockCode);
+        buyExecutionAtT1.setOrderId("buy order 1");
+        buyExecutionAtT1.setPrice(new BigDecimal("19.3"));
+        buyExecutionAtT1.setQuantity(new BigDecimal("4000"));
+        buyExecutionAtT1.setTime(1736308260000L);
+        var buyExecutionAtT2 = new Execution();
+        buyExecutionAtT2.setSide(BUY);
+        buyExecutionAtT2.setCode(stockCode);
+        buyExecutionAtT2.setOrderId("buy order 1");
+        buyExecutionAtT2.setPrice(new BigDecimal("19.5"));
+        buyExecutionAtT2.setQuantity(new BigDecimal("4000"));
+        buyExecutionAtT2.setTime(1736321400000L);
+
+        var TdayExecutions = new HashMap<>(Map.ofEntries(
+                Map.entry("buy1", buyExecutionAtT1),
+                Map.entry("buy2", buyExecutionAtT2),
+                Map.entry("sell1", sellExecutionAtT1)
+        ));
+        when(mockFutuAPIClient.getHKStockTodayExecutions(anyLong())).thenReturn(TdayExecutions);
+        stockTradingTask.executeTask();
+        var logMatched = listAppender.list.stream().anyMatch(l -> l.getFormattedMessage().startsWith("base price: 19.3"));
+        assertThat(logMatched).isTrue();
+
+        // one more sell at T
+        var sellExecutionAtT2 = new Execution();
+        sellExecutionAtT2.setCode(stockCode);
+        sellExecutionAtT2.setSide(SELL);
+        sellExecutionAtT2.setOrderId("sell order 2");
+        sellExecutionAtT2.setPrice(new BigDecimal("19.5"));
+        sellExecutionAtT2.setQuantity(new BigDecimal("4000"));
+        sellExecutionAtT2.setTime(1736321700000L);
+        TdayExecutions.put("sell2", sellExecutionAtT2);
+
+        stockTradingTask.executeTask();
+        var logMatched2 = listAppender.list.stream().anyMatch(l -> l.getFormattedMessage().startsWith("base price: 19.5"));
+        assertThat(logMatched2).isTrue();
     }
 }

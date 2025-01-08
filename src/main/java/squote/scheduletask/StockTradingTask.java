@@ -100,10 +100,10 @@ public class StockTradingTask {
         }
     }
 
-    public record Execution(String code, Side side, int quantity, double price, boolean isToday) {
+    public record Execution(String code, Side side, int quantity, double price, boolean isToday, Date date) {
         @Override
         public String toString() {
-            return String.format("%s %s %d@%.2f (isToday=%s)", side, code, quantity, price, isToday);
+            return String.format("%s %s %d@%.2f (isToday=%s) %s", side, code, quantity, price, isToday, date);
         }
     }
 
@@ -222,31 +222,35 @@ public class StockTradingTask {
 
     private Optional<Execution> findBaseExecution(List<Execution> buyExecutions, List<Execution> sellExecutions) {
         if (buyExecutions.isEmpty() && sellExecutions.isEmpty()) return Optional.empty();
-
         if (sellExecutions.isEmpty()) return buyExecutions.stream().findFirst();
+        if (buyExecutions.isEmpty() && sellExecutions.size() == 1) return Optional.ofNullable(sellExecutions.getFirst());
 
         int buyIndex = 0, sellIndex = 0;
+        var cloneBuyExecutions = new ArrayList<>(buyExecutions);
+        var cloneSellExecutions = new ArrayList<>(sellExecutions);
 
-        while (buyIndex < buyExecutions.size() && sellIndex < sellExecutions.size()) {
+        while (buyIndex < buyExecutions.size()) {
             if (sellExecutions.get(sellIndex).price > buyExecutions.get(buyIndex).price) {
-                buyIndex++;
-                sellIndex++;
+                if (sellExecutions.get(sellIndex).date.after(buyExecutions.get(buyIndex).date)) {
+                    cloneBuyExecutions.remove(buyIndex);
+                    cloneSellExecutions.remove(sellIndex);
+                    if (cloneBuyExecutions.isEmpty() && cloneSellExecutions.isEmpty()) return Optional.ofNullable(sellExecutions.getFirst());
+                    return findBaseExecution(cloneBuyExecutions, cloneSellExecutions);
+                } else {
+                    buyIndex++;
+                }
             } else {
                 log.error("Unexpected executions: {} < {}", sellExecutions.get(sellIndex), buyExecutions.get(buyIndex));
                 return Optional.empty();
             }
         }
 
-        if (buyIndex < buyExecutions.size()) return Optional.of(buyExecutions.get(buyIndex));
-
-        if (sellExecutions.size() == 1) return sellExecutions.stream().findFirst();
-
         return Optional.empty();
     }
 
     private void printExecutions(String title, List<Execution> executions) {
         log.info(title);
-        executions.forEach(execution -> log.info("{}@{}", execution.quantity, execution.price));
+        executions.forEach(execution -> log.info("{}@{} at {}", execution.quantity, execution.price, execution.date));
     }
 
     private List<Execution> sortExecutions(List<HoldingStock> holdings,
@@ -274,15 +278,14 @@ public class StockTradingTask {
         return new Execution(e.getCode(), e.getSide(),
                 e.getQuantity().intValue(),
                 e.getPrice().doubleValue(),
-                true);
+                true, new Date(e.getTime()));
     }
 
     private Execution toExecution(HoldingStock holding) {
         return new Execution(holding.getCode(), holding.getSide(),
                 holding.getQuantity(),
                 holding.getGross().doubleValue() / (holding.getQuantity()),
-                false
-        );
+                false, holding.getDate());
     }
 
     private Map<String, FutuClientConfig> parseFutuClientConfigs() {

@@ -169,7 +169,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 		return (boolean) getResult(seq);
 	}
 
-	public HashMap<String, Execution> getHKStockTodayExecutions(long accountId) {
+	public Map<String, Execution> getHKStockTodayExecutions(long accountId) {
 		int seq = sendGetTodayOrderFillRequest(accountId);
 		log.info("Seq[{}] Send getTodayOrderFillList", seq);
 
