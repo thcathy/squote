@@ -29,6 +29,7 @@ public class Fund {
 	public String userId;
 	private @DateTimeFormat(pattern="yyyy-MM-dd") Date date;
 	private Map<String, FundHolding> holdings = new ConcurrentHashMap<>();
+	private Map<String, AlgoConfig> algoConfigs = new ConcurrentHashMap<>();
 	private BigDecimal profit = new BigDecimal("0");
 	private BigDecimal netProfit = new BigDecimal("0");
 	private BigDecimal cashoutAmount = new BigDecimal("0");
@@ -160,4 +161,11 @@ public class Fund {
 		return holdings.containsKey(symbol);
 	}
 
+	public Map<String, AlgoConfig> getAlgoConfigs() {
+		return algoConfigs;
+	}
+
+	public void setAlgoConfigs(Map<String, AlgoConfig> algoConfigs) {
+		this.algoConfigs = algoConfigs;
+	}
 }

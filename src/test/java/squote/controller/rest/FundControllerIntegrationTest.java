@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import squote.IntegrationTest;
+import squote.domain.AlgoConfig;
 import squote.domain.Fund;
 import squote.domain.FundHolding;
 import squote.domain.repository.FundRepository;
@@ -44,14 +45,14 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 	}
 
 	@BeforeEach
-	public void setup() {
+	public void beforeEach() {
 		authenticationServiceStub.userId = userId;
 		fundRepo.save(testFund);
 		fundRepo.save(testFund2);
 	}
 
 	@AfterEach
-	public void revert() {
+	public void afterEach() {
 		fundRepo.delete(testFund);
 	}
 
@@ -211,5 +212,31 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 	public void splitInterest_wrongAmount() {
 		var result = fundController.splitInterest("2828", "10xyz900", "/testfund2/testfund");
 		assertEquals("Error: invalid amount=10xyz900", result.get(0));
+	}
+
+	@Test
+	public void algoConfigTest() {
+		// get all
+		var algoConfigs = fundController.getAllAlgoConfigs(testFund.name);
+		assertThat(algoConfigs).hasSize(0);
+
+		// add
+		var expectedConfig = new AlgoConfig("2800", 0, 0);
+		var config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice());
+		assertThat(config).isEqualTo(expectedConfig);
+		algoConfigs = fundController.getAllAlgoConfigs(testFund.name);
+		assertThat(algoConfigs.getFirst()).isEqualTo(expectedConfig);
+
+		// update
+		expectedConfig = new AlgoConfig("2800", 4000, 25.5);
+		config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice());
+		assertThat(config).isEqualTo(expectedConfig);
+		algoConfigs = fundController.getAllAlgoConfigs(testFund.name);
+		assertThat(algoConfigs.getFirst()).isEqualTo(expectedConfig);
+
+		// delete
+		fundController.deleteAlgoConfig(testFund.name, expectedConfig.code());
+		algoConfigs = fundController.getAllAlgoConfigs(testFund.name);
+		assertThat(algoConfigs).hasSize(0);
 	}
 }
