@@ -181,7 +181,7 @@ class StockTradingTaskTest {
         stockTradingTask.executeTask();
 
         verify(mockFutuAPIClient, times(1)).placeOrder(anyLong(), eq(BUY), eq(stockCode), eq(4000), eq(expectedPrice));
-        verify(mockTelegramAPIClient, times(1)).sendMessage(contains("placed order: BUY"));
+        verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Placed order (FundA): BUY"));
     }
 
     @Test
@@ -197,9 +197,9 @@ class StockTradingTaskTest {
         stockTradingTask.executeTask();
 
         verify(mockFutuAPIClient, times(1)).cancelOrder(anyLong(), eq(pendingOrderId));
-        verify(mockTelegramAPIClient, times(1)).sendMessage(contains(" cancelled"));
+        verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Cancelled order (FundA): BUY"));
         verify(mockFutuAPIClient, times(1)).placeOrder(anyLong(), eq(BUY), eq(stockCode), eq(4000), eq(expectedPrice));
-        verify(mockTelegramAPIClient, times(1)).sendMessage(contains("placed order: BUY"));
+        verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Placed order (FundA): BUY"));
     }
 
     @Test
@@ -285,7 +285,7 @@ class StockTradingTaskTest {
         stockTradingTask.executeTask();
 
         verify(mockFutuAPIClient, times(1)).cancelOrder(anyLong(), eq(pendingOrderId));
-        verify(mockTelegramAPIClient, times(1)).sendMessage(contains("cancelled"));
+        verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Cancelled order (FundA): BUY"));
         verify(mockFutuAPIClient, times(1)).placeOrder(anyLong(), eq(SELL), eq(stockCode), eq(4000), eq(expectedPrice));
     }
 

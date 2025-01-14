@@ -127,18 +127,19 @@ public class SyncStockExecutionsTask {
                 .append(" with fee ").append(fees).append("\n");
         logs.append("updated fund profit=").append(fund.getProfit()).append("\n\n");
 
-        var messaage = String.format("""
-Created holding: %s %s %d@%.2f (%.2f)
-Updated fund: %s, fee=%.2f, profit=%.2f""",
+        var message = String.format("""
+## Created holding
+**%s %s %d@%.2f** (%.2f) to **%s**
+fee=%.2f profit=%.2f""",
                 holding.getSide(), holding.getCode(), holding.getQuantity(),
                 holding.getPrice(), holding.getGross(),
                 fund.name, fees, fund.getProfit());
-        sendTelegram(messaage);
+        sendTelegram(message);
     }
 
-    private void sendTelegram(String messaage) {
+    private void sendTelegram(String message) {
         if (sendTelegram) {
-            telegramAPIClient.sendMessage(messaage);
+            telegramAPIClient.sendMessage(message);
         }
     }
 

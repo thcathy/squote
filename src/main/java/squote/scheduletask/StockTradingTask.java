@@ -126,7 +126,7 @@ public class StockTradingTask {
         var sellExecutions = sortExecutions(holdings, allTodayExecutions, SELL);
 
         findBaseExecution(buyExecutions, sellExecutions)
-                .ifPresent(exec -> processBaseExecution(futuAPIClient, clientConfig.accountId(), stdDev.get(), exec));
+                .ifPresent(exec -> processBaseExecution(futuAPIClient, clientConfig, stdDev.get(), exec));
     }
 
     private Optional<Double> getStdDev(String code) {
@@ -134,21 +134,21 @@ public class StockTradingTask {
                 .flatMap(summary -> Optional.ofNullable(summary.stdDevs.get(stdDevRange)));
     }
 
-    private void processBaseExecution(FutuAPIClient futuAPIClient, long accountId, double stdDev, Execution execution) {
+    private void processBaseExecution(FutuAPIClient futuAPIClient, FutuClientConfig config, double stdDev, Execution execution) {
         log.info("base price: {}", execution.price);    // used in test case
         log.info("process base execution: {}", execution);
 
-        var pendingOrders = futuAPIClient.getPendingOrders(accountId);
+        var pendingOrders = futuAPIClient.getPendingOrders(config.accountId());
         if (pendingOrders.stream().anyMatch(Order::isPartialFilled)) {
             log.info("Has partial filled pending order. Skip processing");
             return;
         }
 
-        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, futuAPIClient, accountId);
-        handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, futuAPIClient, accountId);
+        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, futuAPIClient, config);
+        handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, futuAPIClient, config);
     }
 
-    private void handleOrderForBaseExecution(Side pendingOrderSide, Execution baseExec, List<Order> pendingOrders, double stdDev, FutuAPIClient futuAPIClient, long accountId) {
+    private void handleOrderForBaseExecution(Side pendingOrderSide, Execution baseExec, List<Order> pendingOrders, double stdDev, FutuAPIClient futuAPIClient, FutuClientConfig clientConfig) {
         log.info("handle {} order", pendingOrders);
         if (pendingOrderSide == SELL && baseExec.side == SELL) return;
 
@@ -166,10 +166,12 @@ public class StockTradingTask {
 
             var pendingOrderId = pendingOrder.get().orderId();
             log.info("pending order price {} over threshold {}. Going to cancel order id={}", pendingOrderPrice, targetPrice, pendingOrderId);
-            cancelOrder(futuAPIClient, accountId, pendingOrderId);
+            cancelOrder(futuAPIClient, clientConfig.accountId(), pendingOrderId);
+            telegramAPIClient.sendMessage(String.format("Cancelled order (%s): %s %s %s@%.2f", clientConfig.fundName(),
+                    pendingOrder.get().side(), stockCode,pendingOrder.get().quantity(), pendingOrderPrice));
         }
 
-        placeOrder(futuAPIClient, accountId, baseExec, stockCode, pendingOrderSide, targetPrice);
+        placeOrder(futuAPIClient, clientConfig, baseExec, stockCode, pendingOrderSide, targetPrice);
     }
 
     private double calculateTargetPrice(Side side, String code, double basePrice, double stdDev) {
@@ -183,19 +185,17 @@ public class StockTradingTask {
         return targetPrice;
     }
 
-    private void placeOrder(FutuAPIClient futuAPIClient, long accountId, Execution execution, String stockCode, Side side, double price) {
-        var placeOrderResponse = futuAPIClient.placeOrder(accountId, side, stockCode, execution.quantity, price);
+    private void placeOrder(FutuAPIClient futuAPIClient, FutuClientConfig config, Execution execution, String stockCode, Side side, double price) {
+        var placeOrderResponse = futuAPIClient.placeOrder(config.accountId(), side, stockCode, execution.quantity, price);
 
         if (placeOrderResponse.errorCode() > 0) {
             log.error("Cannot place order, error cod={}, message={}", placeOrderResponse.errorCode(), placeOrderResponse.message());
             throw new RuntimeException("Cannot place order");
         }
 
-        String placedMessage = String.format("placed order: %s %s %d@%f",
-                side,
-                stockCode,
-                execution.quantity,
-                price);
+        String placedMessage = String.format("Placed order (%s): %s %s %d@%.2f",
+                config.fundName(),
+                side, stockCode, execution.quantity, price);
         log.info(placedMessage);
         telegramAPIClient.sendMessage(placedMessage);
     }
@@ -210,8 +210,6 @@ public class StockTradingTask {
                     cancelOrderResponse.message());
             throw new RuntimeException(errorMessage);
         }
-
-        telegramAPIClient.sendMessage(String.format("acc [%s]: order %s cancelled", accountId, pendingOrderId));
     }
 
     public boolean priceWithinThreshold(double p1, double p2) {
