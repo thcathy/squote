@@ -177,9 +177,7 @@ public class StockTradingTask {
     private double calculateTargetPrice(Side side, String code, double basePrice, double stdDev) {
         var targetPrice = side == SELL ? basePrice * (1 + (stdDev * stdDevMultiplier / 100)) : basePrice / (1 + (stdDev * stdDevMultiplier / 100));
         var tickSize = tickSizes.getOrDefault(code, 0.01);
-        targetPrice = Math.round(targetPrice / tickSize) * tickSize;
-        targetPrice = side == BUY ? targetPrice - tickSize : targetPrice + tickSize;   // 1 tick size advanced for fee
-        targetPrice = Math.round(targetPrice/ tickSize) * tickSize;
+        targetPrice = side == BUY ? Math.floor(targetPrice / tickSize) * tickSize : Math.ceil(targetPrice / tickSize) * tickSize;
         targetPrice = (double) Math.round(targetPrice * 1000) / 1000;
         log.info("{}: targetPrice={}, basePrice={}, stdDev={}", side, targetPrice, basePrice, stdDev);
         return targetPrice;
