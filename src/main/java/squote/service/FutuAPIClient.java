@@ -8,7 +8,6 @@ import squote.SquoteConstants;
 import squote.domain.Execution;
 import squote.domain.Order;
 
-import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -24,7 +23,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	private final FTAPI_Conn_Trd futuConnTrd;
 	private long errorCode = -1;
-	private final Map<Integer, WeakReference<Object>> resultMap = new ConcurrentHashMap<>();
+	private final Map<Integer, Object> resultMap = new ConcurrentHashMap<>();
 
 	int timeoutSeconds = 30;
 	List<Integer> pendingOrderStatuses = List.of(
@@ -82,24 +81,24 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 	public void onReply_GetAccList(FTAPI_Conn client, int seq, TrdGetAccList.Response response) {
 		if (response.getRetType() != 0) {
 			log.error("GetAccList failed: {}", response.getRetMsg());
-			resultMap.put(seq, new WeakReference<>(null));
+			resultMap.put(seq, null);
 		}
 
 		var accountList = response.getS2C().getAccListList();
 		log.info("{} account returned", accountList.size());
-		resultMap.put(seq, new WeakReference<>(accountList));
+		resultMap.put(seq, accountList);
 	}
 
 	@Override
 	public void onReply_GetOrderFillList(FTAPI_Conn client, int seq, TrdGetOrderFillList.Response response) {
 		if (response.getRetType() != 0) {
 			log.error("TrdGetOrderFillList failed: {}", response.getRetMsg());
-			resultMap.put(seq, new WeakReference<>(null));
+			resultMap.put(seq, null);
 		}
 
 		var executions = response.getS2C().getOrderFillListList();
 		log.info("Seq[{}] {} order returned", seq, executions.size());
-		resultMap.put(seq, new WeakReference<>(executions));
+		resultMap.put(seq, executions);
 	}
 
 	public void close() { futuConnTrd.close(); }
@@ -108,23 +107,23 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 	public void onReply_GetHistoryOrderFillList(FTAPI_Conn client, int seq, TrdGetHistoryOrderFillList.Response response) {
 		if (response.getRetType() != 0) {
 			log.error("GetHistoryOrderFillList failed: {}", response.getRetMsg());
-			resultMap.put(seq, new WeakReference<>(null));
+			resultMap.put(seq, null);
 		}
 		var executions = response.getS2C().getOrderFillListList();
 		log.info("Seq[{}] {} execution returned", seq, executions.size());
-		resultMap.put(seq, new WeakReference<>(executions));
+		resultMap.put(seq, executions);
 	}
 
 	@Override
 	public void onReply_GetOrderList(FTAPI_Conn client, int seq, TrdGetOrderList.Response response) {
 		if (response.getRetType() != 0) {
 			log.error("TrdGetOrderList failed: {}", response.getRetMsg());
-			resultMap.put(seq, new WeakReference<>(null));
+			resultMap.put(seq, null);
 		}
 
 		var orders = response.getS2C().getOrderListList();
 		log.info("Seq[{}] {} orders returned", seq, orders.size());
-		resultMap.put(seq, new WeakReference<>(orders));
+		resultMap.put(seq, orders);
 	}
 
 	@Override
@@ -133,7 +132,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 		if (response.getRetType() != 0) {
 			log.error("TrdPlaceOrder failed: {}", response.getRetMsg());
 		}
-		resultMap.put(seq, new WeakReference<>(result));
+		resultMap.put(seq, result);
 	}
 
 	@Override
@@ -142,18 +141,18 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 		if (response.getRetType() != 0) {
 			log.error("TrdModifyOrder failed: {}", response.getRetMsg());
 		}
-		resultMap.put(seq, new WeakReference<>(result));
+		resultMap.put(seq, result);
 	}
 
 	@Override
 	public void onReply_UnlockTrade(FTAPI_Conn client, int seq, TrdUnlockTrade.Response response) {
 		if (response.getRetType() != 0) {
 			log.error("UnlockTrade failed: {}", response.getRetMsg());
-			resultMap.put(seq, new WeakReference<>(false));
+			resultMap.put(seq, false);
 		}
 
 		log.info("Seq[{}] unlock trade result={}", seq, response.getRetMsg());
-		resultMap.put(seq, new WeakReference<>(true));
+		resultMap.put(seq, true);
 	}
 
 	public boolean unlockTrade(String code) {
