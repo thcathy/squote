@@ -351,7 +351,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 		while (timeout.isAfter(Instant.now())) {
 			var result = resultMap.get(seq);
 			if (result != null) {
-				return resultMap.remove(seq).get();
+				return resultMap.remove(seq);
 			}
 
 			try {
