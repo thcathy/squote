@@ -128,12 +128,12 @@ public class SyncStockExecutionsTask {
         logs.append("updated fund profit=").append(fund.getProfit()).append("\n\n");
 
         var message = String.format("""
-## Created holding
-**%s %s %d@%.2f** (%.2f) to **%s**
+Created holding for %s
+%s %s %d@%.2f (%.2f)
 fee=%.2f profit=%.2f""",
-                holding.getSide(), holding.getCode(), holding.getQuantity(),
-                holding.getPrice(), holding.getGross(),
-                fund.name, fees, fund.getProfit());
+                fund.name,
+                holding.getSide(), holding.getCode(), holding.getQuantity(), holding.getPrice(), holding.getGross(),
+                fees, fund.getProfit());
         sendTelegram(message);
     }
 
