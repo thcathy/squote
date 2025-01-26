@@ -39,7 +39,7 @@ calculatedailysummarytask:
 stocktradingtask:
   enabled: false
   stdDevRange: 20
-  stdDevMultiplier: 0.95
+  stdDevMultiplier: 0.7
   fundSymbols:
     newfund:
       - 2800
