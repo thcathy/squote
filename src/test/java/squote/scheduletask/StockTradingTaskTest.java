@@ -218,6 +218,25 @@ class StockTradingTaskTest {
     }
 
     @Test
+    void multiPendingBuyOrders_cancelAllThenNew() {
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
+        var expectedPrice = 19.74; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(
+                Order.newOrder(stockCode, BUY, 4000, expectedPrice * 1.0002, 123456L),   // price within threshold,
+                Order.newOrder(stockCode, BUY, 4000, expectedPrice * 1.1, 123456L)   // price within threshold
+        ));
+
+        stockTradingTask.executeTask();
+
+        verify(mockFutuAPIClient, times(2)).cancelOrder(anyLong(), anyLong());
+        verify(mockTelegramAPIClient, times(2)).sendMessage(startsWith("Cancelled order due to multiple pending (FundA): BUY"));
+        verify(mockFutuAPIClient, times(1)).placeOrder(anyLong(), eq(BUY), eq(stockCode), eq(4000), eq(expectedPrice));
+        verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Placed order (FundA): BUY"));
+    }
+
+
+    @Test
     void cancelOrderFailed_stopProcessing() {
         var holding = HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000), "FundA");
         var expectedPrice = 19.72; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));

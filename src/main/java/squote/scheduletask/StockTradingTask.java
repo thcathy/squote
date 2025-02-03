@@ -57,7 +57,7 @@ public class StockTradingTask {
         this.holdingStockRepository = holdingStockRepository;
     }
 
-    @Scheduled(cron = "0 */5 9-17 * * MON-FRI", zone = "Asia/Hong_Kong")
+    @Scheduled(cron = "35 */5 9-16 * * MON-FRI", zone = "Asia/Hong_Kong")
     public void executeTask() {
         if (!enabled) {
             log.info("Task disabled");
@@ -154,21 +154,27 @@ public class StockTradingTask {
 
         var stockCode = baseExec.code;
         var targetPrice = calculateTargetPrice(pendingOrderSide, stockCode, baseExec.price, stdDev);
-        var pendingOrder = pendingOrders.stream()
-                .filter(o -> o.side() == pendingOrderSide && o.code().equals(stockCode) && o.quantity() == baseExec.quantity)
-                .findFirst();
-        if (pendingOrder.isPresent()) {
-            var pendingOrderPrice = pendingOrder.get().price();
+        var matchedPendingOrders = pendingOrders.stream()
+                .filter(o -> o.side() == pendingOrderSide && o.code().equals(stockCode) && o.quantity() == baseExec.quantity).toList();
+        if (matchedPendingOrders.size() > 1) {
+            matchedPendingOrders.forEach(o -> {
+                cancelOrder(futuAPIClient, clientConfig.accountId(), o.orderId());
+                telegramAPIClient.sendMessage(String.format("Cancelled order due to multiple pending (%s): %s %s %s@%.2f", clientConfig.fundName(),
+                        pendingOrderSide, stockCode, o.quantity(), o.price()));
+            });
+        } else if (matchedPendingOrders.size() == 1) {
+            var pendingOrder = matchedPendingOrders.getFirst();
+            var pendingOrderPrice = matchedPendingOrders.getFirst().price();
             if (priceWithinThreshold(pendingOrderPrice, targetPrice)) {
                 log.info("pendingOrderPrice {} within threshold. do nothing", pendingOrderPrice);
                 return; // do nothing
             }
 
-            var pendingOrderId = pendingOrder.get().orderId();
+            var pendingOrderId = pendingOrder.orderId();
             log.info("pending order price {} over threshold {}. Going to cancel order id={}", pendingOrderPrice, targetPrice, pendingOrderId);
             cancelOrder(futuAPIClient, clientConfig.accountId(), pendingOrderId);
             telegramAPIClient.sendMessage(String.format("Cancelled order (%s): %s %s %s@%.2f", clientConfig.fundName(),
-                    pendingOrder.get().side(), stockCode,pendingOrder.get().quantity(), pendingOrderPrice));
+                    pendingOrder.side(), stockCode,pendingOrder.quantity(), pendingOrderPrice));
         }
 
         placeOrder(futuAPIClient, clientConfig, baseExec, stockCode, pendingOrderSide, targetPrice);
