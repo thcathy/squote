@@ -56,8 +56,9 @@ public class StockTradingTask {
         this.telegramAPIClient = telegramAPIClient;
         this.holdingStockRepository = holdingStockRepository;
     }
-
-    @Scheduled(cron = "35 */5 9-16 * * MON-FRI", zone = "Asia/Hong_Kong")
+    
+    @Scheduled(cron = "0 35-55/5 9 * * MON-FRI", zone = "Asia/Hong_Kong")
+    @Scheduled(cron = "0 */5 10-16 * * MON-FRI", zone = "Asia/Hong_Kong")
     public void executeTask() {
         if (!enabled) {
             log.info("Task disabled");
