@@ -156,7 +156,8 @@ public class StockTradingTask {
         var stockCode = baseExec.code;
         var targetPrice = calculateTargetPrice(pendingOrderSide, stockCode, baseExec.price, stdDev);
         var matchedPendingOrders = pendingOrders.stream()
-                .filter(o -> o.side() == pendingOrderSide && o.code().equals(stockCode) && o.quantity() == baseExec.quantity).toList();
+                .filter(o -> o.side() == pendingOrderSide && o.code().equals(stockCode))
+                .toList();
         if (matchedPendingOrders.size() > 1) {
             matchedPendingOrders.forEach(o -> {
                 cancelOrder(futuAPIClient, clientConfig.accountId(), o.orderId());
