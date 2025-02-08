@@ -1,5 +1,6 @@
 package squote.service;
 
+import com.futu.openapi.FTAPI_Conn_Qot;
 import com.futu.openapi.FTAPI_Conn_Trd;
 import com.futu.openapi.pb.TrdCommon;
 import com.futu.openapi.pb.TrdGetAccList;
@@ -22,12 +23,12 @@ import static org.mockito.Mockito.when;
 class FutuAPIClientTest {
     FutuAPIClient client;
 
-    @Mock
-    private FTAPI_Conn_Trd FTAPIConnTrd;
+    @Mock private FTAPI_Conn_Trd FTAPIConnTrd;
+    @Mock private FTAPI_Conn_Qot FTAPIConnQot;
 
     @BeforeEach
     void setUp() {
-        client = new FutuAPIClient(FTAPIConnTrd, "", (short) 80, "", false);
+        client = new FutuAPIClient(FTAPIConnTrd, FTAPIConnQot, "", (short) 80, "", false);
     }
 
     @Test

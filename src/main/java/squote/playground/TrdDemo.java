@@ -11,6 +11,7 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn {
     FTAPI_Conn_Trd trd = new FTAPI_Conn_Trd();
     long accId;
     String tradeCode;
+    int inited = 0;
 
     public TrdDemo() {
 //        var b = new BinanceAPIService();

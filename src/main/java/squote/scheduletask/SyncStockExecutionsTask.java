@@ -2,6 +2,7 @@ package squote.scheduletask;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.futu.openapi.FTAPI_Conn_Qot;
 import com.futu.openapi.FTAPI_Conn_Trd;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -63,9 +64,9 @@ public class SyncStockExecutionsTask {
 
     HKEXMarketFeesCalculator feeCalculator = new HKEXMarketFeesCalculator();
 
-    public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), ip, port, rsaKey, true);
+    public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), new FTAPI_Conn_Qot(), ip, port, rsaKey, true);
 
-    @Scheduled(cron = "0 30 16 * * MON-SAT", zone = "Asia/Hong_Kong")
+    @Scheduled(cron = "0 5 17 * * MON-SAT", zone = "Asia/Hong_Kong")
     public void executeTask() {
         if (!enabled || StringUtils.isEmpty(clientConfigJson)) {
             log.info("Task Disabled");

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import squote.SquoteConstants;
 import squote.domain.Execution;
 import squote.domain.Order;
+import squote.domain.StockQuote;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -19,9 +20,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import static squote.SquoteConstants.Side.BUY;
 import static squote.SquoteConstants.Side.SELL;
 
-public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
+public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	private final FTAPI_Conn_Trd futuConnTrd;
+	private final FTAPI_Conn_Qot futuConnQot;
 	private long errorCode = -1;
 	private final Map<Integer, Object> resultMap = new ConcurrentHashMap<>();
 
@@ -37,20 +39,27 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 			TrdCommon.OrderStatus.OrderStatus_Cancelling_All_VALUE
 	);
 
-	public FutuAPIClient(FTAPI_Conn_Trd futuConnTrd, String ip, short port, String rsaKey, boolean waitConnected) {
+	public FutuAPIClient(FTAPI_Conn_Trd futuConnTrd, FTAPI_Conn_Qot futuConnQot, String ip, short port, String rsaKey, boolean waitConnected) {
 		FTAPI.init();
 
 		byte[] decodedBytes = Base64.getDecoder().decode(rsaKey);
 		var decodedRsaKey = new String(decodedBytes);
 		decodedRsaKey = decodedRsaKey.replace("\\n", "\n");
 		log.info("decodedRsaKey\n{}", decodedRsaKey);
-		this.futuConnTrd = futuConnTrd;
 		futuConnTrd.setClientInfo("squote", 1);
 		futuConnTrd.setConnSpi(this);
 		futuConnTrd.setTrdSpi(this);
-
 		futuConnTrd.setRSAPrivateKey(decodedRsaKey);
+		this.futuConnTrd = futuConnTrd;
+
+		futuConnQot.setClientInfo("squote", 1);
+		futuConnQot.setConnSpi(this);
+		futuConnQot.setQotSpi(this);
+		futuConnQot.setRSAPrivateKey(decodedRsaKey);
+		this.futuConnQot = futuConnQot;
+
 		futuConnTrd.initConnect(ip, port, true);
+		futuConnQot.initConnect(ip, port, true);
 
 		Instant timeout = Instant.now().plusSeconds(timeoutSeconds);
 		while (waitConnected && timeout.isAfter(Instant.now()) && !isConnected()) {
@@ -155,6 +164,17 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 		resultMap.put(seq, true);
 	}
 
+	@Override
+	public void onReply_GetSecuritySnapshot(FTAPI_Conn client, int seq, QotGetSecuritySnapshot.Response response) {
+		if (response.getRetType() != 0) {
+			log.error("QotGetSecuritySnapshot failed: {}", response.getRetMsg());
+			resultMap.put(seq, null);
+		}
+
+		log.info("Seq[{}] QotGetSecuritySnapshot result={}", seq, response.getRetMsg());
+		resultMap.put(seq, response.getS2C().getSnapshotList(0));
+	}
+
 	public boolean unlockTrade(String code) {
 		TrdUnlockTrade.C2S c2s = TrdUnlockTrade.C2S.newBuilder()
 				.setPwdMD5(code)
@@ -216,6 +236,21 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 				.peek(o -> log.info("order received [{}]", o.toString().replaceAll("\n", " ")))
 				.filter(o -> pendingOrderStatuses.contains(o.getOrderStatus()))
 				.map(this::toOrder).toList();
+	}
+
+	public StockQuote getStockQuote(String code) {
+		int seq = requestQuoteSnapshot(code);
+		log.info("Seq[{}] Send requestQuoteSnapshot", seq);
+
+		var result = (QotGetSecuritySnapshot.Snapshot) getResult(seq);
+		if (result == null) return null;
+
+		var quote = new StockQuote(code);
+		quote.setPrice(String.valueOf(result.getBasic().getCurPrice()));
+		quote.setHigh(String.valueOf(result.getBasic().getHighPrice()));
+		quote.setLow(String.valueOf(result.getBasic().getLowPrice()));
+		quote.setLastUpdate(result.getBasic().getUpdateTime());
+		return quote;
 	}
 
 	public record PlaceOrderResponse(long orderId, long errorCode, String message) {}
@@ -315,6 +350,18 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Conn {
 				.build();
 		TrdPlaceOrder.Request req = TrdPlaceOrder.Request.newBuilder().setC2S(c2s).build();
 		return futuConnTrd.placeOrder(req);
+	}
+
+	private int requestQuoteSnapshot(String code) {
+		QotCommon.Security sec = QotCommon.Security.newBuilder()
+				.setMarket(QotCommon.QotMarket.QotMarket_HK_Security_VALUE)
+				.setCode(String.format("%05d", Integer.parseInt(code)))
+				.build();
+		QotGetSecuritySnapshot.C2S c2s = QotGetSecuritySnapshot.C2S.newBuilder()
+				.addSecurityList(sec)
+				.build();
+		QotGetSecuritySnapshot.Request req = QotGetSecuritySnapshot.Request.newBuilder().setC2S(c2s).build();
+		return futuConnQot.getSecuritySnapshot(req);
 	}
 
 	private int cancelOrderRequest(long accountId, long orderId) {

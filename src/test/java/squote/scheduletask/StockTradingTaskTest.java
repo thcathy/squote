@@ -9,10 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
-import squote.domain.DailyAssetSummary;
-import squote.domain.Execution;
-import squote.domain.HoldingStock;
-import squote.domain.Order;
+import squote.domain.*;
 import squote.domain.repository.DailyAssetSummaryRepository;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
@@ -64,6 +61,10 @@ class StockTradingTaskTest {
                 .thenReturn(new FutuAPIClient.CancelOrderResponse(0, ""));
         when(mockTelegramAPIClient.sendMessage(any())).thenReturn(List.of("Message sent"));
         when(mockFutuAPIClient.unlockTrade(any())).thenReturn(true);
+
+        var quote = new StockQuote(stockCode);
+        quote.setPrice("40");   // high price default to pass most of the cases
+        when(mockFutuAPIClient.getStockQuote(any())).thenReturn(quote);
 
         StockTradingTaskProperties properties = new StockTradingTaskProperties();
         properties.fundSymbols = Map.of("FundA", List.of(stockCode));
@@ -183,6 +184,25 @@ class StockTradingTaskTest {
         verify(mockFutuAPIClient, times(1)).placeOrder(anyLong(), eq(BUY), eq(stockCode), eq(4000), eq(expectedPrice));
         verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Placed order (FundA): BUY"));
     }
+
+    @Test
+    void buyOrderPrice_mustLowerThanMin() {
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
+        var marketPrice = 19.78;
+        var maxBuyPrice = 19.64; // marketPrice * (stdDev / 2)
+        var quote = new StockQuote(stockCode);
+
+        quote.setPrice(String.valueOf(marketPrice));
+        when(mockFutuAPIClient.getStockQuote(any())).thenReturn(quote);
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of());
+
+        stockTradingTask.executeTask();
+
+        verify(mockFutuAPIClient, times(1)).placeOrder(anyLong(), eq(BUY), eq(stockCode), eq(4000), eq(maxBuyPrice));
+        verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Placed order (FundA): BUY"));
+    }
+
 
     @Test
     void pendingBuyOrderPriceOverThreshold_replaceOrder() {

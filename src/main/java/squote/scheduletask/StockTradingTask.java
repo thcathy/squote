@@ -1,6 +1,7 @@
 package squote.scheduletask;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.futu.openapi.FTAPI_Conn_Qot;
 import com.futu.openapi.FTAPI_Conn_Trd;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 import squote.SquoteConstants.Side;
 import squote.domain.HoldingStock;
 import squote.domain.Order;
+import squote.domain.StockQuote;
 import squote.domain.repository.DailyAssetSummaryRepository;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
@@ -42,7 +44,7 @@ public class StockTradingTask {
     final TelegramAPIClient telegramAPIClient;
     final Map<String, Double> tickSizes = Map.of("2800", 0.02, "code1", 0.02);
 
-    public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), ip, port, rsaKey, true);
+    public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), new FTAPI_Conn_Qot(), ip, port, rsaKey, true);
 
     @Autowired
     public StockTradingTask(DailyAssetSummaryRepository dailyAssetSummaryRepo,
@@ -116,6 +118,7 @@ public class StockTradingTask {
             return;
         }
 
+        var stockQuote = futuAPIClient.getStockQuote(code);
         var holdings = holdingStockRepository.findByUserIdOrderByDate(clientConfig.fundUserId())
                 .stream().filter(h -> h.getCode().equals(code) && h.getFundName().equals(clientConfig.fundName()))
                 .toList();
@@ -127,7 +130,7 @@ public class StockTradingTask {
         var sellExecutions = sortExecutions(holdings, allTodayExecutions, SELL);
 
         findBaseExecution(buyExecutions, sellExecutions)
-                .ifPresent(exec -> processBaseExecution(futuAPIClient, clientConfig, stdDev.get(), exec));
+                .ifPresent(exec -> processBaseExecution(futuAPIClient, clientConfig, stdDev.get(), exec, stockQuote));
     }
 
     private Optional<Double> getStdDev(String code) {
@@ -135,7 +138,7 @@ public class StockTradingTask {
                 .flatMap(summary -> Optional.ofNullable(summary.stdDevs.get(stdDevRange)));
     }
 
-    private void processBaseExecution(FutuAPIClient futuAPIClient, FutuClientConfig config, double stdDev, Execution execution) {
+    private void processBaseExecution(FutuAPIClient futuAPIClient, FutuClientConfig config, double stdDev, Execution execution, StockQuote stockQuote) {
         log.info("base price: {}", execution.price);    // used in test case
         log.info("process base execution: {}", execution);
 
@@ -145,16 +148,16 @@ public class StockTradingTask {
             return;
         }
 
-        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, futuAPIClient, config);
-        handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, futuAPIClient, config);
+        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, futuAPIClient, config, stockQuote);
+        handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, futuAPIClient, config, stockQuote);
     }
 
-    private void handleOrderForBaseExecution(Side pendingOrderSide, Execution baseExec, List<Order> pendingOrders, double stdDev, FutuAPIClient futuAPIClient, FutuClientConfig clientConfig) {
+    private void handleOrderForBaseExecution(Side pendingOrderSide, Execution baseExec, List<Order> pendingOrders, double stdDev, FutuAPIClient futuAPIClient, FutuClientConfig clientConfig, StockQuote stockQuote) {
         log.info("handle {} order", pendingOrders);
         if (pendingOrderSide == SELL && baseExec.side == SELL) return;
 
         var stockCode = baseExec.code;
-        var targetPrice = calculateTargetPrice(pendingOrderSide, stockCode, baseExec.price, stdDev);
+        var targetPrice = calculateTargetPrice(pendingOrderSide, stockCode, baseExec.price, stdDev, Double.parseDouble(stockQuote.getPrice()));
         var matchedPendingOrders = pendingOrders.stream()
                 .filter(o -> o.side() == pendingOrderSide && o.code().equals(stockCode))
                 .toList();
@@ -182,12 +185,18 @@ public class StockTradingTask {
         placeOrder(futuAPIClient, clientConfig, baseExec, stockCode, pendingOrderSide, targetPrice);
     }
 
-    private double calculateTargetPrice(Side side, String code, double basePrice, double stdDev) {
+    private double calculateTargetPrice(Side side, String code, double basePrice, double stdDev, double marketPrice) {
         var targetPrice = side == SELL ? basePrice * (1 + (stdDev * stdDevMultiplier / 100)) : basePrice / (1 + (stdDev * stdDevMultiplier / 100));
+
+        if (side == BUY) {
+            var maxBuyPrice = marketPrice / (1 + (stdDev * stdDevMultiplier / 2 / 100));
+            targetPrice = Math.min(targetPrice, maxBuyPrice);
+        }
+
         var tickSize = tickSizes.getOrDefault(code, 0.01);
         targetPrice = side == BUY ? Math.floor(targetPrice / tickSize) * tickSize : Math.ceil(targetPrice / tickSize) * tickSize;
         targetPrice = (double) Math.round(targetPrice * 1000) / 1000;
-        log.info("{}: targetPrice={}, basePrice={}, stdDev={}", side, targetPrice, basePrice, stdDev);
+        log.info("{}: targetPrice={}, basePrice={}, stdDev={}, mktPx={}", side, targetPrice, basePrice, stdDev, marketPrice);
         return targetPrice;
     }
 
