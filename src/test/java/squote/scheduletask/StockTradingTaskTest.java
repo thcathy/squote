@@ -186,10 +186,10 @@ class StockTradingTaskTest {
     }
 
     @Test
-    void buyOrderPrice_mustLowerThanMin() {
+    void buyOrderPrice_mustLowerThanMarketPrice() {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
-        var marketPrice = 19.78;
-        var maxBuyPrice = 19.64; // marketPrice * (stdDev / 2)
+        var marketPrice = 19;
+        var maxBuyPrice = 18.88; // base / (stdDev * 1.5)
         var quote = new StockQuote(stockCode);
 
         quote.setPrice(String.valueOf(marketPrice));

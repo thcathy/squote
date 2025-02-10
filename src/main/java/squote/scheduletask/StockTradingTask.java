@@ -189,8 +189,10 @@ public class StockTradingTask {
         var targetPrice = side == SELL ? basePrice * (1 + (stdDev * stdDevMultiplier / 100)) : basePrice / (1 + (stdDev * stdDevMultiplier / 100));
 
         if (side == BUY) {
-            var maxBuyPrice = marketPrice / (1 + (stdDev * stdDevMultiplier / 2 / 100));
-            targetPrice = Math.min(targetPrice, maxBuyPrice);
+            var modifier = 1 + (stdDev * stdDevMultiplier / 2 / 100);
+            while (targetPrice > marketPrice) {
+                targetPrice = targetPrice / modifier;
+            }
         }
 
         var tickSize = tickSizes.getOrDefault(code, 0.01);
