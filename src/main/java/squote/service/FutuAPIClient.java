@@ -28,6 +28,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 	private final Map<Integer, Object> resultMap = new ConcurrentHashMap<>();
 
 	int timeoutSeconds = 30;
+	private int onInitConnectCount = 0;
 	List<Integer> pendingOrderStatuses = List.of(
 			TrdCommon.OrderStatus.OrderStatus_Unknown_VALUE,
 			TrdCommon.OrderStatus.OrderStatus_Unsubmitted_VALUE,
@@ -71,12 +72,13 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 		log.info("isConnected={}", isConnected());
 	}
 
-	public boolean isConnected() { return errorCode == 0; }
+	public boolean isConnected() { return errorCode == 0 && onInitConnectCount >= 2; }
 
 	@Override
 	public void onInitConnect(FTAPI_Conn client, long errorCode, String desc)
 	{
 		this.errorCode = errorCode;
+		this.onInitConnectCount++;
 		log.info("onInitConnect: code={} desc={} connID={}", errorCode, desc, client.getConnectID());
 	}
 
