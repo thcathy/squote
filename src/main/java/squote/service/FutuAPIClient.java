@@ -112,7 +112,10 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 		resultMap.put(seq, executions);
 	}
 
-	public void close() { futuConnTrd.close(); }
+	public void close() {
+		futuConnTrd.close();
+		futuConnQot.close();
+	}
 
 	@Override
 	public void onReply_GetHistoryOrderFillList(FTAPI_Conn client, int seq, TrdGetHistoryOrderFillList.Response response) {
