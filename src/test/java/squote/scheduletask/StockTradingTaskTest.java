@@ -286,6 +286,22 @@ class StockTradingTaskTest {
     }
 
     @Test
+    void baseIsSell_priceLargerThanMinBuyPrice() {
+        var holding = HoldingStock.simple(stockCode, SELL, 4000, BigDecimal.valueOf(80000), "FundA");
+        var marketPrice = 22;
+        var expectedPrice = 21.72; // nearest to (mkt price - 1 stdDev)
+        var quote = new StockQuote(stockCode);
+
+        quote.setPrice(String.valueOf(marketPrice));
+        when(mockFutuAPIClient.getStockQuote(any())).thenReturn(quote);
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+
+        stockTradingTask.executeTask();
+
+        verify(mockFutuAPIClient, times(1)).placeOrder(anyLong(), eq(BUY), eq(stockCode), eq(4000), eq(expectedPrice));
+    }
+
+    @Test
     void noPendingSellOrder_placeOrder() {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         var expectedPrice = 20.26; // 20.0 * (1 + (stdDev * stdDevMultiplier / 100));

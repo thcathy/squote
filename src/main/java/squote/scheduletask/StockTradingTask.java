@@ -157,7 +157,7 @@ public class StockTradingTask {
         if (pendingOrderSide == SELL && baseExec.side == SELL) return;
 
         var stockCode = baseExec.code;
-        var targetPrice = calculateTargetPrice(pendingOrderSide, stockCode, baseExec.price, stdDev, Double.parseDouble(stockQuote.getPrice()));
+        var targetPrice = calculateTargetPrice(pendingOrderSide, stockCode, baseExec, stdDev, Double.parseDouble(stockQuote.getPrice()));
         var matchedPendingOrders = pendingOrders.stream()
                 .filter(o -> o.side() == pendingOrderSide && o.code().equals(stockCode))
                 .toList();
@@ -185,20 +185,30 @@ public class StockTradingTask {
         placeOrder(futuAPIClient, clientConfig, baseExec, stockCode, pendingOrderSide, targetPrice);
     }
 
-    private double calculateTargetPrice(Side side, String code, double basePrice, double stdDev, double marketPrice) {
-        var targetPrice = side == SELL ? basePrice * (1 + (stdDev * stdDevMultiplier / 100)) : basePrice / (1 + (stdDev * stdDevMultiplier / 100));
+    private double calculateTargetPrice(Side orderSide, String code, Execution baseExec, double stdDev, double marketPrice) {
+        var basePrice = baseExec.price;
+        var modifiedStdDevPercentage = (stdDev * stdDevMultiplier / 100);
+        var targetPrice = orderSide == SELL ? basePrice * (1 + modifiedStdDevPercentage) : basePrice / (1 + modifiedStdDevPercentage);
 
-        if (side == BUY) {
-            var modifier = 1 + (stdDev * stdDevMultiplier / 2 / 100);
-            while (targetPrice > marketPrice) {
-                targetPrice = targetPrice / modifier;
+        // handle target price far from market price
+        if (orderSide == BUY) {
+            var priceAdjustmentFactor = 1 + (modifiedStdDevPercentage / 2);
+            if (baseExec.side == BUY) {
+                while (targetPrice > marketPrice) {
+                    targetPrice = targetPrice / priceAdjustmentFactor;
+                }
+            } else {
+                var minBuyPrice = marketPrice / (1 + modifiedStdDevPercentage);
+                while (targetPrice < minBuyPrice) {
+                    targetPrice = targetPrice * priceAdjustmentFactor;
+                }
             }
         }
 
         var tickSize = tickSizes.getOrDefault(code, 0.01);
-        targetPrice = side == BUY ? Math.floor(targetPrice / tickSize) * tickSize : Math.ceil(targetPrice / tickSize) * tickSize;
+        targetPrice = orderSide == BUY ? Math.floor(targetPrice / tickSize) * tickSize : Math.ceil(targetPrice / tickSize) * tickSize;
         targetPrice = (double) Math.round(targetPrice * 1000) / 1000;
-        log.info("{}: targetPrice={}, basePrice={}, stdDev={}, mktPx={}", side, targetPrice, basePrice, stdDev, marketPrice);
+        log.info("{}: targetPrice={}, basePrice={}, stdDev={}, mktPx={}", orderSide, targetPrice, basePrice, stdDev, marketPrice);
         return targetPrice;
     }
 
