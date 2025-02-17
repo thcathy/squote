@@ -198,7 +198,7 @@ public class StockTradingTask {
                     targetPrice = targetPrice / priceAdjustmentFactor;
                 }
             } else {
-                var minBuyPrice = marketPrice / (1 + modifiedStdDevPercentage);
+                var minBuyPrice = marketPrice / (1 + stdDev / 100);   // choose stdDev explicitly
                 while (targetPrice < minBuyPrice) {
                     targetPrice = targetPrice * priceAdjustmentFactor;
                 }
