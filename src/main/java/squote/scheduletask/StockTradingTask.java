@@ -173,6 +173,9 @@ public class StockTradingTask {
             if (priceWithinThreshold(pendingOrderPrice, targetPrice)) {
                 log.info("pendingOrderPrice {} within threshold. do nothing", pendingOrderPrice);
                 return; // do nothing
+            } else if (baseExec.side == SELL && pendingOrderPrice > targetPrice) {
+                log.info("Base is sell. pendingOrderPrice {} > target price {}. do nothing", pendingOrderPrice, targetPrice);
+                return; // do nothing
             }
 
             var pendingOrderId = pendingOrder.orderId();
