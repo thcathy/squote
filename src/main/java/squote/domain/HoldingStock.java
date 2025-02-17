@@ -36,8 +36,12 @@ public class HoldingStock {
 	public HoldingStock() {}
 	
 	public HoldingStock(String userId, String code, Side side, int quantity, BigDecimal gross, Date date, BigDecimal hsce) {
+		this(UUID.randomUUID().toString(), userId, code, side, quantity, gross, date, hsce);
+	}
+
+	public HoldingStock(String id, String userId, String code, Side side, int quantity, BigDecimal gross, Date date, BigDecimal hsce) {
 		super();
-		this.id = UUID.randomUUID().toString();
+		this.id = id;
 		this.userId = userId;
 		this.code = code;
 		this.quantity = quantity;
