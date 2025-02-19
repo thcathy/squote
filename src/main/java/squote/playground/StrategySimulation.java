@@ -19,7 +19,7 @@ public class StrategySimulation {
     private static final int STD_DEV_RANGE = 20;
     private static final double STD_DEV_MULTIPLIER = 0.95;
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    private static final int BET = 130000;
+    private static final int BET = 80000;
     private static final int LOT_SIZE = 500;
     private static final String file = "historical-quote/historical-quote-2800.json";
 
@@ -56,7 +56,7 @@ public class StrategySimulation {
 
     public void execute() throws IOException {
         var quotes = loadJsonFromResourcesFile(file);
-        // quotes = quotes.subList(40, quotes.size());
+//        quotes = quotes.subList(200, quotes.size());
         log.info("total quotes={}, start on={}", quotes.size(), quotes.get(0).date());
         var context = new Context();
         context.basePrice = quotes.get(STD_DEV_RANGE).close();
@@ -69,6 +69,26 @@ public class StrategySimulation {
 
             var dateString = dateFormat.format(quote.date());
             var adjustedStdDev = context.latestStdDev * STD_DEV_MULTIPLIER;
+
+//            var buyTriggerPrice = context.basePrice * (1 - adjustedStdDev / 100);
+//            while (buyTriggerPrice >= quote.low()) {
+//                log.info("{}: Buy @{}, low={}", dateString, String.format("%.2f", buyTriggerPrice), String.format("%.2f", quote.low()));
+//                context.basePrice = buyTriggerPrice;
+//                context.totalBuy++;
+//                context.holdingPrices.add(new Execution(buyTriggerPrice, roundToLotSize(BET / buyTriggerPrice, LOT_SIZE), quote.date()));
+//                buyTriggerPrice = context.basePrice * (1 - adjustedStdDev / 100);
+//                executed = true;
+//                log.info("{}: {}", dateString, context);
+//            }
+
+//            if (quote.low() < buyTriggerPrice) {    // buy more
+//                log.info("{}: Buy @{}, low={}", dateString, String.format("%.2f", buyTriggerPrice), String.format("%.2f", quote.low()));
+//                context.basePrice = buyTriggerPrice;
+//                context.totalBuy++;
+//                context.holdingPrices.add(new Execution(buyTriggerPrice, roundToLotSize(BET / buyTriggerPrice, LOT_SIZE), quote.date()));
+//                executed = true;
+//                log.info("{}: {}", dateString, context);
+//            }
 
             for (int j = context.holdingPrices.size() - 1; j >= 0; j--) {
                 var sellTriggerPrice = context.holdingPrices.get(j).price * (1 + adjustedStdDev / 100);
@@ -92,16 +112,27 @@ public class StrategySimulation {
                 }
             }
 
+            // assume no day trade, such that buy order must be sold if selling price is lower than day high on T+1
+//            var buyTriggerPrice = context.basePrice * (1 - adjustedStdDev / 100);
+//            while (buyTriggerPrice >= quote.low()) {
+//                log.info("{}: Buy @{}, low={}", dateString, String.format("%.2f", buyTriggerPrice), String.format("%.2f", quote.low()));
+//                context.basePrice = buyTriggerPrice;
+//                context.totalBuy++;
+//                context.holdingPrices.add(new Execution(buyTriggerPrice, roundToLotSize(BET / buyTriggerPrice, LOT_SIZE), quote.date()));
+//                buyTriggerPrice = context.basePrice * (1 - adjustedStdDev / 100);
+//                executed = true;
+//                log.info("{}: {}", dateString, context);
+//            }
 
-            var buyTriggerPrice = context.basePrice * (1 - adjustedStdDev / 100);
-            if (quote.low() < buyTriggerPrice) {    // buy more
-                log.info("{}: Buy @{}, low={}", dateString, String.format("%.2f", buyTriggerPrice), String.format("%.2f", quote.low()));
-                context.basePrice = buyTriggerPrice;
-                context.totalBuy++;
-                context.holdingPrices.add(new Execution(buyTriggerPrice, roundToLotSize(BET / buyTriggerPrice, LOT_SIZE), quote.date()));
-                executed = true;
-                log.info("{}: {}", dateString, context);
-            }
+//            var buyTriggerPrice = context.basePrice * (1 - adjustedStdDev / 100);
+//            if (quote.low() < buyTriggerPrice) {    // buy more
+//                log.info("{}: Buy @{}, low={}", dateString, String.format("%.2f", buyTriggerPrice), String.format("%.2f", quote.low()));
+//                context.basePrice = buyTriggerPrice;
+//                context.totalBuy++;
+//                context.holdingPrices.add(new Execution(buyTriggerPrice, roundToLotSize(BET / buyTriggerPrice, LOT_SIZE), quote.date()));
+//                executed = true;
+//                log.info("{}: {}", dateString, context);
+//            }
 
             if (context.holdingPrices.isEmpty()) {
                 context.basePrice = quote.close();
@@ -113,12 +144,6 @@ public class StrategySimulation {
         }
         log.info("No Execution day={}", context.noExecutionDay);
         log.info("Final context={}", context);
-    }
-
-    public static int roundToLotSize(double amount, int lotSize) {
-        double qty = amount / lotSize;
-        int roundedQty = (int) Math.round(qty);
-        return roundedQty * lotSize;
     }
 
     public static double calStdDev(List<Double> data) {

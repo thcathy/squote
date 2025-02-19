@@ -5,10 +5,15 @@ import com.futu.openapi.pb.*;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
 
-public class TrdDemo implements FTSPI_Trd, FTSPI_Conn {
+public class TrdDemo implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
     FTAPI_Conn_Trd trd = new FTAPI_Conn_Trd();
+    FTAPI_Conn_Qot qot = new FTAPI_Conn_Qot();
     long accId;
     String tradeCode;
     int inited = 0;
@@ -22,6 +27,9 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn {
         trd.setClientInfo("javaclient", 1); //Set client information
         trd.setConnSpi(this); //Set connection callback
         trd.setTrdSpi(this); //Set transaction callback
+        qot.setClientInfo("javaclient", 1);
+        qot.setConnSpi(this);
+        qot.setQotSpi(this);
     }
 
     public void start() {
@@ -33,6 +41,8 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn {
         decodedRsaKey = decodedRsaKey.replace("\\n", "\n");
         trd.setRSAPrivateKey(decodedRsaKey);
         trd.initConnect(host, Integer.parseInt(port), true);
+        qot.setRSAPrivateKey(decodedRsaKey);
+        qot.initConnect(host, Integer.parseInt(port), true);
     }
 
     @Override
@@ -42,13 +52,23 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn {
         if (errCode != 0)
             return;
 
-//        getAccounts();
-//       getTrades();
+        System.out.printf("Qot onInitConnect: ret=%b desc=%s connID=%d\n", errCode, desc, client.getConnectID());
+        if (errCode != 0)
+            return;
+
+        inited++;
+
+        if (inited >= 2) {
+//            requestSnapshotQuote();
+//                    getAccounts();
+ //      getTrades();
 //        getTodayFills();
-        getPendingOrders();
-//        unlockTrade();
+//        getPendingOrders();
+        unlockTrade();
 //        placeOrder();
 //        cancelOrder();
+//        requestKlines();
+        }
     }
 
     private void placeOrder() {
@@ -125,8 +145,8 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn {
                 .setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
                 .build();
         TrdCommon.TrdFilterConditions filter = TrdCommon.TrdFilterConditions.newBuilder()
-                .setBeginTime("2024-12-25 00:00:00")
-                //.setEndTime("2025-12-11 00:00:00")
+                .setBeginTime("2025-02-12 00:00:00")
+                .setEndTime("2025-02-13 00:00:00")
                 .build();
         TrdGetHistoryOrderFillList.C2S c2s = TrdGetHistoryOrderFillList.C2S.newBuilder()
                 .setHeader(header)
@@ -156,6 +176,36 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn {
         TrdGetAccList.Request req = TrdGetAccList.Request.newBuilder().setC2S(c2s).build();
         int seqNo = trd.getAccList(req);
         System.out.printf("Send TrdGetAccList: %d", seqNo);
+    }
+
+    private void requestKlines() {
+        QotCommon.Security sec = QotCommon.Security.newBuilder()
+                .setMarket(QotCommon.QotMarket.QotMarket_HK_Security_VALUE)
+                .setCode("02800")
+                .build();
+        QotRequestHistoryKL.C2S c2s = QotRequestHistoryKL.C2S.newBuilder()
+                .setRehabType(QotCommon.RehabType.RehabType_None_VALUE)
+                .setKlType(QotCommon.KLType.KLType_5Min_VALUE)
+                .setSecurity(sec)
+                .setBeginTime("2025-01-01")
+                .setEndTime("2025-01-22")
+                .build();
+        QotRequestHistoryKL.Request req = QotRequestHistoryKL.Request.newBuilder().setC2S(c2s).build();
+        int seqNo = qot.requestHistoryKL(req);
+        System.out.printf("Send QotRequestHistoryKL: %d\n", seqNo);
+    }
+
+    private void requestSnapshotQuote() {
+        QotCommon.Security sec = QotCommon.Security.newBuilder()
+                .setMarket(QotCommon.QotMarket.QotMarket_HK_Security_VALUE)
+                .setCode("02800")
+                .build();
+        QotGetSecuritySnapshot.C2S c2s = QotGetSecuritySnapshot.C2S.newBuilder()
+                .addSecurityList(sec)
+                .build();
+        QotGetSecuritySnapshot.Request req = QotGetSecuritySnapshot.Request.newBuilder().setC2S(c2s).build();
+        int seqNo = qot.getSecuritySnapshot(req);
+        System.out.printf("Send QotGetSecuritySnapshot: %d\n", seqNo);
     }
 
     @Override
@@ -268,6 +318,52 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn {
                 System.out.printf("Receive TrdGetHistoryOrderFillList: %s", json);
                 var executions = rsp.getS2C().getOrderFillListList();
                 System.out.println(executions);
+            } catch (InvalidProtocolBufferException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onReply_RequestHistoryKL(FTAPI_Conn client, int nSerialNo, QotRequestHistoryKL.Response rsp) {
+        if (rsp.getRetType() != 0) {
+            System.out.printf("QotRequestHistoryKL failed: %s\n", rsp.getRetMsg());
+        }
+        else {
+            try {
+                String json = JsonFormat.printer().print(rsp);
+                Path path = Paths.get("/tmp/2800hk-kline-5m-2025.json");
+                Files.write(path, json.getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onReply_GetBasicQot(FTAPI_Conn client, int nSerialNo, QotGetBasicQot.Response rsp) {
+        if (rsp.getRetType() != 0) {
+            System.out.printf("QotGetBasicQot failed: %s\n", rsp.getRetMsg());
+        }
+        else {
+            try {
+                String json = JsonFormat.printer().print(rsp);
+                System.out.printf("Receive QotGetBasicQot: %s\n", json);
+            } catch (InvalidProtocolBufferException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onReply_GetSecuritySnapshot(FTAPI_Conn client, int nSerialNo, QotGetSecuritySnapshot.Response rsp) {
+        if (rsp.getRetType() != 0) {
+            System.out.printf("QotGetSecuritySnapshot failed: %s\n", rsp.getRetMsg());
+        }
+        else {
+            try {
+                String json = JsonFormat.printer().print(rsp);
+                System.out.printf("Receive QotGetSecuritySnapshot: %s\n", json);
             } catch (InvalidProtocolBufferException e) {
                 e.printStackTrace();
             }
