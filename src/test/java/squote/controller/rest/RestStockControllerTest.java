@@ -103,7 +103,22 @@ public class RestStockControllerTest extends IntegrationTest {
         long count = StreamSupport.stream(holdings.spliterator(), false).count();
         assertThat(count).isEqualTo(1);
 
-        holdings = restStockController.delete(holding.getId());
+        holdings = restStockController.deleteHolding(holding.getId());
+        count = StreamSupport.stream(holdings.spliterator(), false).count();
+        assertThat(count).isEqualTo(0);
+    }
+
+    @Test
+    public void test_deleteHoldingPair() {
+        authenticationServiceStub.userId = UUID.randomUUID().toString();
+        HoldingStock buyHolding = holdingStockRepository.save(createSell2800Holding(authenticationServiceStub.userId));
+        HoldingStock sellHolding = holdingStockRepository.save(createBuy2800Holding(authenticationServiceStub.userId));
+
+        Iterable<HoldingStock> holdings = restStockController.listHolding();
+        long count = StreamSupport.stream(holdings.spliterator(), false).count();
+        assertThat(count).isEqualTo(2);
+
+        holdings = restStockController.deleteHoldingPair(sellHolding.getId(), buyHolding.getId());
         count = StreamSupport.stream(holdings.spliterator(), false).count();
         assertThat(count).isEqualTo(0);
     }
@@ -141,7 +156,11 @@ public class RestStockControllerTest extends IntegrationTest {
     }
 
     private HoldingStock createSell2800Holding(String userId) {
-        return new HoldingStock(userId, "2800", SquoteConstants.Side.SELL, 300, new BigDecimal("8190"), new Date(), null);
+        return new HoldingStock(userId, "2800", SquoteConstants.Side.SELL, 2000, new BigDecimal("40400"), new Date(), null);
+    }
+
+    private HoldingStock createBuy2800Holding(String userId) {
+        return new HoldingStock(userId, "2800", SquoteConstants.Side.BUY, 2000, new BigDecimal("40000"), new Date(), null);
     }
 
     private Fund createCryptoFund(String userId) {

@@ -55,9 +55,19 @@ public class RestStockController {
 	}
 	
 	@RequestMapping("/holding/delete/{id}")
-	public Iterable<HoldingStock> delete(@PathVariable String id) {
+	public Iterable<HoldingStock> deleteHolding(@PathVariable String id) {
 		log.warn("delete: id [{}]", id);
 		holdingStockRepo.deleteById(id);
+		return holdingStockRepo.findByUserIdOrderByDate(authenticationService.getUserId().get());
+	}
+
+	@DeleteMapping("/holding/delete-pair/{id1}/{id2}")
+	public Iterable<HoldingStock> deleteHoldingPair(@PathVariable String id1, @PathVariable String id2) {
+		log.warn("Deleting buy/sell pair: {}, {}", id1, id2);
+
+		holdingStockRepo.deleteById(id1);
+		holdingStockRepo.deleteById(id2);
+
 		return holdingStockRepo.findByUserIdOrderByDate(authenticationService.getUserId().get());
 	}
 
