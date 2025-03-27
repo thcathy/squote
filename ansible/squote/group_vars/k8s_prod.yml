@@ -1,6 +1,6 @@
 ---
 spring_profiles_active: prod
-deploy_folder: /home/ubuntu/k3s
+deploy_folder: ~/k3s
 namespace: squote
 url_base_path: squote
-volume_root: /home/ubuntu/k3s/volumes
+volume_root: ~/k3s/volumes
