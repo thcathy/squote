@@ -65,6 +65,14 @@ public class RestStockController {
 	public Iterable<HoldingStock> deleteHoldingPair(@PathVariable String id1, @PathVariable String id2) {
 		log.warn("Deleting buy/sell pair: {}, {}", id1, id2);
 
+		var holding1Optional = holdingStockRepo.findById(id1);
+		var holding2Optional = holdingStockRepo.findById(id2);
+		if (holding1Optional.isPresent() && holding2Optional.isPresent()) {
+			var holding1 = holding1Optional.get();
+			var earning = holding1Optional.get().getGross().subtract(holding2Optional.get().getGross()).abs().doubleValue();
+			log.info("{}({}) earn {}", holding1.getUserId(), holding1.getFundName(), earning);
+		}
+
 		holdingStockRepo.deleteById(id1);
 		holdingStockRepo.deleteById(id2);
 
