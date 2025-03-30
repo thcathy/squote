@@ -453,4 +453,16 @@ class StockTradingTaskTest {
         var logMatched2 = listAppender.list.stream().anyMatch(l -> l.getFormattedMessage().startsWith("base price: 19.5"));
         assertThat(logMatched2).isTrue();
     }
+
+    @Test
+    void partialFilledOrder_willSendWarningMessageToTelegram() {
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        var partialFilledOrder = new Order(stockCode, BUY, 4000, 20.5, 123456L, 3500, 20.48, new Date());
+        when(mockFutuAPIClient.getPendingOrders(anyLong())).thenReturn(List.of(partialFilledOrder));
+
+        stockTradingTask.executeTask();
+
+        verify(mockTelegramAPIClient, times(1)).sendMessage(contains("WARN: Partial filled BUY 4000@20.50. filled=3500"));
+    }
 }

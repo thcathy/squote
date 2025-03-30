@@ -144,7 +144,14 @@ public class StockTradingTask {
         log.info("process base execution: {}", execution);
 
         var pendingOrders = futuAPIClient.getPendingOrders(config.accountId());
-        if (pendingOrders.stream().anyMatch(Order::isPartialFilled)) {
+        var anyPartialFilledOrder = pendingOrders.stream().filter(Order::isPartialFilled).findFirst();
+        if (anyPartialFilledOrder.isPresent()) {
+            var partialFillOrder = anyPartialFilledOrder.get();
+            telegramAPIClient.sendMessage(String.format("%s: WARN: Partial filled %s %s@%.2f. filled=%s",
+                    config.fundName(),
+                    partialFillOrder.side(), partialFillOrder.quantity(), partialFillOrder.price(),
+                    partialFillOrder.filledQuantity()
+                    ));
             log.info("Has partial filled pending order. Skip processing");
             return;
         }
