@@ -59,7 +59,7 @@ class CalculateDailySummaryTaskTest {
 
         calculateDailySummaryTask.executeTask();
         var expectedFromDate = LocalDate.now().minusDays(30).format(CalculateDailySummaryTask.rangeQuoteDateFormatter);
-        var expectedToDate = LocalDate.now().format(CalculateDailySummaryTask.rangeQuoteDateFormatter);
+        var expectedToDate = LocalDate.now().plusDays(1).format(CalculateDailySummaryTask.rangeQuoteDateFormatter);
 
         verify(webService, times(2)).getQuotesInRange(any(), eq(expectedFromDate), eq(expectedToDate));
         verify(dailyAssetSummaryRepository, times(2)).save(any());
