@@ -38,7 +38,7 @@ public class CalculateDailySummaryTask {
         this.webService = webService;
     }
 
-    @Scheduled(cron = "0 0 18 * * MON-FRI", zone = "Asia/Hong_Kong")
+    @Scheduled(cron = "0 20 18 * * MON-FRI", zone = "Asia/Hong_Kong")
     public void executeTask() {
         if (!enabled) {
             log.info("Task disabled");
@@ -58,7 +58,7 @@ public class CalculateDailySummaryTask {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         String fromDate = LocalDate.now().minusDays(maxStdDevRange).format(formatter);
-        String toDate = LocalDate.now().format(formatter);
+        String toDate = LocalDate.now().plusDays(1).format(formatter);
         var today = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
 
         for (String symbol : codes) {
