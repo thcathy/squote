@@ -291,7 +291,10 @@ public class StockTradingTask {
                 .map(this::toExecution)
                 .toList();
         executions.addAll(todayExecutions);
-        executions.sort(Comparator.comparingDouble(Execution::price));
+        executions.sort(
+                Comparator.comparingDouble(Execution::price)
+                        .thenComparing(Execution::date, Comparator.reverseOrder())
+        );
         printExecutions(side + " executions:", executions);
         return executions;
     }
