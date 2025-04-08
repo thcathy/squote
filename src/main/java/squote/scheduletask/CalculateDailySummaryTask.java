@@ -38,7 +38,7 @@ public class CalculateDailySummaryTask {
         this.webService = webService;
     }
 
-    @Scheduled(cron = "0 20 18 * * MON-FRI", zone = "Asia/Hong_Kong")
+    @Scheduled(cron = "0 0 18 * * MON-FRI", zone = "Asia/Hong_Kong")
     public void executeTask() {
         if (!enabled) {
             log.info("Task disabled");
