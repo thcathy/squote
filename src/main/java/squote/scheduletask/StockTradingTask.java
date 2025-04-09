@@ -61,7 +61,7 @@ public class StockTradingTask {
     
     @Scheduled(cron = "0 35-55/5 9 * * MON-FRI", zone = "Asia/Hong_Kong")
     @Scheduled(cron = "0 */5 10-15 * * MON-FRI", zone = "Asia/Hong_Kong")
-    @Scheduled(cron = "0 45 16 * * MON-FRI", zone = "Asia/Hong_Kong")
+    @Scheduled(cron = "0 5 18 * * MON-FRI", zone = "Asia/Hong_Kong")
     public void executeTask() {
         if (!enabled) {
             log.info("Task disabled");
