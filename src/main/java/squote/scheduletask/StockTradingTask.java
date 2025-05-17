@@ -198,7 +198,7 @@ public class StockTradingTask {
 
     private double calculateTargetPrice(Side orderSide, String code, Execution baseExec, double stdDev, double marketPrice) {
         var basePrice = baseExec.price;
-        var modifiedStdDevPercentage = (stdDev * stdDevMultiplier / 100);
+        var modifiedStdDevPercentage = Math.min((stdDev * stdDevMultiplier / 100), 0.01618);
         var targetPrice = orderSide == SELL ? basePrice * (1 + modifiedStdDevPercentage) : basePrice / (1 + modifiedStdDevPercentage);
 
         // handle target price far from market price
