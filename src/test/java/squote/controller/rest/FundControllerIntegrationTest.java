@@ -221,7 +221,7 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 		assertThat(algoConfigs).hasSize(0);
 
 		// add
-		var expectedConfig = new AlgoConfig("2800", 0, 0);
+		var expectedConfig = new AlgoConfig("2800", 0, 0.0);
 		var config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice());
 		assertThat(config).isEqualTo(expectedConfig);
 		algoConfigs = fundController.getAllAlgoConfigs(testFund.name);
