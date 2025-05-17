@@ -194,7 +194,7 @@ public class FundController {
 	@GetMapping(value = "/{fundName}/algo/{code}")
 	public AlgoConfig addOrUpdateAlgoConfig(@PathVariable String fundName, @PathVariable String code,
 											@RequestParam(name = "quantity", required = false) int quantity,
-											@RequestParam(name = "basePrice", required = false) double basePrice) {
+											@RequestParam(name = "basePrice", required = false) Double basePrice) {
 		var userId = authenticationService.getUserId().get();
 		var newConfig = new AlgoConfig(code, quantity, basePrice);
 		log.info("add or update algo config {} to fund {}", newConfig, fundName);

@@ -1,6 +1,6 @@
 package squote.domain;
 
-public record AlgoConfig(String code, int quantity, double basePrice) {
+public record AlgoConfig(String code, int quantity, Double basePrice) {
 
     @Override
     public String toString() {
