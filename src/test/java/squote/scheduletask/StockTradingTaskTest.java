@@ -27,7 +27,7 @@ import static squote.SquoteConstants.Side.SELL;
 
 class StockTradingTaskTest {
     DailyAssetSummaryRepository dailyAssetSummaryRepo = Mockito.mock(DailyAssetSummaryRepository.class);
-    FundRepository fundRepo = Mockito.mock(FundRepository.class);
+    FundRepository mockFundRepo = Mockito.mock(FundRepository.class);
     HoldingStockRepository holdingStockRepository = Mockito.mock(HoldingStockRepository.class);
     FutuAPIClientFactory mockFactory = Mockito.mock(FutuAPIClientFactory.class);
     FutuAPIClient mockFutuAPIClient = Mockito.mock(FutuAPIClient.class);
@@ -66,10 +66,7 @@ class StockTradingTaskTest {
         quote.setPrice("40");   // high price default to pass most of the cases
         when(mockFutuAPIClient.getStockQuote(any())).thenReturn(quote);
 
-        StockTradingTaskProperties properties = new StockTradingTaskProperties();
-        properties.fundSymbols = Map.of("FundA", List.of(stockCode));
-
-        stockTradingTask = new StockTradingTask(dailyAssetSummaryRepo, fundRepo, holdingStockRepository, mockTelegramAPIClient, properties);
+        stockTradingTask = new StockTradingTask(dailyAssetSummaryRepo, mockFundRepo, holdingStockRepository, mockTelegramAPIClient);
         stockTradingTask.futuAPIClientFactory = mockFactory;
         stockTradingTask.enabled = true;  // Enable the task for testing
         stockTradingTask.stdDevRange = stdDevRange;
@@ -80,6 +77,13 @@ class StockTradingTaskTest {
                         {"fundName": "FundB", "fundUserId": "UserB", "accountId": 2, "ip": "192.0.0.1", "port": 80, "unlockCode": "dummy code"}
                     ]
                 """;
+
+        var algoConfig = new AlgoConfig(stockCode, 3500, null);
+        var fundA = new Fund("dummy", "FundA");
+        fundA.getAlgoConfigs().put(stockCode, algoConfig);
+        var fundB = new Fund("dummy", "FundB");
+        fundB.getAlgoConfigs().put(stockCode, algoConfig);
+        when(mockFundRepo.findAll()).thenReturn(Arrays.asList(fundA, fundB));
     }
 
     static Stream<TestFindBasePriceData> testFindBasePriceDataProvider() {
@@ -150,7 +154,7 @@ class StockTradingTaskTest {
         stockTradingTask.executeTask();
 
         verifyNoInteractions(dailyAssetSummaryRepo);
-        verifyNoInteractions(fundRepo);
+        verifyNoInteractions(mockFundRepo);
         verifyNoInteractions(holdingStockRepository);
     }
 
@@ -169,7 +173,7 @@ class StockTradingTaskTest {
 
         stockTradingTask.executeTask();
 
-        verify(mockFutuAPIClient, times(1)).close();
+        verify(mockFutuAPIClient, atLeast(1)).close();
     }
 
     @Test
@@ -387,7 +391,7 @@ class StockTradingTaskTest {
 
         stockTradingTask.executeTask();
 
-        verify(mockFutuAPIClient, times(1)).unlockTrade(any());
+        verify(mockFutuAPIClient, atLeast(1)).unlockTrade(any());
     }
 
     @Test

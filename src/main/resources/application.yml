@@ -40,11 +40,6 @@ stocktradingtask:
   enabled: false
   stdDevRange: 11
   stdDevMultiplier: 0.7
-  fundSymbols:
-    newfund:
-      - 2800
-    absolute:
-      - 2800
 
 futuOpendRsaKey: '${FUTUOPEND_RSAKEY:dummy}'
 futuClientConfigsJson: 'ENC(NzIUHcdkAZnjlswvYxGiiEZNOdF+4znKwx3T2TvjphwVvxR9x4/U8adjgaRH71XRxMxUZ+ytLnzKU1K2dFMKTGn4Whwi9kUSAikgIO0J5Bx9OCRf+ZhRUGHwUJaAl/y1RiDFbBBCdXnpgErh58i8dOZfxRAFRa5XqNeMJx+gt2BrjLJZkqus1/AN/cDgh6oDt/HFjnsO0NN3J6+OOH1nuVKkDctsQD1R47oIl4iuuxuembh5yKQOjW/6V1Uyyuax5HGChNRm8edRsXSe2VRhat6e5ZhI/3dDDnGRq4dAmLZWwA2GLU0LuDAd1MYczY6dY2+mxa73JwSNs9v3xI71jWkBxRetY4z3i5aKQTXT+2AKV75+QNtfzpZcNg+L6SBcn3uZes1Gp+4WHZaD7Nzqcd7eWtzkkLQ8gGqyc4nRZyi3Henp5pFLFMYpDVqTQFtzLvBKanlWJMSEiMKBaXJGVx25NIaslt/qznSG0imyfeqUsMqVWiYOCUT9i81Abww9L6W8OxWae4JDcSxugeIoN54XdaRPwn0IHQ/q8l0TD5802K0uoavdD3DoNaowQ1Q4V7Uzlt3o5Fl9Jj+CvibUxQ==)'

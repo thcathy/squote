@@ -37,7 +37,6 @@ public class StockTradingTask {
     @Value(value = "${futuClientConfigsJson}") String clientConfigJson;
     double priceThreshold = 0.0005;
 
-    final StockTradingTaskProperties properties;
     final DailyAssetSummaryRepository dailyAssetSummaryRepo;
     final FundRepository fundRepo;
     final HoldingStockRepository holdingStockRepository;
@@ -50,10 +49,8 @@ public class StockTradingTask {
     public StockTradingTask(DailyAssetSummaryRepository dailyAssetSummaryRepo,
                             FundRepository fundRepo,
                             HoldingStockRepository holdingStockRepository,
-                            TelegramAPIClient telegramAPIClient,
-                            StockTradingTaskProperties properties) {
+                            TelegramAPIClient telegramAPIClient) {
         this.dailyAssetSummaryRepo = dailyAssetSummaryRepo;
-        this.properties = properties;
         this.fundRepo = fundRepo;
         this.telegramAPIClient = telegramAPIClient;
         this.holdingStockRepository = holdingStockRepository;
@@ -81,8 +78,11 @@ public class StockTradingTask {
         log.info("Starting stock trading task");
         var futuClientConfigs = parseFutuClientConfigs();
 
-        for (var tradeSymbols : properties.fundSymbols.entrySet()) {
-            var fundName = tradeSymbols.getKey();
+        for (var fund : fundRepo.findAll()) {
+            if (fund.getAlgoConfigs().isEmpty()) continue;
+
+            var fundName = fund.name;
+            log.info("Start process fund [{}]", fundName);
             var clientConfig = futuClientConfigs.get(fundName);
             if (clientConfig == null) {
                 log.warn("cannot find client config for fund: {}", fundName);
@@ -91,8 +91,8 @@ public class StockTradingTask {
             FutuAPIClient futuAPIClient = futuAPIClientFactory.build(clientConfig.ip(), clientConfig.port());
 
             unlockTrade(futuAPIClient, clientConfig.unlockCode());
-            for (var code : tradeSymbols.getValue()) {
-                processSingleSymbol(code, clientConfig, futuAPIClient);
+            for (var algoConfig : fund.getAlgoConfigs().values()) {
+                processSingleSymbol(algoConfig.code(), clientConfig, futuAPIClient);
             }
             futuAPIClient.close();
         }
