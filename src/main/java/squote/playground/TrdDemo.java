@@ -64,10 +64,12 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
  //      getTrades();
 //        getTodayFills();
 //        getPendingOrders();
-        unlockTrade();
+//        unlockTrade();
 //        placeOrder();
 //        cancelOrder();
 //        requestKlines();
+            requestVOOKlines();
+//          requestVOOSnapshotQuote();
         }
     }
 
@@ -195,10 +197,41 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
         System.out.printf("Send QotRequestHistoryKL: %d\n", seqNo);
     }
 
+    private void requestVOOKlines() {
+        QotCommon.Security sec = QotCommon.Security.newBuilder()
+                .setMarket(QotCommon.QotMarket.QotMarket_US_Security_VALUE)
+                .setCode("VOO")
+                .build();
+        QotRequestHistoryKL.C2S c2s = QotRequestHistoryKL.C2S.newBuilder()
+                .setRehabType(QotCommon.RehabType.RehabType_None_VALUE)
+                .setKlType(QotCommon.KLType.KLType_5Min_VALUE)
+                .setSecurity(sec)
+                .setBeginTime("2024-01-01")
+                .setEndTime("2024-12-31")
+                .build();
+        QotRequestHistoryKL.Request req = QotRequestHistoryKL.Request.newBuilder().setC2S(c2s).build();
+        int seqNo = qot.requestHistoryKL(req);
+        System.out.printf("Send QotRequestHistoryKL: %d\n", seqNo);
+    }
+
     private void requestSnapshotQuote() {
         QotCommon.Security sec = QotCommon.Security.newBuilder()
                 .setMarket(QotCommon.QotMarket.QotMarket_HK_Security_VALUE)
                 .setCode("02800")
+                .build();
+        QotGetSecuritySnapshot.C2S c2s = QotGetSecuritySnapshot.C2S.newBuilder()
+                .addSecurityList(sec)
+                .build();
+        QotGetSecuritySnapshot.Request req = QotGetSecuritySnapshot.Request.newBuilder().setC2S(c2s).build();
+        int seqNo = qot.getSecuritySnapshot(req);
+        System.out.printf("Send QotGetSecuritySnapshot: %d\n", seqNo);
+    }
+
+    // need Nasdaq basic subscription
+    private void requestVOOSnapshotQuote() {
+        QotCommon.Security sec = QotCommon.Security.newBuilder()
+                .setMarket(QotCommon.QotMarket.QotMarket_US_Security_VALUE)
+                .setCode("VOO")
                 .build();
         QotGetSecuritySnapshot.C2S c2s = QotGetSecuritySnapshot.C2S.newBuilder()
                 .addSecurityList(sec)
@@ -324,6 +357,7 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
         }
     }
 
+    // need mkt data subscription
     @Override
     public void onReply_RequestHistoryKL(FTAPI_Conn client, int nSerialNo, QotRequestHistoryKL.Response rsp) {
         if (rsp.getRetType() != 0) {
@@ -332,7 +366,7 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
         else {
             try {
                 String json = JsonFormat.printer().print(rsp);
-                Path path = Paths.get("/tmp/2800hk-kline-5m-2025.json");
+                Path path = Paths.get("/tmp/VOO-US-kline-5m-2024.json");
                 Files.write(path, json.getBytes());
             } catch (IOException e) {
                 e.printStackTrace();

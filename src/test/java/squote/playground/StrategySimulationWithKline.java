@@ -9,8 +9,10 @@ import org.slf4j.LoggerFactory;
 import thc.util.MathUtils;
 import thc.util.TradingUtils;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -23,9 +25,8 @@ import java.util.stream.IntStream;
 
 public class StrategySimulationWithKline {
     private static Logger log = LoggerFactory.getLogger(StrategySimulation.class);
-    private static final int BET = 80000;
-    private static final int LOT_SIZE = 500;
-    private static final String klineFilesTemplate = "historical-quote/2800hk-kline-5m-%s.json";
+    private static final int BET = 3000;
+    private static final int LOT_SIZE = 1;
 
     public static void main(String[] args) {
         new StrategySimulationWithKline().execute();
@@ -63,14 +64,14 @@ public class StrategySimulationWithKline {
 
     record Execution(double price, int quantity, LocalDateTime date) {}
 
-    record Kline(LocalDateTime time, double high, double low, double open, double close, double lastClose) {}
+    record Kline(LocalDateTime time, double high, double low, double open, double close, double volume) {}
 
     record StrategyParam(int stdDevRange, int year, double adjustment, double maxAmount) {}
 
     public void execute() {
-        var klines = parseAllKlines();
+        var klines = new IBKlineCsvParser().parseAllKlines();
         var params = new ArrayList<StrategyParam>();
-        for (int sdRange = 11; sdRange <= 11; sdRange++) {
+        for (int sdRange = 9; sdRange <= 21; sdRange++) {
             for (int year = 2018; year <= 2024; year++) {
                 for (double adjustment = 1.25; adjustment >= 0.25; adjustment-=0.05) {
                     params.add(new StrategyParam(sdRange, year, adjustment, BET * 20));
@@ -124,6 +125,7 @@ public class StrategySimulationWithKline {
         for (var kline : klines) {
             var stdDev = stdDevMap.get(kline.time.toLocalDate());
             if (stdDev == null) continue;
+            if (kline.volume == 0) continue;
 
             var adjustedStdDev = adjustStdDev(stdDev, param.adjustment);
 
@@ -202,44 +204,86 @@ public class StrategySimulationWithKline {
         return stdDevs;
     }
 
-    @NotNull
-    private List<StrategySimulationWithKline.Kline> parseAllKlines() {
-        return IntStream.rangeClosed(2017, 2025)
-                .mapToObj(Integer::toString)
-                .map(i -> String.format(klineFilesTemplate, i))
-                .flatMap(f -> loadJsonFromResourceFile(f).stream())
-                .toList();
-    }
+    static class IBKlineCsvParser {
+        private static final String klineFilesTemplate = "historical-quote/VOO-kline-5m-%s.csv";
+        private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHH:mm:ss");
 
-    List<Kline> loadJsonFromResourceFile(String fileName) {
-        try (InputStream inputStream = StrategySimulationWithKline.class.getClassLoader().getResourceAsStream(fileName)) {
-            var json = new String(inputStream.readAllBytes());
-            return parseKline(json);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        List<StrategySimulationWithKline.Kline> parseAllKlines() {
+            return IntStream.rangeClosed(2011, 2025)
+                    .mapToObj(Integer::toString)
+                    .map(i -> String.format(klineFilesTemplate, i))
+                    .flatMap(f -> loadFromResourceFile(f).stream())
+                    .toList();
         }
-    }
 
-    List<Kline> parseKline(String json) {
-        var klines = new ArrayList<Kline>();
-        var objectMapper = new ObjectMapper();
-        var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        try {
-            var rootNode = objectMapper.readTree(json);
-            var klListNode = rootNode.path("s2c").path("klList");
-            for (JsonNode klineNode : klListNode) {
-                klines.add(new Kline(
-                        LocalDateTime.parse(klineNode.path("time").asText(), formatter),
-                        klineNode.path("highPrice").asDouble(),
-                        klineNode.path("lowPrice").asDouble(),
-                        klineNode.path("openPrice").asDouble(),
-                        klineNode.path("closePrice").asDouble(),
-                        klineNode.path("lastClosePrice").asDouble()
-                ));
+        List<Kline> loadFromResourceFile(String fileName) {
+            var klines = new ArrayList<Kline>();
+            try (var inputStream = this.getClass().getClassLoader().getResourceAsStream(fileName);
+                 var reader = new BufferedReader(new InputStreamReader(inputStream))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    klines.add(parseKline(line));
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            return klines;
         }
-        return klines;
+
+        Kline parseKline(String str) {
+            var strings = str.split(" ");
+            var time = LocalDateTime.parse(strings[3] + strings[4], formatter);
+            var highPrice = Double.parseDouble(strings[7].split("=")[1]);
+            var lowPrice = Double.parseDouble(strings[8].split("=")[1]);
+            var openPrice = Double.parseDouble(strings[6].split("=")[1]);
+            var closePrice = Double.parseDouble(strings[9].split("=")[1]);
+            var volume = Double.parseDouble(strings[10].split("=")[1]);
+            return new Kline(time, highPrice, lowPrice, openPrice, closePrice, volume);
+        }
+    }
+
+    static class FutuKlineJsonParser {
+        private static final String klineFilesTemplate = "historical-quote/2800hk-kline-5m-%s.json";
+
+        @NotNull
+        private List<StrategySimulationWithKline.Kline> parseAllKlines() {
+            return IntStream.rangeClosed(2017, 2025)
+                    .mapToObj(Integer::toString)
+                    .map(i -> String.format(klineFilesTemplate, i))
+                    .flatMap(f -> loadJsonFromResourceFile(f).stream())
+                    .toList();
+        }
+
+        List<Kline> loadJsonFromResourceFile(String fileName) {
+            try (InputStream inputStream = StrategySimulationWithKline.class.getClassLoader().getResourceAsStream(fileName)) {
+                var json = new String(inputStream.readAllBytes());
+                return parseKline(json);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        List<Kline> parseKline(String json) {
+            var klines = new ArrayList<Kline>();
+            var objectMapper = new ObjectMapper();
+            var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            try {
+                var rootNode = objectMapper.readTree(json);
+                var klListNode = rootNode.path("s2c").path("klList");
+                for (JsonNode klineNode : klListNode) {
+                    klines.add(new Kline(
+                            LocalDateTime.parse(klineNode.path("time").asText(), formatter),
+                            klineNode.path("highPrice").asDouble(),
+                            klineNode.path("lowPrice").asDouble(),
+                            klineNode.path("openPrice").asDouble(),
+                            klineNode.path("closePrice").asDouble(),
+                            0
+                    ));
+                }
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+            return klines;
+        }
     }
 }
