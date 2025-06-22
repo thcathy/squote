@@ -33,7 +33,7 @@ class CalculateDailySummaryTaskTest {
     private boolean enabled = true;
     private List<Integer> stdDevRanges = List.of(20, 30);
     ;
-    private List<String> codes = List.of("2800", "2828");
+    private List<String> codes = List.of("2800", "2828", "QQQ.XNAS");
 
     @BeforeEach
     void setUp() {
@@ -53,16 +53,16 @@ class CalculateDailySummaryTaskTest {
         };
         HttpResponse<DailyStockQuote[]> mockResponse = mock(HttpResponse.class);
         when(mockResponse.getBody()).thenReturn(mockQuotes);
-        when(webService.getQuotesInRange(any(), any(), any()))
+        when(webService.getQuotesInRange(any(), any(), any(), any()))
                 .thenReturn(mockResponse);
         ArgumentCaptor<DailyAssetSummary> dailySummaries = ArgumentCaptor.forClass(DailyAssetSummary.class);
 
         calculateDailySummaryTask.executeTask();
-        var expectedFromDate = LocalDate.now().minusDays(30).format(CalculateDailySummaryTask.rangeQuoteDateFormatter);
+        var expectedFromDate = LocalDate.now().minusDays((long) (30 * 1.5)).format(CalculateDailySummaryTask.rangeQuoteDateFormatter);
         var expectedToDate = LocalDate.now().plusDays(1).format(CalculateDailySummaryTask.rangeQuoteDateFormatter);
 
-        verify(webService, times(2)).getQuotesInRange(any(), eq(expectedFromDate), eq(expectedToDate));
-        verify(dailyAssetSummaryRepository, times(2)).save(any());
+        verify(webService, times(3)).getQuotesInRange(any(), any(), eq(expectedFromDate), eq(expectedToDate));
+        verify(dailyAssetSummaryRepository, times(3)).save(any());
         dailySummaries.getAllValues().forEach(s -> {
             assertThat(s.stdDevs).hasSize(stdDevRanges.size());
         });
@@ -72,7 +72,7 @@ class CalculateDailySummaryTaskTest {
     void testExecuteTaskDisabled() throws UnirestException {
         calculateDailySummaryTask.enabled = false;
         calculateDailySummaryTask.executeTask();
-        verify(webService, never()).getQuotesInRange(any(), any(), any());
+        verify(webService, never()).getQuotesInRange(any(), any(), any(), any());
     }
 
 }

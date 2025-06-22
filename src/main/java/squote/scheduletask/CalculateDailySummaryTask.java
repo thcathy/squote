@@ -57,13 +57,15 @@ public class CalculateDailySummaryTask {
         var maxStdDevRange = stdDevRanges.stream().mapToInt(s -> s).max().orElse(20);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
-        String fromDate = LocalDate.now().minusDays(maxStdDevRange).format(formatter);
+        String fromDate = LocalDate.now().minusDays((long) (maxStdDevRange * 1.5)).format(formatter);   // take care holiday
         String toDate = LocalDate.now().plusDays(1).format(formatter);
         var today = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
 
         for (String symbol : codes) {
             log.info("Processing code: {}, {}-{}", symbol, fromDate, toDate);
-            var quotes = webService.getQuotesInRange(symbol, fromDate, toDate).getBody();
+            var symbols = symbol.split("\\.");
+            var mic = symbols.length > 1 ? symbols[1] : "XHKG";
+            var quotes = webService.getQuotesInRange(symbols[0], mic, fromDate, toDate).getBody();
             var closingPrices = Arrays.stream(quotes).mapToDouble(DailyStockQuote::close).boxed().toList();
             var summary = new DailyAssetSummary(symbol, today);
 
