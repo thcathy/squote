@@ -8,6 +8,7 @@ import squote.SquoteConstants;
 import squote.domain.Execution;
 import squote.domain.Order;
 import squote.domain.StockQuote;
+import squote.scheduletask.FutuClientConfig;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -20,12 +21,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import static squote.SquoteConstants.Side.BUY;
 import static squote.SquoteConstants.Side.SELL;
 
-public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
+public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerAPIClient {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	private final FTAPI_Conn_Trd futuConnTrd;
 	private final FTAPI_Conn_Qot futuConnQot;
 	private long errorCode = -1;
 	private final Map<Integer, Object> resultMap = new ConcurrentHashMap<>();
+	private final FutuClientConfig clientConfig;
 
 	int timeoutSeconds = 30;
 	private int onInitConnectCount = 0;
@@ -40,7 +42,9 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 			TrdCommon.OrderStatus.OrderStatus_Cancelling_All_VALUE
 	);
 
-	public FutuAPIClient(FTAPI_Conn_Trd futuConnTrd, FTAPI_Conn_Qot futuConnQot, String ip, short port, String rsaKey, boolean waitConnected) {
+	public FutuAPIClient(FutuClientConfig clientConfig, FTAPI_Conn_Trd futuConnTrd, FTAPI_Conn_Qot futuConnQot, String rsaKey, boolean waitConnected) {
+		this.clientConfig = clientConfig;
+
 		FTAPI.init();
 
 		byte[] decodedBytes = Base64.getDecoder().decode(rsaKey);
@@ -59,6 +63,8 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 		futuConnQot.setRSAPrivateKey(decodedRsaKey);
 		this.futuConnQot = futuConnQot;
 
+		var ip = clientConfig.ip();
+		var port = clientConfig.port();
 		futuConnTrd.initConnect(ip, port, true);
 		futuConnQot.initConnect(ip, port, true);
 
@@ -193,8 +199,8 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 		return (boolean) getResult(seq);
 	}
 
-	public Map<String, Execution> getHKStockTodayExecutions(long accountId) {
-		int seq = sendGetTodayOrderFillRequest(accountId);
+	public Map<String, Execution> getHKStockTodayExecutions() {
+		int seq = sendGetTodayOrderFillRequest();
 		log.info("Seq[{}] Send getTodayOrderFillList", seq);
 
 		var result = (List<TrdCommon.OrderFill>) getResult(seq);
@@ -206,8 +212,8 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 		return executions;
 	}
 
-	public HashMap<String, Execution> getHKStockExecutions(long accountId, Date fromDate) {
-		int seq = sendGetHistoryOrderFillRequest(accountId, fromDate);
+	public HashMap<String, Execution> getHKStockExecutions(Date fromDate) {
+		int seq = sendGetHistoryOrderFillRequest(fromDate);
 		log.info("Seq[{}] Send getHistoryOrderFillList", seq);
 
 		var result = (List<TrdCommon.OrderFill>) getResult(seq);
@@ -219,20 +225,21 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 		return executions;
 	}
 
-	public PlaceOrderResponse placeOrder(long accountId, SquoteConstants.Side side, String code, int quantity, double price) {
-		int seq = placeOrderRequest(accountId, side, code, quantity, price);
+	public PlaceOrderResponse placeOrder(SquoteConstants.Side side, String code, int quantity, double price) {
+		int seq = placeOrderRequest(side, code, quantity, price);
 		log.info("Seq[{}] Send placeOrder", seq);
 		return (PlaceOrderResponse) getResult(seq);
 	}
 
-	public CancelOrderResponse cancelOrder(long accountId, long orderId) {
-		int seq = cancelOrderRequest(accountId, orderId);
+	public CancelOrderResponse cancelOrder(long orderId) {
+		int seq = cancelOrderRequest(orderId);
 		log.info("Seq[{}] Send cancelOrder", seq);
 		return (CancelOrderResponse) getResult(seq);
 	}
 
-	public List<Order> getPendingOrders(long accountId) {
-		int seq = sendGetOrderRequest(accountId);
+	@Override
+	public List<Order> getPendingOrders() {
+		int seq = sendGetOrderRequest();
 		log.info("Seq[{}] Send getPendingOrders", seq);
 
 		var result = (List<TrdCommon.Order>) getResult(seq);
@@ -258,10 +265,6 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 		return quote;
 	}
 
-	public record PlaceOrderResponse(long orderId, long errorCode, String message) {}
-
-	public record CancelOrderResponse(long errorCode, String message) {}
-
 	private Order toOrder(TrdCommon.Order order) {
 		return new Order(
 				order.getCode().replaceAll("^0+(?!$)", ""),
@@ -285,9 +288,9 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 		return exec;
 	}
 
-	private int sendGetTodayOrderFillRequest(long accountId) {
+	private int sendGetTodayOrderFillRequest() {
 		TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
-				.setAccID(accountId)
+				.setAccID(clientConfig.accountId())
 				.setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
 				.setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
 				.build();
@@ -298,12 +301,12 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 		return futuConnTrd.getOrderFillList(req);
 	}
 
-	private int sendGetHistoryOrderFillRequest(long accountId, Date fromDate) {
+	private int sendGetHistoryOrderFillRequest(Date fromDate) {
 		var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		var oneDayAfter = LocalDateTime.now().plusDays(1);
 
 		var header = TrdCommon.TrdHeader.newBuilder()
-				.setAccID(accountId)
+				.setAccID(clientConfig.accountId())
 				.setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
 				.setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
 				.build();
@@ -336,9 +339,9 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 				.findFirst().get().getAccID();
 	}
 
-	private int placeOrderRequest(long accountId, SquoteConstants.Side side, String code, int quantity, double price) {
+	private int placeOrderRequest(SquoteConstants.Side side, String code, int quantity, double price) {
 		TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
-				.setAccID(accountId)
+				.setAccID(clientConfig.accountId())
 				.setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
 				.setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
 				.build();
@@ -369,9 +372,9 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 		return futuConnQot.getSecuritySnapshot(req);
 	}
 
-	private int cancelOrderRequest(long accountId, long orderId) {
+	private int cancelOrderRequest(long orderId) {
 		TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
-				.setAccID(accountId)
+				.setAccID(clientConfig.accountId())
 				.setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
 				.setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
 				.build();
@@ -385,9 +388,9 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn {
 		return futuConnTrd.modifyOrder(req);
 	}
 
-	private int sendGetOrderRequest(long accountId) {
+	private int sendGetOrderRequest() {
 		TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
-				.setAccID(accountId)
+				.setAccID(clientConfig.accountId())
 				.setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
 				.setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
 				.build();

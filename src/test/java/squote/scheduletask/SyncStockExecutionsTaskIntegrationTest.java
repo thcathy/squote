@@ -50,7 +50,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
     void setup() {
         holdingRepo.deleteAll();
         fundRepo.deleteAll();
-        when(mockFactory.build(any(), anyShort())).thenReturn(mockFutuAPIClient);
+        when(mockFactory.build(any())).thenReturn(mockFutuAPIClient);
         when(mockTelegramAPIClient.sendMessage(any(String.class))).thenReturn(List.of("Message sent"));
 
         task = new SyncStockExecutionsTask();
@@ -91,7 +91,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         exec.setTime(execDate.getTime());
         executions.put(exec.getOrderId(), exec);
 
-        when(mockFutuAPIClient.getHKStockExecutions(eq(1234567L), any())).thenReturn(executions);
+        when(mockFutuAPIClient.getHKStockExecutions(any())).thenReturn(executions);
         task.executeTask();
 
         var holdings = Lists.newArrayList(holdingRepo.findAll());
@@ -146,7 +146,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         exec.setCode("2800");
         exec.setTime(execDate.getTime());
         executions.put(exec.getOrderId(), exec);
-        when(mockFutuAPIClient.getHKStockExecutions(eq(1234567L), any())).thenReturn(executions);
+        when(mockFutuAPIClient.getHKStockExecutions(any())).thenReturn(executions);
 
         task.executeTask();
 

@@ -36,7 +36,7 @@ class SyncStockExecutionsTaskTest {
 
     @BeforeEach
     void init() {
-        when(mockFactory.build(any(), anyShort())).thenReturn(mockFutuAPIClient);
+        when(mockFactory.build(any())).thenReturn(mockFutuAPIClient);
         when(mockHoldingStockRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         when(mockFundRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
@@ -58,14 +58,14 @@ class SyncStockExecutionsTaskTest {
     void executeTask_canBeDisabled() {
         task.enabled = false;
         task.executeTask();
-        verify(mockFactory, never()).build(any(), anyShort());
+        verify(mockFactory, never()).build(any());
     }
 
     @Test
     void executeTask_missingClientConfig() {
         task.clientConfigJson = "";
         task.executeTask();
-        verify(mockFactory, never()).build(any(), anyShort());
+        verify(mockFactory, never()).build(any());
     }
 
     @Test
@@ -75,7 +75,7 @@ class SyncStockExecutionsTaskTest {
                 .thenReturn(Optional.empty());
         task.executeTask();
         ArgumentCaptor<Date> argumentCaptor = ArgumentCaptor.forClass(Date.class);
-        verify(mockFutuAPIClient).getHKStockExecutions(anyLong(), argumentCaptor.capture());
+        verify(mockFutuAPIClient).getHKStockExecutions(argumentCaptor.capture());
         var date = argumentCaptor.getValue();
         assertTrue(date.getTime() < new Date().getTime() - (27L * 24 * 60 * 60 * 1000));    // 1 month minus 1 day earlier 
     }
@@ -92,7 +92,7 @@ class SyncStockExecutionsTaskTest {
         task.executeTask();
 
         ArgumentCaptor<Date> argumentCaptor = ArgumentCaptor.forClass(Date.class);
-        verify(mockFutuAPIClient).getHKStockExecutions(anyLong(), argumentCaptor.capture());
+        verify(mockFutuAPIClient).getHKStockExecutions(argumentCaptor.capture());
         var date = argumentCaptor.getValue();
         assertEquals(formatter.parse("2024-11-02 00:00:00"), date);
     }

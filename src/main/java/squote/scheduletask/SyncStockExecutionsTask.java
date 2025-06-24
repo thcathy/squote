@@ -64,7 +64,7 @@ public class SyncStockExecutionsTask {
 
     HKEXMarketFeesCalculator feeCalculator = new HKEXMarketFeesCalculator();
 
-    public FutuAPIClientFactory futuAPIClientFactory = (ip, port) -> new FutuAPIClient(new FTAPI_Conn_Trd(), new FTAPI_Conn_Qot(), ip, port, rsaKey, true);
+    public FutuAPIClientFactory futuAPIClientFactory = (futuClientConfig) -> new FutuAPIClient(futuClientConfig, new FTAPI_Conn_Trd(), new FTAPI_Conn_Qot(), rsaKey, true);
 
     @Scheduled(cron = "0 5 17 * * MON-SAT", zone = "Asia/Hong_Kong")
     @Scheduled(cron = "0 15 20 * * MON-SAT", zone = "Asia/Hong_Kong")   // temp schedule
@@ -78,16 +78,16 @@ public class SyncStockExecutionsTask {
         StringBuilder logs = new StringBuilder("Start SyncStockExecutionsTask\n\n");
         FutuAPIClient futuAPIClient = null;
         try {
-            var clientConfigs = mapper.readValue(clientConfigJson, FutuClientConfig[].class);
+            var futuClientConfigs = mapper.readValue(clientConfigJson, FutuClientConfig[].class);
             var fromDate = getFromDate();
 
-            for (var config : clientConfigs) {
+            for (var config : futuClientConfigs) {
                 logs.append("Process config=").append(config).append("\n\n");
                 logs.append("Fund snapshot before:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName())).append("\n\n");
-                futuAPIClient = futuAPIClientFactory.build(config.ip(), config.port());
+                futuAPIClient = futuAPIClientFactory.build(config);
 
                 logs.append("Get executions for accountId=").append(config.accountId()).append(" since ").append(fromDate).append("\n\n");
-                var executions = futuAPIClient.getHKStockExecutions(config.accountId(), fromDate);
+                var executions = futuAPIClient.getHKStockExecutions(fromDate);
                 for (var exec : executions.values()) {
                     logs.append("\n").append("Process execution=").append(exec).append("\n");
                     if (holdingRepo.existsByFillIdsLike(exec.getFillIds())) {

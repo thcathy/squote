@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import squote.SquoteConstants;
+import squote.scheduletask.FutuClientConfig;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -28,7 +29,7 @@ class FutuAPIClientTest {
 
     @BeforeEach
     void setUp() {
-        client = new FutuAPIClient(FTAPIConnTrd, FTAPIConnQot, "", (short) 80, "", false);
+        client = new FutuAPIClient(FutuClientConfig.defaultConfig(), FTAPIConnTrd, FTAPIConnQot, "", false);
     }
 
     @Test
@@ -79,7 +80,7 @@ class FutuAPIClientTest {
                         .setRetType(0).setS2C(S2CBuilder).build();
         when(FTAPIConnTrd.getHistoryOrderFillList(any())).thenReturn(1);
         client.onReply_GetHistoryOrderFillList(FTAPIConnTrd, 1, response);
-        var executions = client.getHKStockExecutions(1L, new Date());
+        var executions = client.getHKStockExecutions(new Date());
         assertEquals(2, executions.size());
         var exec2828 = executions.get("1");
         var exec2800 = executions.get("2");
