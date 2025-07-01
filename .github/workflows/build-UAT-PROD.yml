@@ -26,6 +26,11 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
+    - name: Install local JAR with POM
+      run: |
+        mvn install:install-file \
+          -Dfile=ib-tws-api/jarfile.jar \
+          -DpomFile=ib-tws-api/pom.xml
     - name: Start MongoDB
       uses: supercharge/mongodb-github-action@1.8.0
     - name: Build with Maven
