@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import squote.SquoteConstants.Side;
+import squote.domain.AlgoConfig;
 import squote.domain.Fund;
 import squote.domain.HoldingStock;
 import squote.domain.Order;
@@ -53,27 +54,27 @@ public class StockTradingAlgoService {
         }
     }
 
-    public void processSingleSymbol(Fund fund, String code, FutuClientConfig clientConfig, IBrokerAPIClient brokerAPIClient) {
-        log.info("start process for {} in {}", code, fund.name);
-        var stdDev = getStdDev(code);
+    public void processSingleSymbol(Fund fund, AlgoConfig algoConfig, FutuClientConfig clientConfig, IBrokerAPIClient brokerAPIClient) {
+        log.info("start process for {} in {}", algoConfig.code(), fund.name);
+        var stdDev = getStdDev(algoConfig.code());
         if (stdDev.isEmpty()) {
-            log.error("Cannot find std dev for {}, range={}", code, stdDevRange);
+            log.error("Cannot find std dev for {}, range={}", algoConfig.code(), stdDevRange);
             return;
         }
 
-        var stockQuote = brokerAPIClient.getStockQuote(code);
+        var stockQuote = brokerAPIClient.getStockQuote(algoConfig.code());
         var holdings = holdingStockRepository.findByUserIdOrderByDate(fund.userId)
-                .stream().filter(h -> h.getCode().equals(code) && h.getFundName().equals(fund.name))
+                .stream().filter(h -> h.getCode().equals(algoConfig.code()) && h.getFundName().equals(fund.name))
                 .toList();
         var allTodayExecutions = brokerAPIClient.getHKStockTodayExecutions().values().stream()
-                .filter(e -> e.getCode().equals(code))
+                .filter(e -> e.getCode().equals(algoConfig.code()))
                 .toList();
         log.info("{} holdings, {} T day executions", holdings.size(), allTodayExecutions.size());
         var buyExecutions = sortExecutions(holdings, allTodayExecutions, BUY);
         var sellExecutions = sortExecutions(holdings, allTodayExecutions, SELL);
 
         findBaseExecution(buyExecutions, sellExecutions)
-                .ifPresent(exec -> processBaseExecution(brokerAPIClient, clientConfig, stdDev.get(), exec, stockQuote));
+                .ifPresent(exec -> processBaseExecution(brokerAPIClient, clientConfig, stdDev.get(), exec, stockQuote, algoConfig));
     }
 
     private Optional<Double> getStdDev(String code) {
@@ -81,7 +82,7 @@ public class StockTradingAlgoService {
                 .flatMap(summary -> Optional.ofNullable(summary.stdDevs.get(stdDevRange)));
     }
 
-    private void processBaseExecution(IBrokerAPIClient clientAPIClient, FutuClientConfig config, double stdDev, Execution execution, StockQuote stockQuote) {
+    private void processBaseExecution(IBrokerAPIClient clientAPIClient, FutuClientConfig config, double stdDev, Execution execution, StockQuote stockQuote, AlgoConfig algoConfig) {
         log.info("base price: {}", execution.price);    // used in test case
         log.info("process base execution: {}", execution);
 
@@ -98,11 +99,12 @@ public class StockTradingAlgoService {
             return;
         }
 
-        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, clientAPIClient, config, stockQuote);
-        handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, clientAPIClient, config, stockQuote);
+        int buyQuantity = algoConfig.quantity() > 0 ? algoConfig.quantity() : execution.quantity;
+        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, clientAPIClient, config, stockQuote, buyQuantity);
+        handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, clientAPIClient, config, stockQuote, execution.quantity);
     }
 
-    private void handleOrderForBaseExecution(Side pendingOrderSide, Execution baseExec, List<Order> pendingOrders, double stdDev, IBrokerAPIClient brokerAPIClient, FutuClientConfig clientConfig, StockQuote stockQuote) {
+    private void handleOrderForBaseExecution(Side pendingOrderSide, Execution baseExec, List<Order> pendingOrders, double stdDev, IBrokerAPIClient brokerAPIClient, FutuClientConfig clientConfig, StockQuote stockQuote, int quantity) {
         log.info("handle {} order", pendingOrders);
         if (pendingOrderSide == SELL && baseExec.side == SELL) return;
 
@@ -135,7 +137,7 @@ public class StockTradingAlgoService {
                     pendingOrder.side(), stockCode,pendingOrder.quantity(), pendingOrderPrice));
         }
 
-        placeOrder(brokerAPIClient, clientConfig, baseExec, stockCode, pendingOrderSide, targetPrice);
+        placeOrder(brokerAPIClient, clientConfig, stockCode, pendingOrderSide, targetPrice, quantity);
     }
 
     private double calculateTargetPrice(Side orderSide, String code, Execution baseExec, double stdDev, double marketPrice) {
@@ -165,8 +167,8 @@ public class StockTradingAlgoService {
         return targetPrice;
     }
 
-    private void placeOrder(IBrokerAPIClient brokerAPIClient, FutuClientConfig config, Execution execution, String stockCode, Side side, double price) {
-        var placeOrderResponse = brokerAPIClient.placeOrder(side, stockCode, execution.quantity, price);
+    private void placeOrder(IBrokerAPIClient brokerAPIClient, FutuClientConfig config, String stockCode, Side side, double price, int quantity) {
+        var placeOrderResponse = brokerAPIClient.placeOrder(side, stockCode, quantity, price);
 
         if (placeOrderResponse.errorCode() > 0) {
             log.error("Cannot place order, error cod={}, message={}", placeOrderResponse.errorCode(), placeOrderResponse.message());
@@ -175,7 +177,7 @@ public class StockTradingAlgoService {
 
         String placedMessage = String.format("Placed order (%s): %s %s %d@%.2f",
                 config.fundName(),
-                side, stockCode, execution.quantity, price);
+                side, stockCode, quantity, price);
         log.info(placedMessage);
         telegramAPIClient.sendMessage(placedMessage);
     }

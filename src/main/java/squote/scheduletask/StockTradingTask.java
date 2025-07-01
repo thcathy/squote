@@ -80,7 +80,7 @@ public class StockTradingTask {
 
             unlockTrade(futuAPIClient, clientConfig.unlockCode());
             for (var algoConfig : fund.getAlgoConfigs().values()) {
-                algoService.processSingleSymbol(fund, algoConfig.code(), clientConfig, futuAPIClient);
+                algoService.processSingleSymbol(fund, algoConfig, clientConfig, futuAPIClient);
             }
             futuAPIClient.close();
         }
