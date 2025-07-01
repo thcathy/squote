@@ -48,9 +48,14 @@ public class CalculateAlgoEarning {
         int totalBuy = 0, totalSell = 0;
 
         for (var record : deletedRecords) {
-            if (matchDateRange(record)) continue;
+            if (notMatchDateRange(record)) continue;
 
             var holding = findHolding(record);
+            if (holding == null) {
+                System.out.println("cannot find holding: " + record.id + "@" + record.date);
+                continue;
+            }
+
             if (holding.getSide() == SquoteConstants.Side.BUY) {
                 totalBuy++;
                 buyAmount += holding.getGross().doubleValue();
@@ -69,6 +74,7 @@ public class CalculateAlgoEarning {
     private HoldingStock findHolding(DeletedRecord record) {
         var holding = holdings.get(record.id);
         if (holding != null) return holding;
+        if (!addedRecords.containsKey(record.id)) return null;
 
         var addedHoldingTime = addedRecords.get(record.id).date;
         for (int i = holdingFromExecMsg.size() - 1; i >= 0; i--) {
@@ -82,9 +88,9 @@ public class CalculateAlgoEarning {
         throw new RuntimeException("cannot find holding " + record.id);
     }
 
-    private static boolean matchDateRange(DeletedRecord record) {
+    private static boolean notMatchDateRange(DeletedRecord record) {
 //        return record.date.getYear() != 2025;
-        return record.date.getYear() != 2025 || record.date.getMonth() != Month.FEBRUARY;
+        return record.date.getYear() != 2025 || record.date.getMonth() != Month.MARCH;
     }
 
     public void readLogFiles(String directoryPath) {
@@ -109,7 +115,10 @@ public class CalculateAlgoEarning {
 
     void processLog(String log) {
         if (log.contains("RestStockController - delete")) {
-            deletedRecords.add(parseDeletedRecord(log));
+//            deletedRecords.add(parseDeletedRecord(log));
+        } else if (log.contains("RestStockController - Deleting buy/sell pair:")) {
+            var records = parseBuySellPairRecord(log);
+            deletedRecords.addAll(records);
         } else if (log.contains("created holding=")) {
             var holding = parseHoldingStock(log);
             holdings.put(holding.getId(), holding);
@@ -120,6 +129,24 @@ public class CalculateAlgoEarning {
             var record = parseAddedRecord(log);
             addedRecords.put(record.id, record);
         }
+    }
+
+    List<DeletedRecord> parseBuySellPairRecord(String log) {
+        Pattern pattern = Pattern.compile("^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}).*?Deleting buy/sell pair: ([a-f0-9\\-]+), ([a-f0-9\\-]+)");
+        Matcher matcher = pattern.matcher(log);
+
+        if (matcher.find()) {
+            String dateTimeStr = matcher.group(1);
+            LocalDateTime dateTime = LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
+            String id1 = matcher.group(2);
+            String id2 = matcher.group(3);
+            
+            List<DeletedRecord> records = new ArrayList<>();
+            records.add(new DeletedRecord(dateTime, id1));
+            records.add(new DeletedRecord(dateTime, id2));
+            return records;
+        }
+        throw new RuntimeException("Could not parse buy/sell pair log: " + log);
     }
 
     AddedRecord parseAddedRecord(String log) {
@@ -143,8 +170,7 @@ public class CalculateAlgoEarning {
             var msg = matcher.group(1);
             StockExecutionMessage executionMessage = StockExecutionMessageBuilder.build(msg).get();
             try {
-                var date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").parse(log.substring(0, 24));
-                executionMessage.date = date;
+                executionMessage.date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").parse(log.substring(0, 24));
             } catch (ParseException e) {
                 throw new RuntimeException(e);
             }
