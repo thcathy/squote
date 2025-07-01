@@ -16,16 +16,14 @@ import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class StrategySimulationWithKline {
     private static Logger log = LoggerFactory.getLogger(StrategySimulation.class);
-    private static final int BET = 3000;
+    private static final int BET = 5000;
     private static final int LOT_SIZE = 1;
 
     public static void main(String[] args) {
@@ -55,7 +53,7 @@ public class StrategySimulationWithKline {
 
         @Override
         public String toString() {
-            return String.format("basePrice=%.2f, holdings=%d (%s:%s), earning=%.0f, holdingAmt=%.0f, balance=%.0f, maxAmount=%.0f",
+            return String.format("basePrice=%.2f, holdings=%d (%s:%s), earning=%.0f, holdingAmt=%.0f, balance=%.0f, maxHoldingAmount=%.0f",
                     basePrice, executions.size(), totalBuy, totalSell,
                     earning, holdingAmount(), balance,
                     maxHoldingAmount);
@@ -68,12 +66,14 @@ public class StrategySimulationWithKline {
 
     record StrategyParam(int stdDevRange, int year, double adjustment, double maxAmount) {}
 
+    record GroupResult(double totalEarning, double totalMaxAmount) {}
+
     public void execute() {
         var klines = new IBKlineCsvParser().parseAllKlines();
         var params = new ArrayList<StrategyParam>();
         for (int sdRange = 9; sdRange <= 21; sdRange++) {
-            for (int year = 2018; year <= 2024; year++) {
-                for (double adjustment = 1.25; adjustment >= 0.25; adjustment-=0.05) {
+            for (int year = 2024; year <= 2025; year++) {
+                for (double adjustment = 0.9; adjustment >= 0.5; adjustment-=0.05) {
                     params.add(new StrategyParam(sdRange, year, adjustment, BET * 20));
                 }
             }
@@ -81,12 +81,37 @@ public class StrategySimulationWithKline {
 
         var contexts = params.stream()
                 .map(param -> runSingleBatch(param, klines, BET, LOT_SIZE,
-                        k -> k.time.getYear() >= param.year && k.time.getYear() <= 2024))   // multi year
+                        k -> k.time.getYear() >= param.year && k.time.getYear() <= 2025))   // multi year
 //                    k -> k.time.getYear() == param.year)) // single year
                 .toList();
 
         contexts.forEach(c ->
                 log.info("Year: {}, SD range={}, adjustment={}, Context: {}", c.param.year, c.param.stdDevRange, Math.round(c.param.adjustment * 100.0) / 100.0 , c));
+
+        // Group by SD range and adjustment, sum earning and maxAmount
+        Map<String, GroupResult> grouped = contexts.stream()
+                .collect(Collectors.groupingBy(
+                        c -> "SD range=" + c.param.stdDevRange + ", adjustment=" + Math.round(c.param.adjustment * 100.0) / 100.0,
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                list -> new GroupResult(
+                                        list.stream().mapToDouble(ctx -> ctx.earning - (ctx.totalBuy + ctx.totalSell) * 2).sum(),
+                                        list.stream().mapToDouble(ctx -> ctx.maxHoldingAmount).max().getAsDouble()
+                                )
+                        )
+                ));
+
+// Sort by total earning descending and print
+        grouped.entrySet().stream()
+                .sorted(Map.Entry.<String, GroupResult>comparingByValue(
+                        Comparator.comparingDouble(GroupResult::totalEarning).reversed()))
+                .forEach(entry ->
+                        log.info("{}: totalEarning={}, totalMaxAmount={}",
+                                entry.getKey(),
+                                entry.getValue().totalEarning(),
+                                entry.getValue().totalMaxAmount())
+                );
+
 
 //        Map<Double, List<Context>> contextsByAdjustment = contexts.stream()
 //                .collect(Collectors.groupingBy(c -> c.param.adjustment));
@@ -135,12 +160,12 @@ public class StrategySimulationWithKline {
                     buyTriggerPrice = kline.high;
 
                 var quantity = TradingUtils.roundToLotSize(bet / buyTriggerPrice, lotSize);
-                log.info("{}: Buy {}@{}, low={}", kline.time, quantity, String.format("%.2f", buyTriggerPrice), String.format("%.2f", kline.low));
+//                log.info("{}: Buy {}@{}, low={}", kline.time, quantity, String.format("%.2f", buyTriggerPrice), String.format("%.2f", kline.low));
                 context.totalBuy++;
                 context.executions.addFirst(new Execution(buyTriggerPrice, quantity, kline.time));
                 context.maxHoldingAmount = Math.max(context.maxHoldingAmount, context.holdingAmount());
                 context.basePrice = context.executions.getFirst().price;
-                log.info("{}: {}", kline.time, context);
+//                log.info("{}: {}", kline.time, context);
             }
 
             if (canSell(context, adjustedStdDev, kline.high)) {
@@ -154,11 +179,11 @@ public class StrategySimulationWithKline {
                 context.totalSell++;
                 context.basePrice = context.executions.isEmpty() ? kline.close : context.executions.getFirst().price;
 
-                log.info("{}: Sell {}@{}, earn={}, high={}", kline.time, execution.quantity,
-                        String.format("%.2f", sellTriggerPrice),
-                        String.format("%.0f", earning),
-                        String.format("%.2f", kline.high));
-                log.info("{}: {}", kline.time, context);
+//                log.info("{}: Sell {}@{}, earn={}, high={}", kline.time, execution.quantity,
+//                        String.format("%.2f", sellTriggerPrice),
+//                        String.format("%.0f", earning),
+//                        String.format("%.2f", kline.high));
+//                log.info("{}: {}", kline.time, context);
             }
             context.basePrice = context.executions.isEmpty() ? kline.close : context.executions.getFirst().price;
             context.balance = context.holdingQuantity() * kline.close - context.holdingAmount();
@@ -205,11 +230,11 @@ public class StrategySimulationWithKline {
     }
 
     static class IBKlineCsvParser {
-        private static final String klineFilesTemplate = "historical-quote/VOO-kline-5m-%s.csv";
+        private static final String klineFilesTemplate = "historical-quote/IBIT-kline-5m-%s.csv";
         private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHH:mm:ss");
 
         List<StrategySimulationWithKline.Kline> parseAllKlines() {
-            return IntStream.rangeClosed(2011, 2025)
+            return IntStream.rangeClosed(2024, 2025)
                     .mapToObj(Integer::toString)
                     .map(i -> String.format(klineFilesTemplate, i))
                     .flatMap(f -> loadFromResourceFile(f).stream())

@@ -11,17 +11,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 
-public class TrdDemo implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
+public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
     FTAPI_Conn_Trd trd = new FTAPI_Conn_Trd();
     FTAPI_Conn_Qot qot = new FTAPI_Conn_Qot();
     long accId;
     String tradeCode;
     int inited = 0;
 
-    public TrdDemo() {
-//        var b = new BinanceAPIService();
-//        var c = b.getAllPrices();
-//        System.out.println(c);
+    public FutuAPIPlayground() {
         accId = Long.parseLong(System.getenv("FUTU_ACCID"));
         tradeCode = System.getenv("FUTU_TRADE_CODE");
         trd.setClientInfo("javaclient", 1); //Set client information
@@ -406,7 +403,7 @@ public class TrdDemo implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
 
     public static void main(String[] args) {
         FTAPI.init();
-        TrdDemo trd = new TrdDemo();
+        FutuAPIPlayground trd = new FutuAPIPlayground();
         trd.start();
 
         while (true) {
