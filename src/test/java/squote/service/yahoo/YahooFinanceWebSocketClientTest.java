@@ -43,7 +43,7 @@ class YahooFinanceWebSocketClientTest {
     }
 
     @Test
-    @Timeout(30)
+    @Timeout(300)
     void testRealConnectionAndDataReceiving() throws InterruptedException {
         var client = new YahooFinanceWebSocketClient();
         var tickerCount = new AtomicInteger(0);
