@@ -15,12 +15,10 @@ import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.security.AuthenticationServiceStub;
 import squote.service.BinanceAPIService;
+import squote.service.YahooFinanceService;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.StreamSupport;
 
@@ -33,28 +31,34 @@ public class RestStockControllerTest extends IntegrationTest {
     @Autowired HoldingStockRepository holdingStockRepository;
     @Autowired FundRepository fundRepository;
 
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired AuthenticationServiceStub authenticationServiceStub;
 
     BinanceAPIService mockBinanceAPIService;
     BinanceAPIService realBinanceAPIService;
+    YahooFinanceService mockYahooFinanceService;
+    YahooFinanceService realYahooFinanceService;
 
     @BeforeEach
     public void setup() {
         realBinanceAPIService = restStockController.binanceAPIService;
         mockBinanceAPIService = Mockito.mock(BinanceAPIService.class);
         restStockController.binanceAPIService = mockBinanceAPIService;
+        
+        realYahooFinanceService = restStockController.yahooFinanceService;
+        mockYahooFinanceService = Mockito.mock(YahooFinanceService.class);
+        restStockController.yahooFinanceService = mockYahooFinanceService;
     }
 
     @AfterEach
     public void resetStub() {
         authenticationServiceStub.userId = authenticationServiceStub.TESTER_USERID;
         restStockController.binanceAPIService = realBinanceAPIService;
+        restStockController.yahooFinanceService = realYahooFinanceService;
     }
 
     @Test
     public void collectAllStockQuotes_willRemoveDuplicate() {
-        StockQuote[] duplicateStockQuotes = new StockQuote[]{new StockQuote("NA"), new StockQuote("NA")};
+        StockQuote[] duplicateStockQuotes = new StockQuote[]{new StockQuote("2800"), new StockQuote("2800")};
         Map<String, StockQuote> result = restStockController.collectAllStockQuotes(duplicateStockQuotes);
 
         assertThat(result.size()).isEqualTo(1);
@@ -125,6 +129,8 @@ public class RestStockControllerTest extends IntegrationTest {
 
     @Test
     public void test_quote_supportMultiUser() throws ExecutionException, InterruptedException {
+        when(mockYahooFinanceService.getLatestTicker(Mockito.anyString())).thenReturn(Optional.empty());
+        
         authenticationServiceStub.userId = UUID.randomUUID().toString();
         holdingStockRepository.save(createSell2800Holding(authenticationServiceStub.userId));
 
@@ -140,6 +146,8 @@ public class RestStockControllerTest extends IntegrationTest {
 
     @Test
     public void quote_givenCryptoFund_willUpdateNetProfit() throws Exception {
+        when(mockYahooFinanceService.getLatestTicker(Mockito.anyString())).thenReturn(Optional.empty());
+        
         authenticationServiceStub.userId = UUID.randomUUID().toString();
         Fund testFund = createCryptoFund(authenticationServiceStub.userId);
         fundRepository.save(testFund);
@@ -153,6 +161,23 @@ public class RestStockControllerTest extends IntegrationTest {
         assertThat(funds.get(0).getHoldings().get("BTCUSDT").getNetProfit().setScale(0, HALF_UP)).isEqualTo(BigDecimal.valueOf(100));
 
         fundRepository.delete(testFund);
+    }
+
+    @Test
+    public void test_quote_WithUSStocks() throws ExecutionException, InterruptedException {
+        authenticationServiceStub.userId = UUID.randomUUID().toString();
+        String codes = "AAPL.XNAS,2800";
+        StockQuote aaplQuote = new StockQuote("AAPL.XNAS").setPrice("150.75");
+        
+        when(mockYahooFinanceService.getLatestTicker("AAPL.XNAS")).thenReturn(Optional.of(aaplQuote));
+        when(mockBinanceAPIService.getAllPrices()).thenReturn(Collections.emptyMap());
+        
+        Map<String, Object> resultMap = restStockController.quote(codes);
+        Map<String, StockQuote> allQuotes = (Map<String, StockQuote>) resultMap.get("allQuotes");
+        
+        assertThat(allQuotes).containsKey("AAPL.XNAS");
+        assertThat(allQuotes.get("AAPL.XNAS").getPrice()).isEqualTo("150.75");
+        Mockito.verify(mockYahooFinanceService).subscribeToSymbols("AAPL.XNAS");
     }
 
     private HoldingStock createSell2800Holding(String userId) {
