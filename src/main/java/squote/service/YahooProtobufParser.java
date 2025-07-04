@@ -43,9 +43,12 @@ public class YahooProtobufParser {
                             ticker.setPrice(buffer.getFloat());
                         }
                         break;
-                    case 3: // time (int64)
-                        if (wireType == 0) { // Varint
-                            ticker.setTime(readVarint64(buffer));
+                    case 3: // time (sint64)
+                        if (wireType == 0) { // Varint with zigzag encoding
+                            long rawTime = readVarint64(buffer);
+                            long decodedTime = (rawTime >>> 1) ^ -(rawTime & 1);
+                            long timeInMillis = decodedTime;
+                            ticker.setTime(timeInMillis);
                         }
                         break;
                     case 4: // currency (string)

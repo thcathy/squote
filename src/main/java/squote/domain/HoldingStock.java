@@ -10,6 +10,7 @@ import squote.SquoteConstants;
 import squote.SquoteConstants.Side;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -87,7 +88,9 @@ public class HoldingStock {
 		return holding;
 	}
 	
-	public BigDecimal getPrice() { return gross.divide(BigDecimal.valueOf(quantity)); }
+	public BigDecimal getPrice() { 
+		return gross.divide(BigDecimal.valueOf(quantity), 4, RoundingMode.HALF_UP);
+	}
 	
 	public double performance(double latestPrice) {
 		return (latestPrice - getPrice().doubleValue())/getPrice().doubleValue()*100;		

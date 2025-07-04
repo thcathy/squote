@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import squote.SquoteConstants;
 import squote.domain.*;
 import squote.domain.repository.DailyAssetSummaryRepository;
 import squote.domain.repository.FundRepository;
@@ -16,10 +17,7 @@ import squote.domain.repository.HoldingStockRepository;
 import squote.domain.repository.StockQueryRepository;
 import squote.scheduletask.StockTradingTask;
 import squote.security.AuthenticationService;
-import squote.service.BinanceAPIService;
-import squote.service.MarketReportService;
-import squote.service.StockPerformanceService;
-import squote.service.WebParserRestService;
+import squote.service.*;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -47,6 +45,7 @@ public class RestStockController {
 	@Autowired BinanceAPIService binanceAPIService;
 	@Autowired DailyAssetSummaryRepository dailyAssetSummaryRepository;
 	@Autowired StockTradingTask stockTradingTask;
+	@Autowired YahooFinanceService yahooFinanceService;
 
 	@RequestMapping("/holding/list")
 	public Iterable<HoldingStock> listHolding() {
@@ -134,11 +133,15 @@ public class RestStockController {
 		List<HoldingStock> holdingStocks = Lists.newArrayList(holdingStockRepo.findByUserIdOrderByDate(userId));
 		List<Fund> funds = fundRepo.findByUserId(userId);
 		Set<String> codeSet = uniqueStockCodes(codes, holdingStocks, funds);
-		Future<HttpResponse<StockQuote[]>> stockQuotesFuture = webParserService.getRealTimeQuotes(codeSet);
+		Map<ExchangeCode.Market, Set<String>> separatedCodes = separateStockCodesByMarket(codeSet);
+		Future<HttpResponse<StockQuote[]>> hkStockQuotesFuture = webParserService.getRealTimeQuotes(separatedCodes.get(ExchangeCode.Market.HK));
+		Set<String> USStockCodes = separatedCodes.get(ExchangeCode.Market.US);
+		yahooFinanceService.subscribeToSymbols(USStockCodes.toArray(new String[0]));
 
 		// After all concurrent jobs submitted
-		Map<String, StockQuote> allQuotes = collectAllStockQuotes(stockQuotesFuture.get().getBody());
+		Map<String, StockQuote> allQuotes = collectAllStockQuotes(hkStockQuotesFuture.get().getBody());
 		allQuotes.putAll(binanceAPIService.getAllPrices());
+		allQuotes.putAll(getUSStockQuotes(USStockCodes));
 		Future<HttpResponse<StockQuote[]>> indexFutures = webParserService.getIndexQuotes();
 		List<StockQuote> indexes = Arrays.asList(indexFutures.get().getBody());
 		funds.forEach( f -> f.calculateNetProfit(allQuotes) );
@@ -156,6 +159,18 @@ public class RestStockController {
 		resultMap.put("allQuotes", allQuotes);
 		resultMap.put("funds", funds);
 		return resultMap;
+	}
+
+	private Map<String, ? extends StockQuote> getUSStockQuotes(Set<String> usStockCodes) {
+		if (usStockCodes.isEmpty()) return Collections.emptyMap();
+
+		return usStockCodes.stream()
+				.flatMap(code -> yahooFinanceService.getLatestTicker(code).stream())
+				.collect(Collectors.toMap(
+						StockQuote::getStockCode,
+						quote -> quote,
+						(existing, replacement) -> existing)
+				);
 	}
 
 	@GetMapping("/summary/latest")
@@ -182,6 +197,7 @@ public class RestStockController {
 	Map<String, StockQuote> collectAllStockQuotes(
 			StockQuote[] quotes) {
 		return Arrays.stream(quotes)
+				.filter(s -> !SquoteConstants.NA.equals(s.getStockCode()))
 				.collect(Collectors.toMap(
 						StockQuote::getStockCode,
 						quote->quote,
@@ -226,5 +242,21 @@ public class RestStockController {
 				pre(30, Calendar.DATE),
 				pre(60, Calendar.DATE)
 		);
+	}
+
+	private Map<ExchangeCode.Market, Set<String>> separateStockCodesByMarket(Set<String> codeSet) {
+		var result = new HashMap<ExchangeCode.Market, Set<String>>();
+		result.put(ExchangeCode.Market.US, new HashSet<>());
+		result.put(ExchangeCode.Market.HK, new HashSet<>());
+
+		for (String code : codeSet) {
+			if (ExchangeCode.isUSStockCode(code)) {
+				result.get(ExchangeCode.Market.US).add(code);
+			} else {
+				result.get(ExchangeCode.Market.HK).add(code);
+			}
+		}
+
+		return result;
 	}
 }

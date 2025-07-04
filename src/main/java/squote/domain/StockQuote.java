@@ -54,10 +54,9 @@ public class StockQuote {
 	public double getYearHighPercentage() {
 		try {
 			if (yearHighPercentage == null) {
-				double yearHighValue = Double.valueOf(yearHigh);
-				double realPrice = Double.valueOf(price);
-				yearHighPercentage = new BigDecimal(((realPrice - yearHighValue) / yearHighValue) * 100).setScale(2,RoundingMode.HALF_UP).doubleValue();
-
+				double yearHighValue = Double.parseDouble(yearHigh);
+				double realPrice = Double.parseDouble(price);
+				yearHighPercentage = BigDecimal.valueOf(((realPrice - yearHighValue) / yearHighValue) * 100).setScale(2,RoundingMode.HALF_UP).doubleValue();
 			}
 		} catch (Exception e) {
 			yearHighPercentage = 0.0;
@@ -73,12 +72,12 @@ public class StockQuote {
 		return previousPriceMap.get(previousYear);
 	}
 
-	public double getPreviouYearPercentage(int previousYear) {
+	public double getPreviousYearPercentage(int previousYear) {
 		double percentage = 0;
 		try {
 			double previousPrice = getPreviousPrice(previousYear);
-			double realPrice = Double.valueOf(price);
-			percentage = new BigDecimal(((realPrice - previousPrice) / previousPrice) * 100).setScale(2,RoundingMode.HALF_UP).doubleValue();
+			double realPrice = Double.parseDouble(price);
+			percentage = BigDecimal.valueOf(((realPrice - previousPrice) / previousPrice) * 100).setScale(2,RoundingMode.HALF_UP).doubleValue();
 		} catch (Exception e) {
 			percentage = 0.0;
 		}
@@ -87,7 +86,7 @@ public class StockQuote {
 
 	public Double getLastYearPercentage() {
 		if (lastYearPercentage == null) {
-			lastYearPercentage = getPreviouYearPercentage(1);
+			lastYearPercentage = getPreviousYearPercentage(1);
 		}
 		return lastYearPercentage;
 	}
@@ -95,7 +94,7 @@ public class StockQuote {
 
 	public Double getLast2YearPercentage() {
 		if (last2YearPercentage == null) {
-			last2YearPercentage = getPreviouYearPercentage(2);
+			last2YearPercentage = getPreviousYearPercentage(2);
 		}
 		return last2YearPercentage;
 	}
@@ -103,7 +102,7 @@ public class StockQuote {
 
 	public Double getLast3YearPercentage() {
 		if (last3YearPercentage == null) {
-			last3YearPercentage = getPreviouYearPercentage(3);
+			last3YearPercentage = getPreviousYearPercentage(3);
 		}
 		return last3YearPercentage;
 	}
