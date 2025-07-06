@@ -15,6 +15,7 @@ import squote.service.StockTradingAlgoService;
 import squote.service.TelegramAPIClient;
 
 import java.util.Arrays;
+import java.util.HashMap;
 
 import static org.mockito.Mockito.*;
 
@@ -43,7 +44,8 @@ class StockTradingTaskTest {
 
         stockTradingTask = new StockTradingTask(mockFundRepo, mockStockTradingAlgoService, mockTelegramAPIClient);
         stockTradingTask.futuAPIClientFactory = mockFactory;
-        stockTradingTask.enabled = true;  // Enable the task for testing
+        stockTradingTask.enabledByMarket = new HashMap<>();
+        stockTradingTask.enabledByMarket.put("HK", true);
         stockTradingTask.clientConfigJson = """
                     [
                         {"fundName": "FundA", "fundUserId": "UserA", "accountId": 1, "ip": "192.0.0.1", "port": 80, "unlockCode": "dummy code"},
@@ -51,7 +53,7 @@ class StockTradingTaskTest {
                     ]
                 """;
 
-        var algoConfig = new AlgoConfig(stockCode, 3500, null);
+        var algoConfig = new AlgoConfig(stockCode, 3500, null, 10, 0.7);
         var fundA = new Fund("dummy", "FundA");
         fundA.getAlgoConfigs().put(stockCode, algoConfig);
         var fundB = new Fund("dummy", "FundB");
@@ -61,7 +63,7 @@ class StockTradingTaskTest {
 
     @Test
     void testExecuteTaskDisabled() {
-        stockTradingTask.enabled = false;
+        stockTradingTask.enabledByMarket.put("HK", false);
         stockTradingTask.executeTask();
 
         verifyNoInteractions(mockStockTradingAlgoService);

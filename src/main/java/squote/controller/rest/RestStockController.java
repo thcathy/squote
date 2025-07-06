@@ -184,14 +184,16 @@ public class RestStockController {
 		return ResponseEntity.ok(summaryMap);
 	}
 
-	@GetMapping("/trading/enable")
-	public boolean getStockTradingTaskEnable() {
-		return stockTradingTask.enabled;
+	@GetMapping("/trading/enabledByMarket")
+	public Map<String, Boolean> getStockTradingTaskEnabledByMarket() {
+		return stockTradingTask.enabledByMarket;
 	}
 
-	@PostMapping("/trading/enable/{value}")
-	public void setStockTradingTaskEnable(@PathVariable boolean value) {
-		stockTradingTask.enabled = value;
+	@PostMapping("/trading/enable/{market}/{value}")
+	public void setStockTradingTaskEnable(@PathVariable String market, @PathVariable boolean value) {
+		var newMap = new HashMap<>(stockTradingTask.enabledByMarket);
+		newMap.put(market, value);
+		stockTradingTask.enabledByMarket = newMap;
 	}
 
 	Map<String, StockQuote> collectAllStockQuotes(

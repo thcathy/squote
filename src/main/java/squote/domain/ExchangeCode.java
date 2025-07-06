@@ -22,4 +22,9 @@ public class ExchangeCode {
                 .filter(mic -> mic.market == Market.US)
                 .anyMatch(mic -> stockCode.endsWith("." + mic.name()));
     }
+    
+    public static Market getMarketByStockCode(String stockCode) {
+        return isUSStockCode(stockCode) ? Market.US : Market.HK;
+    }
+    
 }

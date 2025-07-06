@@ -66,23 +66,19 @@ class StockTradingAlgoServiceTest {
 
         stockTradingAlgoService = new StockTradingAlgoService(
                 dailyAssetSummaryRepo, mockFundRepo, holdingStockRepository, mockTelegramAPIClient);
-        stockTradingAlgoService.stdDevRange = stdDevRange;
-        stockTradingAlgoService.stdDevMultiplier = stdDevMultiplier;
 
-        var algoConfig = new AlgoConfig(stockCode, 3500, null);
+        var algoConfig = new AlgoConfig(stockCode, 3500, null, stdDevRange, stdDevMultiplier);
         fundA.getAlgoConfigs().put(stockCode, algoConfig);
         fundB.getAlgoConfigs().put(stockCode, algoConfig);
         when(mockFundRepo.findAll()).thenReturn(Arrays.asList(fundA, fundB));
     }
 
-    // Helper method to get default AlgoConfig for tests
     private AlgoConfig getDefaultAlgoConfig() {
-        return new AlgoConfig(stockCode, 3500, null);
+        return getAlgoConfigWithQuantity(3500);
     }
 
-    // Helper method to get AlgoConfig with custom quantity
     private AlgoConfig getAlgoConfigWithQuantity(int quantity) {
-        return new AlgoConfig(stockCode, quantity, null);
+        return new AlgoConfig(stockCode, quantity, null, stdDevRange, stdDevMultiplier);
     }
 
     static Stream<TestFindBasePriceData> testFindBasePriceDataProvider() {
@@ -546,7 +542,6 @@ class StockTradingAlgoServiceTest {
 
     @Test
     void algoConfigQuantityZero_buyOrderUsesExecutionQuantity() {
-        // Setup: execution quantity = 2500, AlgoConfig quantity = 0 (should fallback to execution quantity)
         var executionQuantity = 2500;
         var algoConfigQuantity = 0;
         var holding = HoldingStock.simple(stockCode, BUY, executionQuantity, BigDecimal.valueOf(50000), "FundA");
@@ -563,9 +558,7 @@ class StockTradingAlgoServiceTest {
                 mockBrokerAPIClient
         );
 
-        // BUY order should use execution quantity when algoConfig quantity is 0
         verify(mockBrokerAPIClient, times(1)).placeOrder(eq(BUY), eq(stockCode), eq(executionQuantity), eq(expectedPrice));
-        // SELL order should always use execution quantity
         verify(mockBrokerAPIClient, times(1)).placeOrder(eq(SELL), eq(stockCode), eq(executionQuantity), anyDouble());
         verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Placed order (FundA): BUY"));
         verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Placed order (FundA): SELL"));

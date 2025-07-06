@@ -42,8 +42,8 @@ class YahooFinanceWebSocketClientTest {
         assertDoesNotThrow(() -> client.onTickerUpdate(mockTicker));
     }
 
-    @Test
-    @Timeout(300)
+//    @Test // run manually due to no data on non-trading day
+    @Timeout(30)
     void testRealConnectionAndDataReceiving() throws InterruptedException {
         var client = new YahooFinanceWebSocketClient();
         var tickerCount = new AtomicInteger(0);

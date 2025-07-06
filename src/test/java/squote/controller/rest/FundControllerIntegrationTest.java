@@ -220,17 +220,26 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 		var algoConfigs = fundController.getAllAlgoConfigs(testFund.name);
 		assertThat(algoConfigs).hasSize(0);
 
-		// add
-		var expectedConfig = new AlgoConfig("2800", 0, 0.0);
-		var config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice());
+		// add - using default values for new parameters
+		var expectedConfig = new AlgoConfig("2800", 0, 0.0, 11, 0.7);
+		var config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice(), expectedConfig.stdDevRange(), expectedConfig.stdDevMultiplier());
 		assertThat(config).isEqualTo(expectedConfig);
 		algoConfigs = fundController.getAllAlgoConfigs(testFund.name);
 		assertThat(algoConfigs.getFirst()).isEqualTo(expectedConfig);
 
-		// update
-		expectedConfig = new AlgoConfig("2800", 4000, 25.5);
-		config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice());
+		// update - using default values for new parameters
+		expectedConfig = new AlgoConfig("2800", 4000, 25.5, 11, 0.7);
+		config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice(), expectedConfig.stdDevRange(), expectedConfig.stdDevMultiplier());
 		assertThat(config).isEqualTo(expectedConfig);
+		algoConfigs = fundController.getAllAlgoConfigs(testFund.name);
+		assertThat(algoConfigs.getFirst()).isEqualTo(expectedConfig);
+
+		// test custom stdDevRange and stdDevMultiplier
+		expectedConfig = new AlgoConfig("2800", 1000, 30.0, 9, 0.8);
+		config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice(), expectedConfig.stdDevRange(), expectedConfig.stdDevMultiplier());
+		assertThat(config).isEqualTo(expectedConfig);
+		assertThat(config.stdDevRange()).isEqualTo(9);
+		assertThat(config.stdDevMultiplier()).isEqualTo(0.8);
 		algoConfigs = fundController.getAllAlgoConfigs(testFund.name);
 		assertThat(algoConfigs.getFirst()).isEqualTo(expectedConfig);
 
@@ -238,5 +247,21 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 		fundController.deleteAlgoConfig(testFund.name, expectedConfig.code());
 		algoConfigs = fundController.getAllAlgoConfigs(testFund.name);
 		assertThat(algoConfigs).hasSize(0);
+	}
+
+	@Test
+	public void addOrUpdateAlgoConfig_withDefaultValues() {
+		// Test that default values are used when new parameters are not provided
+		var config = fundController.addOrUpdateAlgoConfig(testFund.name, "2800", 1000, 25.0, 11, 0.7);
+		assertThat(config.stdDevRange()).isEqualTo(11);
+		assertThat(config.stdDevMultiplier()).isEqualTo(0.7);
+		
+		// Test with custom values
+		config = fundController.addOrUpdateAlgoConfig(testFund.name, "2800", 1000, 25.0, 15, 0.9);
+		assertThat(config.stdDevRange()).isEqualTo(15);
+		assertThat(config.stdDevMultiplier()).isEqualTo(0.9);
+		
+		// Clean up
+		fundController.deleteAlgoConfig(testFund.name, "2800");
 	}
 }

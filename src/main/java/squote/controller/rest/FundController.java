@@ -194,9 +194,12 @@ public class FundController {
 	@GetMapping(value = "/{fundName}/algo/{code}")
 	public AlgoConfig addOrUpdateAlgoConfig(@PathVariable String fundName, @PathVariable String code,
 											@RequestParam(name = "quantity", required = false) int quantity,
-											@RequestParam(name = "basePrice", required = false) Double basePrice) {
+											@RequestParam(name = "basePrice", required = false) Double basePrice,
+											@RequestParam(name = "stdDevRange", defaultValue = "11") int stdDevRange,
+											@RequestParam(name = "stdDevMultiplier", defaultValue = "0.7") double stdDevMultiplier) {
 		var userId = authenticationService.getUserId().get();
-		var newConfig = new AlgoConfig(code, quantity, basePrice);
+		
+		var newConfig = new AlgoConfig(code, quantity, basePrice, stdDevRange, stdDevMultiplier);
 		log.info("add or update algo config {} to fund {}", newConfig, fundName);
 
 		var fund = fundRepo.findByUserIdAndName(userId, fundName).get();
