@@ -2,4 +2,5 @@ syncstockexecutionstask:
   enabled: true
   sendTelegram: true
 
-enabled: "{US: false, HK: true}"
+stocktradingtask:
+  enabled: "{US: false, HK: true}"
