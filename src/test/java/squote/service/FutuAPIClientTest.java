@@ -60,15 +60,18 @@ class FutuAPIClientTest {
                 .setCode("02828").setOrderID(1L).setQty(100).setPrice(10)
                 .setTrdSide(TrdCommon.TrdSide.TrdSide_Buy_VALUE)
                 .setFillID(1).setFillIDEx("1").setName("").setCreateTime("")
+                .setSecMarket(TrdCommon.TrdSecMarket.TrdSecMarket_HK_VALUE)
                 .setUpdateTimestamp(1);
         var buy2828_2 = TrdCommon.OrderFill.newBuilder()
                 .setCode("02828").setOrderID(1L).setQty(500).setPrice(10.24)
                 .setTrdSide(TrdCommon.TrdSide.TrdSide_Buy_VALUE)
+                .setSecMarket(TrdCommon.TrdSecMarket.TrdSecMarket_HK_VALUE)
                 .setFillID(2).setFillIDEx("1").setName("").setCreateTime("")
                 .setUpdateTimestamp(2);
         var buy2800 = TrdCommon.OrderFill.newBuilder()
                 .setCode("02800").setOrderID(2L).setQty(500).setPrice(18.1)
                 .setTrdSide(TrdCommon.TrdSide.TrdSide_Sell_VALUE)
+                .setSecMarket(TrdCommon.TrdSecMarket.TrdSecMarket_HK_VALUE)
                 .setFillID(3).setFillIDEx("1").setName("").setCreateTime("")
                 .setUpdateTimestamp(3);
         var S2CBuilder = TrdGetHistoryOrderFillList.S2C.newBuilder();
