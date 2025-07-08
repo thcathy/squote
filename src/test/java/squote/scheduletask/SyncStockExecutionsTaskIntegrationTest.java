@@ -7,6 +7,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import squote.IntegrationTest;
+import squote.domain.ExchangeCode;
 import squote.domain.Execution;
 import squote.domain.Fund;
 import squote.domain.TaskConfig;
@@ -19,15 +20,12 @@ import squote.service.TelegramAPIClient;
 import squote.service.UpdateFundByHoldingService;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyShort;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static squote.SquoteConstants.Side.BUY;
 
@@ -59,13 +57,13 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         task.emailService = mockEmailService;
         task.telegramAPIClient = mockTelegramAPIClient;
         task.sendTelegram = true;
-        task.enabled = true;
+        task.enabledByMarket = Map.of("HK", true);
         task.futuAPIClientFactory = mockFactory;
         task.updateFundService = updateFundByHoldingService;
         task.taskConfigRepo = taskConfigRepo;
         task.clientConfigJson = """
         [
-            {"ip":"127.0.0.1","port":1,"fundName":"A","accountId": 1234567}
+            {"ip":"127.0.0.1","port":1,"fundUserId":"userA","fundName":"A","accountId":1234567,"unlockCode":"","markets":["HK"]}
         ]""";
 
         taskConfigRepo.deleteAll();
@@ -89,10 +87,11 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         exec.setSide(BUY);
         exec.setCode("2800");
         exec.setTime(execDate.getTime());
+        exec.setMarket(ExchangeCode.Market.HK);
         executions.put(exec.getOrderId(), exec);
 
-        when(mockFutuAPIClient.getHKStockExecutions(any())).thenReturn(executions);
-        task.executeTask();
+        when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(ExchangeCode.Market.HK))).thenReturn(executions);
+        task.executeHK();
 
         var holdings = Lists.newArrayList(holdingRepo.findAll());
         assertEquals(1, holdings.size());
@@ -115,7 +114,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         assertEquals(execDate, config.lastExecutionTime());
 
         // run the task again will not repeat same fill id
-        task.executeTask();
+        task.executeHK();
         fund = fundRepo.findByUserIdAndName(userId, "A").get();
         assertEquals(-19.43, fund.getProfit().doubleValue());   // due to fee
         fundHolding = fund.getHoldings().get("2800");
@@ -146,9 +145,9 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         exec.setCode("2800");
         exec.setTime(execDate.getTime());
         executions.put(exec.getOrderId(), exec);
-        when(mockFutuAPIClient.getHKStockExecutions(any())).thenReturn(executions);
+        when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(ExchangeCode.Market.HK))).thenReturn(executions);
 
-        task.executeTask();
+        task.executeHK();
 
         var configEntity = taskConfigRepo.findById(SyncStockExecutionsTask.class.toString()).orElseThrow();
         var config = SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.fromJson(configEntity.jsonConfig());
@@ -159,7 +158,27 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
     void sendTelegramFalse_willNotSendMessage() {
         task.sendTelegram = false;
         task.clientConfigJson = "not a json"; // trigger exception
-        task.executeTask();
+        task.executeHK();
         verify(mockTelegramAPIClient, never()).sendMessage(any());
+    }
+
+    @Test
+    void executeUS_usesUSMarket() {
+        task.enabledByMarket = Map.of("US", true);
+        task.clientConfigJson = """
+        [
+            {"ip":"127.0.0.1","port":1,"fundUserId":"userA","fundName":"A","accountId":1234567,"unlockCode":"","markets":["US"]}
+        ]""";
+        var userId = UUID.randomUUID().toString();
+        task.userId = userId;
+        Fund f = new Fund(userId, "A");
+        fundRepo.save(f);
+
+        var executions = new HashMap<String, Execution>();
+        when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(ExchangeCode.Market.US))).thenReturn(executions);
+        
+        task.executeUS();
+        
+        verify(mockFutuAPIClient).getStockExecutions(any(Date.class), eq(ExchangeCode.Market.US));
     }
 }

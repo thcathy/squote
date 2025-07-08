@@ -5,6 +5,7 @@ import com.futu.openapi.pb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import squote.SquoteConstants;
+import squote.domain.ExchangeCode;
 import squote.domain.Execution;
 import squote.domain.Order;
 import squote.domain.StockQuote;
@@ -212,8 +213,12 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		return executions;
 	}
 
-	public HashMap<String, Execution> getHKStockExecutions(Date fromDate) {
-		int seq = sendGetHistoryOrderFillRequest(fromDate);
+	public HashMap<String, Execution> getStockExecutions(Date fromDate, ExchangeCode.Market market) {
+		var trdMarket = switch (market) {
+			case US -> TrdCommon.TrdMarket.TrdMarket_US;
+			case HK -> TrdCommon.TrdMarket.TrdMarket_HK;
+		};
+		int seq = sendGetHistoryOrderFillRequest(fromDate, trdMarket);
 		log.info("Seq[{}] Send getHistoryOrderFillList", seq);
 
 		var result = (List<TrdCommon.OrderFill>) getResult(seq);
@@ -285,7 +290,16 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		exec.setSide(fill.getTrdSide() == TrdCommon.TrdSide.TrdSide_Buy_VALUE ? BUY : SELL);
 		exec.setCode(fill.getCode().replaceAll("^0+(?!$)", ""));
 		exec.setTime((long) (fill.getUpdateTimestamp() * 1000));
+		exec.setMarket(secMarketToMarket(fill.getSecMarket()));
 		return exec;
+	}
+
+	private ExchangeCode.Market secMarketToMarket(int secMarket) {
+		return switch (secMarket) {
+			case TrdCommon.TrdSecMarket.TrdSecMarket_HK_VALUE -> ExchangeCode.Market.HK;
+			case TrdCommon.TrdSecMarket.TrdSecMarket_US_VALUE -> ExchangeCode.Market.US;
+            default -> throw new IllegalStateException("Unexpected value: " + secMarket);
+        };
 	}
 
 	private int sendGetTodayOrderFillRequest() {
@@ -301,14 +315,14 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		return futuConnTrd.getOrderFillList(req);
 	}
 
-	private int sendGetHistoryOrderFillRequest(Date fromDate) {
+	private int sendGetHistoryOrderFillRequest(Date fromDate, TrdCommon.TrdMarket trdMarket) {
 		var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		var oneDayAfter = LocalDateTime.now().plusDays(1);
 
 		var header = TrdCommon.TrdHeader.newBuilder()
 				.setAccID(clientConfig.accountId())
 				.setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
-				.setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
+				.setTrdMarket(trdMarket.getNumber())
 				.build();
 		var filter = TrdCommon.TrdFilterConditions.newBuilder()
 				.setBeginTime(dateFormat.format(fromDate))

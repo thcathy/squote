@@ -21,10 +21,7 @@ import squote.service.*;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 public class SyncStockExecutionsTask {
@@ -48,7 +45,7 @@ public class SyncStockExecutionsTask {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Value(value = "${syncstockexecutionstask.enabled}") boolean enabled;
+    @Value("#{${syncstockexecutionstask.enabled}}") public Map<String, Boolean> enabledByMarket;
     @Value(value = "${syncstockexecutionstask.userId}") String userId;
     @Value(value = "${futuOpendRsaKey}") String rsaKey;
     @Value(value = "${futuClientConfigsJson}") String clientConfigJson;
@@ -67,29 +64,61 @@ public class SyncStockExecutionsTask {
     public FutuAPIClientFactory futuAPIClientFactory = (futuClientConfig) -> new FutuAPIClient(futuClientConfig, new FTAPI_Conn_Trd(), new FTAPI_Conn_Qot(), rsaKey, true);
 
     @Scheduled(cron = "0 5 17 * * MON-SAT", zone = "Asia/Hong_Kong")
-    @Scheduled(cron = "0 15 20 * * MON-SAT", zone = "Asia/Hong_Kong")   // temp schedule
-    public void executeTask() {
-        if (!enabled || StringUtils.isEmpty(clientConfigJson)) {
+    public void executeHK() {
+        if (isMarketDisabled(ExchangeCode.Market.HK) || StringUtils.isEmpty(clientConfigJson)) {
             log.info("Task Disabled");
             return;
         }
 
+        try {
+            innerExecute(ExchangeCode.Market.HK);
+        } catch (Exception e) {
+            var message = String.format("SyncStockExecutionsTask: Unexpected exception: %s \n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
+            log.error("HK market execution failed", e);
+            sendTelegram(message);
+        }
+    }
+
+    @Scheduled(cron = "0 5 00 * * TUE-SAT", zone = "America/New_York")
+    public void executeUS() {
+        if (isMarketDisabled(ExchangeCode.Market.US) || StringUtils.isEmpty(clientConfigJson)) {
+            log.info("US Task Disabled");
+            return;
+        }
+
+        try {
+            innerExecute(ExchangeCode.Market.US);
+        } catch (Exception e) {
+            var message = String.format("SyncStockExecutionsTask US: Unexpected exception: %s \n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
+            log.error("US market execution failed", e);
+            sendTelegram(message);
+        }
+    }
+
+    private void innerExecute(ExchangeCode.Market market) {
         var mapper = new ObjectMapper();
-        StringBuilder logs = new StringBuilder("Start SyncStockExecutionsTask\n\n");
+        StringBuilder logs = new StringBuilder("Start SyncStockExecutionsTask for market: " + market + "\n\n");
         FutuAPIClient futuAPIClient = null;
         try {
             var futuClientConfigs = mapper.readValue(clientConfigJson, FutuClientConfig[].class);
             var fromDate = getFromDate();
 
             for (var config : futuClientConfigs) {
+                if (config.markets() ==null || !config.markets().contains(market)) continue;
+
                 logs.append("Process config=").append(config).append("\n\n");
                 logs.append("Fund snapshot before:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName())).append("\n\n");
                 futuAPIClient = futuAPIClientFactory.build(config);
 
                 logs.append("Get executions for accountId=").append(config.accountId()).append(" since ").append(fromDate).append("\n\n");
-                var executions = futuAPIClient.getHKStockExecutions(fromDate);
+                var executions = futuAPIClient.getStockExecutions(fromDate, market);
                 for (var exec : executions.values()) {
                     logs.append("\n").append("Process execution=").append(exec).append("\n");
+                    if (exec.getMarket() != market) {
+                        logs.append(exec.getMarket()).append("!=").append(market).append(" Skip processing\n");
+                        continue;
+                    }
+
                     if (holdingRepo.existsByFillIdsLike(exec.getFillIds())) {
                         logs.append("Fill id exists. Skip processing\n");
                         continue;
@@ -194,5 +223,9 @@ fee=%.2f profit=%.2f""",
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.MONTH, -1);
         return calendar.getTime();
+    }
+
+    private boolean isMarketDisabled(ExchangeCode.Market market) {
+        return !enabledByMarket.getOrDefault(market.toString(), false);
     }
 }

@@ -27,7 +27,7 @@ binance:
 
 syncstockexecutionstask:
   userId: 'ENC(0TMR4CMt1UaDKj0YxVU5WrsLgOo7/+3en6fWwwpu54OdViKdBjImlKP1JLMq7PrRMdbMjegACHEqgL6dKnNoVH9H6gjPMJOICSMmvDqoQI8=)'
-  enabled: false
+  enabled: "{US: false, HK: false}"
   summaryEmailAddress: ''
   sendTelegram: false
 
@@ -40,7 +40,8 @@ stocktradingtask:
   enabled: "{US: false, HK: false}"
 
 futuOpendRsaKey: '${FUTUOPEND_RSAKEY:dummy}'
-futuClientConfigsJson: 'ENC(NzIUHcdkAZnjlswvYxGiiEZNOdF+4znKwx3T2TvjphwVvxR9x4/U8adjgaRH71XRxMxUZ+ytLnzKU1K2dFMKTGn4Whwi9kUSAikgIO0J5Bx9OCRf+ZhRUGHwUJaAl/y1RiDFbBBCdXnpgErh58i8dOZfxRAFRa5XqNeMJx+gt2BrjLJZkqus1/AN/cDgh6oDt/HFjnsO0NN3J6+OOH1nuVKkDctsQD1R47oIl4iuuxuembh5yKQOjW/6V1Uyyuax5HGChNRm8edRsXSe2VRhat6e5ZhI/3dDDnGRq4dAmLZWwA2GLU0LuDAd1MYczY6dY2+mxa73JwSNs9v3xI71jWkBxRetY4z3i5aKQTXT+2AKV75+QNtfzpZcNg+L6SBcn3uZes1Gp+4WHZaD7Nzqcd7eWtzkkLQ8gGqyc4nRZyi3Henp5pFLFMYpDVqTQFtzLvBKanlWJMSEiMKBaXJGVx25NIaslt/qznSG0imyfeqUsMqVWiYOCUT9i81Abww9L6W8OxWae4JDcSxugeIoN54XdaRPwn0IHQ/q8l0TD5802K0uoavdD3DoNaowQ1Q4V7Uzlt3o5Fl9Jj+CvibUxQ==)'
+futuClientConfigsJson: 'ENC(xjgWEUmWPOXv/uqO0NXxQGgMwOWwIAXqK9ah/aCQNBvZVXBY1rcGq6K3QY7f40MsknlCzUO0SqS+cRudhe7ue14ZWngIHztk8/s6//0wjh53JKr4oDoa+j0vOBz/tus/zcuYiT/XL9y1wOvLkyill9TdiEY1M0wsm+P/pr/RT3pvZegRF013UcGlXJIxayap0Q+uu3MsFh/bTnXdCDVwUn+O6iKiA7Vm6V2Yq4F5jiH/Eb+2WmylsQ58hn8dkgDUxqokSIxOD4KtHAo1ZfwSe/drJvT91mGTlF3cyvKMqbrVjkxIn8SqZnHqYkBDz6ybZRlSsXnoukEpdZiT7gEkUUAY7twlpmFlBe1Y5mj0zQQ4W0mIl18u+NCg3waH7SY63SYMby6Kna5BstaV/Opf1SnU5InsJHhgPr3p+2ltFXdaeG51ScKmqHv7+sHx0ORRU0RoJXGevrOQOByutCO+dyjNVCJzIKeXRt862nvypRkC1CVfSWqCY4dcKuJin1dwnpqzP8e+MwEXaYk40gJivagPyVQ02bpsi1LB2742Ax7kwqfMI+mAVp9oyV47d52VDxn73o7TCe3sOOkUxT44kQxeFb9EigSI7eLymVchtO9yFh6Z71sbXkpnSF+YqfFO)'
+
 
 
 telegramAPIClient:
