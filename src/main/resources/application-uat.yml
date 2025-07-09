@@ -1,2 +1,2 @@
 syncstockexecutionstask:
-  enabled: true
+  enabled: "{US: false, HK: true}"

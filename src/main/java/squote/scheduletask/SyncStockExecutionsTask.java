@@ -64,7 +64,7 @@ public class SyncStockExecutionsTask {
     public FutuAPIClientFactory futuAPIClientFactory = (futuClientConfig) -> new FutuAPIClient(futuClientConfig, new FTAPI_Conn_Trd(), new FTAPI_Conn_Qot(), rsaKey, true);
 
     @Scheduled(cron = "0 5 17 * * MON-SAT", zone = "Asia/Hong_Kong")
-    @Scheduled(cron = "0 45 18 * * MON-SAT", zone = "Asia/Hong_Kong")
+    @Scheduled(cron = "0 40 11 * * MON-SAT", zone = "Asia/Hong_Kong")
     public void executeHK() {
         if (isMarketDisabled(ExchangeCode.Market.HK) || StringUtils.isEmpty(clientConfigJson)) {
             log.info("Task Disabled");
