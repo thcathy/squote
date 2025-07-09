@@ -1,5 +1,5 @@
 syncstockexecutionstask:
-  enabled: "{US: false, HK: false}"
+  enabled: "{US: false, HK: true}"
   sendTelegram: true
 
 stocktradingtask:
