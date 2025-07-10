@@ -180,6 +180,16 @@ public class RestStockControllerTest extends IntegrationTest {
         Mockito.verify(mockYahooFinanceService).subscribeToSymbols("AAPL.XNAS");
     }
 
+    @Test
+    public void test_quote_missingUSStockQuote_shouldNotContainNullInQuotes() throws ExecutionException, InterruptedException {
+        when(mockYahooFinanceService.getLatestTicker("QQQ.XNAS")).thenReturn(Optional.empty());
+        when(mockBinanceAPIService.getAllPrices()).thenReturn(Collections.emptyMap());
+        
+        Map<String, Object> resultMap = restStockController.quote("QQQ.XNAS");
+        List<StockQuote> quotes = (List<StockQuote>) resultMap.get("quotes");
+        assertThat(quotes).doesNotContainNull();
+    }
+
     private HoldingStock createSell2800Holding(String userId) {
         return new HoldingStock(userId, "2800", SquoteConstants.Side.SELL, 2000, new BigDecimal("40400"), new Date(), null);
     }

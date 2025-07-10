@@ -134,12 +134,12 @@ public class RestStockController {
 		List<Fund> funds = fundRepo.findByUserId(userId);
 		Set<String> codeSet = uniqueStockCodes(codes, holdingStocks, funds);
 		Map<ExchangeCode.Market, Set<String>> separatedCodes = separateStockCodesByMarket(codeSet);
-		Future<HttpResponse<StockQuote[]>> hkStockQuotesFuture = webParserService.getRealTimeQuotes(separatedCodes.get(ExchangeCode.Market.HK));
+		Future<HttpResponse<StockQuote[]>> hkStockQuotesFuture = separatedCodes.get(ExchangeCode.Market.HK).isEmpty() ? null : webParserService.getRealTimeQuotes(separatedCodes.get(ExchangeCode.Market.HK));
 		Set<String> USStockCodes = separatedCodes.get(ExchangeCode.Market.US);
 		yahooFinanceService.subscribeToSymbols(USStockCodes.toArray(new String[0]));
 
 		// After all concurrent jobs submitted
-		Map<String, StockQuote> allQuotes = collectAllStockQuotes(hkStockQuotesFuture.get().getBody());
+		Map<String, StockQuote> allQuotes = hkStockQuotesFuture == null ? new HashMap<>() : collectAllStockQuotes(hkStockQuotesFuture.get().getBody());
 		allQuotes.putAll(binanceAPIService.getAllPrices());
 		allQuotes.putAll(getUSStockQuotes(USStockCodes));
 		Future<HttpResponse<StockQuote[]>> indexFutures = webParserService.getIndexQuotes();
@@ -150,6 +150,7 @@ public class RestStockController {
 		resultMap.put("codes", codes);
 		resultMap.put("quotes",
 				Arrays.stream(codes.split(CODE_SEPARATOR))
+						.filter(allQuotes::containsKey)
 						.map(allQuotes::get)
 						.collect(Collectors.toList())
 		);
@@ -196,8 +197,7 @@ public class RestStockController {
 		stockTradingTask.enabledByMarket = newMap;
 	}
 
-	Map<String, StockQuote> collectAllStockQuotes(
-			StockQuote[] quotes) {
+	Map<String, StockQuote> collectAllStockQuotes(StockQuote[] quotes) {
 		return Arrays.stream(quotes)
 				.filter(s -> !SquoteConstants.NA.equals(s.getStockCode()))
 				.collect(Collectors.toMap(
