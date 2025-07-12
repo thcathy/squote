@@ -25,7 +25,7 @@ import java.util.*;
 
 @Component
 public class SyncStockExecutionsTask {
-    record SyncStockExecutionsTaskConfig(Date lastExecutionTime) {
+    record SyncStockExecutionsTaskConfig(Map<ExchangeCode.Market, Date> lastExecutionTimeByMarket) {
         static String toJson(SyncStockExecutionsTaskConfig config) {
             try {
                 return new ObjectMapper().writeValueAsString(config);
@@ -72,7 +72,7 @@ public class SyncStockExecutionsTask {
         }
 
         try {
-            innerExecute(ExchangeCode.Market.HK);
+            sync(ExchangeCode.Market.HK);
         } catch (Exception e) {
             var message = String.format("SyncStockExecutionsTask: Unexpected exception: %s \n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
             log.error("HK market execution failed", e);
@@ -88,7 +88,7 @@ public class SyncStockExecutionsTask {
         }
 
         try {
-            innerExecute(ExchangeCode.Market.US);
+            sync(ExchangeCode.Market.US);
         } catch (Exception e) {
             var message = String.format("SyncStockExecutionsTask US: Unexpected exception: %s \n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
             log.error("US market execution failed", e);
@@ -96,13 +96,13 @@ public class SyncStockExecutionsTask {
         }
     }
 
-    private void innerExecute(ExchangeCode.Market market) {
+    public void sync(ExchangeCode.Market market) {
         var mapper = new ObjectMapper();
         StringBuilder logs = new StringBuilder("Start SyncStockExecutionsTask for market: " + market + "\n\n");
         FutuAPIClient futuAPIClient = null;
         try {
             var futuClientConfigs = mapper.readValue(clientConfigJson, FutuClientConfig[].class);
-            var fromDate = getFromDate();
+            var fromDate = getFromDate(market);
 
             for (var config : futuClientConfigs) {
                 if (config.markets() ==null || !config.markets().contains(market)) continue;
@@ -136,7 +136,7 @@ public class SyncStockExecutionsTask {
                 }
                 futuAPIClient.close();
 
-                saveLastExecutionTime(logs, fromDate, executions);
+                saveLastExecutionTime(logs, market, fromDate, executions);
                 logs.append("Fund snapshot after:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName())).append("\n\n");
             }
         } catch (Exception e) {
@@ -180,7 +180,7 @@ fee=%.2f profit=%.2f""",
             emailService.sendEmail(summaryEmailAddress, "SyncStockExecutionsTask Executed", logsString);
     }
 
-    private void saveLastExecutionTime(StringBuilder logs, Date fromDate, HashMap<String, Execution> executions) {
+    private void saveLastExecutionTime(StringBuilder logs, ExchangeCode.Market market, Date fromDate, HashMap<String, Execution> executions) {
         if (executions.isEmpty()) {
             log.info("Do not update last execution time when no executions proceed");
             return;
@@ -190,25 +190,32 @@ fee=%.2f profit=%.2f""",
                 .mapToLong(Execution::getTime)
                 .max().orElseThrow();
         var date = new Date(Math.max(maxTime, fromDate.getTime()));
-        var jsonConfig = SyncStockExecutionsTaskConfig.toJson(new SyncStockExecutionsTaskConfig(date));
-        taskConfigRepo.save(new TaskConfig(this.getClass().toString(), jsonConfig));
+
+        var taskConfig = taskConfigRepo.findById(this.getClass().toString()).orElseGet(() -> new TaskConfig(this.getClass().toString(), ""));
+        var config = taskConfig.jsonConfig().isEmpty() ? new SyncStockExecutionsTaskConfig(new HashMap<>()) : SyncStockExecutionsTaskConfig.fromJson(taskConfig.jsonConfig());
+        config.lastExecutionTimeByMarket.put(market, date);
+        taskConfigRepo.save(new TaskConfig(this.getClass().toString(), SyncStockExecutionsTaskConfig.toJson(config)));
         log.info("Saved last execution time: {}", date);
         logs.append("Saved last execution time: ").append(date).append("\n\n");
     }
 
-    private Date getFromDate() {
-        var date = getLastExecutionTime().orElseGet(this::getLastMonth);
+    private Date getFromDate(ExchangeCode.Market market) {
+        var date = getLastExecutionTime(market).orElseGet(this::getLastMonth);
         return getTomorrowAtMidnight(date);
     }
 
-    private Optional<Date> getLastExecutionTime() {
+    private Optional<Date> getLastExecutionTime(ExchangeCode.Market market) {
         try {
             var entity = taskConfigRepo.findById(this.getClass().toString()).orElseThrow();
-            var lastExecution = SyncStockExecutionsTaskConfig.fromJson(entity.jsonConfig()).lastExecutionTime;
-            log.info("lastExecutionTime in config: {}", lastExecution);
-            return Optional.ofNullable(lastExecution); // 1 hour
+            var config = SyncStockExecutionsTaskConfig.fromJson(entity.jsonConfig());
+            if (config.lastExecutionTimeByMarket == null || !config.lastExecutionTimeByMarket.containsKey(market))
+                return Optional.empty();
+
+            var time = config.lastExecutionTimeByMarket.get(market);
+            log.info("lastExecutionTime in config: {}", time);
+            return Optional.ofNullable(time); // 1 hour
         } catch (Exception e) {
-            log.info("Cannot get last execution time: {}", e.toString());
+            log.info("Cannot get last execution time for {}: {}", market, e.toString());
             return Optional.empty();
         }
     }

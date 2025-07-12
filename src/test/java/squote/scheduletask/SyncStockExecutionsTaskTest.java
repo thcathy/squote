@@ -88,8 +88,9 @@ class SyncStockExecutionsTaskTest {
     void executeTask_useTimeFromConfig() throws ParseException {
         var holding = new HoldingStock("", "", SquoteConstants.Side.BUY, 1, null, new Date(), null);
         var formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        var config = new SyncStockExecutionsTask.SyncStockExecutionsTaskConfig(formatter.parse("2024-11-01 00:00:00"));
-        var taskConfig = new TaskConfig(SyncStockExecutionsTask.class.toString(), config.toJson(config));
+        var lastExecutionTimes = Map.of(ExchangeCode.Market.HK, formatter.parse("2024-11-01 00:00:00"));
+        var config = new SyncStockExecutionsTask.SyncStockExecutionsTaskConfig(lastExecutionTimes);
+        var taskConfig = new TaskConfig(SyncStockExecutionsTask.class.toString(), SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.toJson(config));
         when(mockHoldingStockRepository.findTopByFundNameOrderByDateDesc(any()))
                 .thenReturn(Optional.of(holding));
         when(mockTaskConfigRepository.findById(any())).thenReturn(Optional.of(taskConfig));

@@ -111,7 +111,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
 
         var configEntity = taskConfigRepo.findById(SyncStockExecutionsTask.class.toString()).orElseThrow();
         var config = SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.fromJson(configEntity.jsonConfig());
-        assertEquals(execDate, config.lastExecutionTime());
+        assertEquals(execDate, config.lastExecutionTimeByMarket().get(ExchangeCode.Market.HK));
 
         // run the task again will not repeat same fill id
         task.executeHK();
@@ -131,7 +131,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
 
         var configDate = new Date();
         var jsonConfig = SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.toJson(
-                new SyncStockExecutionsTask.SyncStockExecutionsTaskConfig(configDate));
+                new SyncStockExecutionsTask.SyncStockExecutionsTaskConfig(Map.of(ExchangeCode.Market.HK, configDate)));
         taskConfigRepo.save(new TaskConfig(SyncStockExecutionsTask.class.toString(), jsonConfig));
 
         var executions = new HashMap<String, Execution>();
@@ -151,7 +151,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
 
         var configEntity = taskConfigRepo.findById(SyncStockExecutionsTask.class.toString()).orElseThrow();
         var config = SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.fromJson(configEntity.jsonConfig());
-        assertTrue(configDate.getTime() < config.lastExecutionTime().getTime());
+        assertTrue(configDate.getTime() < config.lastExecutionTimeByMarket().get(ExchangeCode.Market.HK).getTime());
     }
 
     @Test

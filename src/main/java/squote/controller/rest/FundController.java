@@ -5,9 +5,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import squote.domain.AlgoConfig;
+import squote.domain.ExchangeCode;
 import squote.domain.Fund;
 import squote.domain.FundHolding;
 import squote.domain.repository.FundRepository;
+import squote.scheduletask.SyncStockExecutionsTask;
 import squote.security.AuthenticationService;
 import squote.service.SplitInterestService;
 import squote.service.UpdateFundByHoldingService;
@@ -36,6 +38,7 @@ public class FundController {
 	@Autowired AuthenticationService authenticationService;
 	@Autowired UpdateFundByHoldingService updateFundByHoldingService;
 	@Autowired SplitInterestService splitInterestService;
+	@Autowired SyncStockExecutionsTask syncStockExecutionsTask;
 			
 	@RequestMapping(value = "/{fundName}/buy/{code}/{qty}/{price}")
 	public Fund buy(@PathVariable String fundName, @PathVariable String code, @PathVariable String qty, @PathVariable String price) {
@@ -180,6 +183,15 @@ public class FundController {
 		String userId = authenticationService.getUserId().get();
 		log.info("get trades from {} from fund {}", source, fundName);
 		return updateFundByHoldingService.getTradesAndUpdateFund(userId, fundName, source);
+	}
+
+	@RequestMapping(value = "/sync-stock-exec/{market}")
+	public void syncStockExec(@PathVariable String market) {
+		if (authenticationService.getUserId().isEmpty())
+			throw new SecurityException("User not logged in");
+
+        log.info("syncStockExec: {}", market);
+		syncStockExecutionsTask.sync(ExchangeCode.Market.valueOf(market));
 	}
 
 	@GetMapping(value = "/{fundName}/algo")
