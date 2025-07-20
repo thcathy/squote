@@ -1,17 +1,20 @@
 package squote.service;
 
+import squote.domain.HoldingStock;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.function.Function;
 
-public class HKEXMarketFeesCalculator {
+public class HKMarketFeesCalculator {
     public static String INCLUDE_STAMP = "INCLUDE_STAMP";
     public static String EXCLUDE_STAMP = "EXCLUDE_STAMP";
 
-    public BigDecimal totalFee(BigDecimal value, boolean includeStampDuty, Function<BigDecimal, BigDecimal> commission) {
-        var sum = tradingTariff().add(settlementFee(value)).add(tradingFee(value)).add(transactionLevy(value)).add(commission.apply(value));
+    public BigDecimal totalFee(HoldingStock holding, boolean includeStampDuty, Function<HoldingStock, BigDecimal> commission) {
+        var gross = holding.getGross();
+        var sum = tradingTariff().add(settlementFee(gross)).add(tradingFee(gross)).add(transactionLevy(gross)).add(commission.apply(holding));
         if (includeStampDuty)
-            sum = sum.add(stampDuty(value));
+            sum = sum.add(stampDuty(gross));
         return sum;
     }
 

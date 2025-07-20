@@ -21,11 +21,12 @@ import static squote.SquoteConstants.Side.SELL;
 public class StockTradingAlgoService {
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    double priceThreshold = 0.0005;
+    double priceThresholdPercent = 0.0005;
 
     final DailyAssetSummaryRepository dailyAssetSummaryRepo;
     final FundRepository fundRepo;
     final HoldingStockRepository holdingStockRepository;
+    final WebParserRestService webParserRestService;
     final TelegramAPIClient telegramAPIClient;
     final Map<String, Double> tickSizes = Map.of("2800", 0.02, "code1", 0.02);
 
@@ -33,11 +34,13 @@ public class StockTradingAlgoService {
     public StockTradingAlgoService(DailyAssetSummaryRepository dailyAssetSummaryRepo,
                                    FundRepository fundRepo,
                                    HoldingStockRepository holdingStockRepository,
+                                   WebParserRestService webParserService,
                                    TelegramAPIClient telegramAPIClient) {
         this.dailyAssetSummaryRepo = dailyAssetSummaryRepo;
         this.fundRepo = fundRepo;
         this.telegramAPIClient = telegramAPIClient;
         this.holdingStockRepository = holdingStockRepository;
+        this.webParserRestService = webParserService;
     }
 
     public record Execution(String code, Side side, int quantity, double price, boolean isToday, Date date) {
@@ -47,7 +50,7 @@ public class StockTradingAlgoService {
         }
     }
 
-    public void processSingleSymbol(Fund fund, AlgoConfig algoConfig, FutuClientConfig clientConfig, IBrokerAPIClient brokerAPIClient) {
+    public void processSingleSymbol(Fund fund, ExchangeCode.Market market, AlgoConfig algoConfig, FutuClientConfig clientConfig, IBrokerAPIClient brokerAPIClient) {
         log.info("start process for {} in {}", algoConfig.code(), fund.name);
         var stdDev = getStdDev(algoConfig.code(), algoConfig.stdDevRange());
         if (stdDev.isEmpty()) {
@@ -55,11 +58,11 @@ public class StockTradingAlgoService {
             return;
         }
 
-        var stockQuote = brokerAPIClient.getStockQuote(algoConfig.code());
+        var stockQuote = getStockQuote(algoConfig.code(), brokerAPIClient);
         var holdings = holdingStockRepository.findByUserIdOrderByDate(fund.userId)
                 .stream().filter(h -> h.getCode().equals(algoConfig.code()) && h.getFundName().equals(fund.name))
                 .toList();
-        var allTodayExecutions = brokerAPIClient.getHKStockTodayExecutions().values().stream()
+        var allTodayExecutions = brokerAPIClient.getStockTodayExecutions(market).values().stream()
                 .filter(e -> e.getCode().equals(algoConfig.code()))
                 .toList();
         log.info("{} holdings, {} T day executions", holdings.size(), allTodayExecutions.size());
@@ -67,7 +70,19 @@ public class StockTradingAlgoService {
         var sellExecutions = sortExecutions(holdings, allTodayExecutions, SELL);
 
         findBaseExecution(buyExecutions, sellExecutions)
-                .ifPresent(exec -> processBaseExecution(brokerAPIClient, clientConfig, stdDev.get(), algoConfig.stdDevMultiplier(), exec, stockQuote, algoConfig));
+                .ifPresent(exec -> processBaseExecution(brokerAPIClient, clientConfig, stdDev.get(), algoConfig.stdDevMultiplier(), exec, stockQuote, algoConfig, market));
+    }
+
+    private StockQuote getStockQuote(String code, IBrokerAPIClient brokerAPIClient) {
+        try {
+            if (ExchangeCode.isUSStockCode(code)) {
+                return webParserRestService.getRealTimeQuotes(List.of(code)).get().getBody()[0];
+            }
+
+            return brokerAPIClient.getStockQuote(code);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Optional<Double> getStdDev(String code, int stdDevRange) {
@@ -75,12 +90,14 @@ public class StockTradingAlgoService {
                 .flatMap(summary -> Optional.ofNullable(summary.stdDevs.get(stdDevRange)));
     }
 
-    private void processBaseExecution(IBrokerAPIClient clientAPIClient, FutuClientConfig config, double stdDev, double stdDevMultiplier, Execution execution, StockQuote stockQuote, AlgoConfig algoConfig) {
+    private void processBaseExecution(IBrokerAPIClient brokerAPIClient, FutuClientConfig config, double stdDev, double stdDevMultiplier, Execution execution, StockQuote stockQuote, AlgoConfig algoConfig, ExchangeCode.Market market) {
         log.info("base price: {}", execution.price);    // used in test case
         log.info("process base execution: {}", execution);
 
-        var pendingOrders = clientAPIClient.getPendingOrders();
-        var anyPartialFilledOrder = pendingOrders.stream().filter(Order::isPartialFilled).findFirst();
+        var pendingOrders = brokerAPIClient.getPendingOrders(market);
+        var anyPartialFilledOrder = pendingOrders.stream()
+                .filter(o -> algoConfig.code().equals(o.code()))
+                .filter(Order::isPartialFilled).findFirst();
         if (anyPartialFilledOrder.isPresent()) {
             var partialFillOrder = anyPartialFilledOrder.get();
             telegramAPIClient.sendMessage(String.format("%s: WARN: Partial filled %s %s@%.2f. filled=%s",
@@ -93,8 +110,8 @@ public class StockTradingAlgoService {
         }
 
         int buyQuantity = algoConfig.quantity() > 0 ? algoConfig.quantity() : execution.quantity;
-        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, stdDevMultiplier, clientAPIClient, config, stockQuote, buyQuantity);
-        handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, stdDevMultiplier, clientAPIClient, config, stockQuote, execution.quantity);
+        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, stdDevMultiplier, brokerAPIClient, config, stockQuote, buyQuantity);
+        handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, stdDevMultiplier, brokerAPIClient, config, stockQuote, execution.quantity);
     }
 
     private void handleOrderForBaseExecution(Side pendingOrderSide, Execution baseExec, List<Order> pendingOrders, double stdDev, double stdDevMultiplier, IBrokerAPIClient brokerAPIClient, FutuClientConfig clientConfig, StockQuote stockQuote, int quantity) {
@@ -104,11 +121,11 @@ public class StockTradingAlgoService {
         var stockCode = baseExec.code;
         var targetPrice = calculateTargetPrice(pendingOrderSide, stockCode, baseExec, stdDev, stdDevMultiplier, Double.parseDouble(stockQuote.getPrice()));
         var matchedPendingOrders = pendingOrders.stream()
-                .filter(o -> o.side() == pendingOrderSide && o.code().equals(stockCode))
+                .filter(o -> o.side() == pendingOrderSide &&  o.code().equals(baseExec.code))
                 .toList();
         if (matchedPendingOrders.size() > 1) {
             matchedPendingOrders.forEach(o -> {
-                cancelOrder(brokerAPIClient, o.orderId());
+                cancelOrder(brokerAPIClient, o.orderId(), stockCode);
                 telegramAPIClient.sendMessage(String.format("Cancelled order due to multiple pending (%s): %s %s %s@%.2f", clientConfig.fundName(),
                         pendingOrderSide, stockCode, o.quantity(), o.price()));
             });
@@ -125,7 +142,7 @@ public class StockTradingAlgoService {
 
             var pendingOrderId = pendingOrder.orderId();
             log.info("pending order price {} over threshold {}. Going to cancel order id={}", pendingOrderPrice, targetPrice, pendingOrderId);
-            cancelOrder(brokerAPIClient, pendingOrderId);
+            cancelOrder(brokerAPIClient, pendingOrderId, stockCode);
             telegramAPIClient.sendMessage(String.format("Cancelled order (%s): %s %s %s@%.2f", clientConfig.fundName(),
                     pendingOrder.side(), stockCode,pendingOrder.quantity(), pendingOrderPrice));
         }
@@ -135,7 +152,7 @@ public class StockTradingAlgoService {
 
     private double calculateTargetPrice(Side orderSide, String code, Execution baseExec, double stdDev, double stdDevMultiplier, double marketPrice) {
         var basePrice = baseExec.price;
-        var modifiedStdDevPercentage = Math.min((stdDev * stdDevMultiplier / 100), 0.01618);
+        var modifiedStdDevPercentage = Math.min((stdDev * stdDevMultiplier / 100), 0.02618); // 0.01618 ^ 2
         var targetPrice = orderSide == SELL ? basePrice * (1 + modifiedStdDevPercentage) : basePrice / (1 + modifiedStdDevPercentage);
 
         // handle target price far from market price
@@ -153,7 +170,7 @@ public class StockTradingAlgoService {
             }
         }
 
-        var tickSize = tickSizes.getOrDefault(code, 0.01);
+        var tickSize = tickSizes.getOrDefault(code, 0.01);  // default US to 0.01
         targetPrice = orderSide == BUY ? Math.floor(targetPrice / tickSize) * tickSize : Math.ceil(targetPrice / tickSize) * tickSize;
         targetPrice = (double) Math.round(targetPrice * 1000) / 1000;
         log.info("{}: targetPrice={}, basePrice={}, stdDev={}, mktPx={}", orderSide, targetPrice, basePrice, stdDev, marketPrice);
@@ -175,8 +192,8 @@ public class StockTradingAlgoService {
         telegramAPIClient.sendMessage(placedMessage);
     }
 
-    private void cancelOrder(IBrokerAPIClient brokerAPIClient, long pendingOrderId) {
-        var cancelOrderResponse = brokerAPIClient.cancelOrder(pendingOrderId);
+    private void cancelOrder(IBrokerAPIClient brokerAPIClient, long pendingOrderId, String code) {
+        var cancelOrderResponse = brokerAPIClient.cancelOrder(pendingOrderId, code);
 
         if (cancelOrderResponse.errorCode() > 0) {
             String errorMessage = String.format("Cannot cancel order %s, error code=%s, message=%s",
@@ -189,7 +206,7 @@ public class StockTradingAlgoService {
 
     public boolean priceWithinThreshold(double p1, double p2) {
         double difference = Math.abs(p1 - p2);
-        double tolerance = Math.max(Math.abs(p1), Math.abs(p2)) * priceThreshold;
+        double tolerance = Math.max(Math.abs(p1), Math.abs(p2)) * priceThresholdPercent;
         return difference <= tolerance;
     }
 

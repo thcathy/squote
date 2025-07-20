@@ -59,7 +59,8 @@ public class SyncStockExecutionsTask {
     @Autowired EmailService emailService;
     @Autowired TelegramAPIClient telegramAPIClient;
 
-    HKEXMarketFeesCalculator feeCalculator = new HKEXMarketFeesCalculator();
+    HKMarketFeesCalculator hkFeeCalculator = new HKMarketFeesCalculator();
+    USMarketFeesCalculator usFeeCalculator = new USMarketFeesCalculator();
 
     public FutuAPIClientFactory futuAPIClientFactory = (futuClientConfig) -> new FutuAPIClient(futuClientConfig, new FTAPI_Conn_Trd(), new FTAPI_Conn_Qot(), rsaKey, true);
 
@@ -106,16 +107,15 @@ public class SyncStockExecutionsTask {
             for (var config : futuClientConfigs) {
                 if (config.markets() ==null || !config.markets().contains(market)) continue;
 
-                logs.append("Process config=").append(config).append("\n\n");
-                logs.append("Fund snapshot before:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName())).append("\n\n");
+                logs.append(String.format("Process config=%s\n\nFund snapshot before:\n%s\n\n", config, fundRepo.findByUserIdAndName(userId, config.fundName())));
                 futuAPIClient = futuAPIClientFactory.build(config);
 
-                logs.append("Get executions for accountId=").append(config.accountId()).append(" since ").append(fromDate).append("\n\n");
+                logs.append(String.format("Get executions for accountId=%s since %s\n\n", config.accountId(), fromDate));
                 var executions = futuAPIClient.getStockExecutions(fromDate, market);
                 for (var exec : executions.values()) {
-                    logs.append("\n").append("Process execution=").append(exec).append("\n");
+                    logs.append(String.format("\nProcess execution=%s\n", exec));
                     if (exec.getMarket() != market) {
-                        logs.append(exec.getMarket()).append("!=").append(market).append(" Skip processing\n");
+                        logs.append(String.format("%s!=%s Skip processing\n", exec.getMarket(), market));
                         continue;
                     }
 
@@ -126,7 +126,10 @@ public class SyncStockExecutionsTask {
 
                     var holding = HoldingStock.from(exec, userId);
                     holding = holdingRepo.save(holding);
-                    var fees = feeCalculator.totalFee(holding.getGross(), false, Broker.FUTU.calculateCommission);
+                    var stockMarket = ExchangeCode.getMarketByStockCode(holding.getCode());
+                    BigDecimal fees = (stockMarket == ExchangeCode.Market.US) 
+                        ? usFeeCalculator.totalFee(holding, Broker.FUTU.calculateCommission)
+                        : hkFeeCalculator.totalFee(holding, false, Broker.FUTU.calculateCommission);
                     var fund = updateFundService.updateFundByHolding(userId, config.fundName(), holding, fees);
                     fundRepo.save(fund);
                     holdingRepo.save(holding);
@@ -136,11 +139,11 @@ public class SyncStockExecutionsTask {
                 futuAPIClient.close();
 
                 saveLastExecutionTime(logs, market, fromDate, executions);
-                logs.append("Fund snapshot after:\n").append(fundRepo.findByUserIdAndName(userId, config.fundName())).append("\n\n");
+                logs.append(String.format("Fund snapshot after:\n%s\n\n", fundRepo.findByUserIdAndName(userId, config.fundName())));
             }
         } catch (Exception e) {
             var message = String.format("SyncStockExecutionsTask: Unexpected exception: %s \n %s", e.getMessage(), ExceptionUtils.getStackTrace(e));
-            logs.append("ERROR, stop execute\n\n").append(message);
+            logs.append(String.format("ERROR, stop execute\n\n%s", message));
             sendTelegram(message);
         } finally {
             if (futuAPIClient != null) futuAPIClient.close();
@@ -152,11 +155,10 @@ public class SyncStockExecutionsTask {
     }
 
     private void logHoldingProcessed(FutuClientConfig config, StringBuilder logs, HoldingStock holding, BigDecimal fees, Fund fund) {
-        logs.append("created holding=").append(holding).append("\n");
-        logs.append("update with holding to fund ")
-                .append(userId).append(":").append(config.fundName())
-                .append(" with fee ").append(fees).append("\n");
-        logs.append("updated fund profit=").append(fund.getProfit()).append("\n\n");
+        logs.append(String.format("created holding=%s\n", holding));
+        logs.append(String.format("update with holding to fund %s:%s with fee %s\n", 
+                userId, config.fundName(), fees));
+        logs.append(String.format("updated fund profit=%s\n\n", fund.getProfit()));
 
         var message = String.format("""
 Created holding for %s
@@ -195,7 +197,7 @@ fee=%.2f profit=%.2f""",
         config.lastExecutionTimeByMarket.put(market, date);
         taskConfigRepo.save(new TaskConfig(this.getClass().toString(), SyncStockExecutionsTaskConfig.toJson(config)));
         log.info("Saved last execution time: {}", date);
-        logs.append("Saved last execution time: ").append(date).append("\n\n");
+        logs.append(String.format("Saved last execution time: %s\n\n", date));
     }
 
     private Date getFromDate(ExchangeCode.Market market) {

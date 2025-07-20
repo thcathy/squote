@@ -2,6 +2,7 @@ package squote.playground;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import squote.domain.ExchangeCode;
 import squote.domain.Order;
 
 import java.util.List;
@@ -59,7 +60,7 @@ public class IBAPIClientPlayground {
             IBAPIClient client = new IBAPIClient(HOST, PORT, BASE_CLIENT_ID + 2);
             log.info("✓ Successfully connected to IB Gateway for pending orders test");
             
-            List<Order> pendingOrders = client.getPendingOrders();
+            List<Order> pendingOrders = client.getPendingOrders(ExchangeCode.Market.US);
             log.info("Retrieved {} pending orders", pendingOrders.size());
             
             if (pendingOrders.isEmpty()) {

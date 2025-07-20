@@ -26,5 +26,8 @@ public class ExchangeCode {
     public static Market getMarketByStockCode(String stockCode) {
         return isUSStockCode(stockCode) ? Market.US : Market.HK;
     }
-    
+
+    public static String getBaseCodeFromTicker(String code) {
+        return code.split("\\.")[0];
+    }
 }

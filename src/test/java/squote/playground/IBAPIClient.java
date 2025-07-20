@@ -5,6 +5,7 @@ import com.ib.client.protobuf.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import squote.SquoteConstants;
+import squote.domain.ExchangeCode;
 import squote.domain.Execution;
 import squote.domain.Order;
 import squote.domain.StockQuote;
@@ -127,7 +128,7 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	}
 
 	@Override
-	public List<Order> getPendingOrders() {
+	public List<Order> getPendingOrders(ExchangeCode.Market market) {
 		// Request all open orders
 		startOperation(Operation.PENDING_ORDERS);
 		
@@ -154,7 +155,7 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	}
 
 	@Override
-	public Map<String, Execution> getHKStockTodayExecutions() {
+	public Map<String, Execution> getStockTodayExecutions(ExchangeCode.Market market) {
 		// TODO: Implement IB-specific today executions logic
 		return Collections.emptyMap();
 	}
@@ -166,7 +167,7 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	}
 
 	@Override
-	public CancelOrderResponse cancelOrder(long orderId) {
+	public CancelOrderResponse cancelOrder(long orderId, String code) {
 		// TODO: Implement IB-specific cancel order logic
 		return new CancelOrderResponse(-1, "Not implemented");
 	}

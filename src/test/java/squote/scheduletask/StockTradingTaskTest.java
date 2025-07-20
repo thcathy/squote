@@ -90,7 +90,7 @@ class StockTradingTaskTest {
 
         stockTradingTask.executeTask();
 
-        verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("StockTradingTask: Unexpected exception: unlock trade failed"));
+        verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("StockTradingTask - HK: Unexpected exception: unlock trade failed"));
     }
 
     @Test
@@ -98,6 +98,6 @@ class StockTradingTaskTest {
         stockTradingTask.executeTask();
 
         verify(mockStockTradingAlgoService, atLeast(1))
-                .processSingleSymbol(any(), any(), any(), any());
+                .processSingleSymbol(any(), any(), any(), any(), any());
     }
 }

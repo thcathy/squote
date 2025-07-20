@@ -200,8 +200,8 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		return (boolean) getResult(seq);
 	}
 
-	public Map<String, Execution> getHKStockTodayExecutions() {
-		int seq = sendGetTodayOrderFillRequest();
+	public Map<String, Execution> getStockTodayExecutions(ExchangeCode.Market market) {
+		int seq = sendGetTodayOrderFillRequest(toTrdMarket(market));
 		log.info("Seq[{}] Send getTodayOrderFillList", seq);
 
 		var result = (List<TrdCommon.OrderFill>) getResult(seq);
@@ -213,12 +213,22 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		return executions;
 	}
 
-	public HashMap<String, Execution> getStockExecutions(Date fromDate, ExchangeCode.Market market) {
-		var trdMarket = switch (market) {
-			case US -> TrdCommon.TrdMarket.TrdMarket_US;
-			case HK -> TrdCommon.TrdMarket.TrdMarket_HK;
+	private static TrdCommon.TrdMarket toTrdMarket(ExchangeCode.Market market) {
+        return switch (market) {
+            case HK -> TrdCommon.TrdMarket.TrdMarket_HK;
+            case US -> TrdCommon.TrdMarket.TrdMarket_US;
+        };
+	}
+
+	private static TrdCommon.TrdSecMarket toSecTrdMarket(ExchangeCode.Market market) {
+		return switch (market) {
+			case HK -> TrdCommon.TrdSecMarket.TrdSecMarket_HK;
+			case US -> TrdCommon.TrdSecMarket.TrdSecMarket_US;
 		};
-		int seq = sendGetHistoryOrderFillRequest(fromDate, trdMarket);
+	}
+
+	public HashMap<String, Execution> getStockExecutions(Date fromDate, ExchangeCode.Market market) {
+		int seq = sendGetHistoryOrderFillRequest(fromDate, toTrdMarket(market));
 		log.info("Seq[{}] Send getHistoryOrderFillList", seq);
 
 		var result = (List<TrdCommon.OrderFill>) getResult(seq);
@@ -236,15 +246,16 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		return (PlaceOrderResponse) getResult(seq);
 	}
 
-	public CancelOrderResponse cancelOrder(long orderId) {
-		int seq = cancelOrderRequest(orderId);
+	public CancelOrderResponse cancelOrder(long orderId, String code) {
+		var market = ExchangeCode.getMarketByStockCode(code);
+		int seq = cancelOrderRequest(orderId, toTrdMarket(market));
 		log.info("Seq[{}] Send cancelOrder", seq);
 		return (CancelOrderResponse) getResult(seq);
 	}
 
 	@Override
-	public List<Order> getPendingOrders() {
-		int seq = sendGetOrderRequest();
+	public List<Order> getPendingOrders(ExchangeCode.Market market) {
+		int seq = sendGetOrderRequest(toTrdMarket(market));
 		log.info("Seq[{}] Send getPendingOrders", seq);
 
 		var result = (List<TrdCommon.Order>) getResult(seq);
@@ -270,9 +281,17 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		return quote;
 	}
 
+	private String toSquoteCode(String futuCode, int trdMarketValue) {
+		var code = futuCode.replaceAll("^0+(?!$)", "");
+		if (trdMarketValue == TrdCommon.TrdMarket.TrdMarket_US_VALUE) {
+			return code + "." + ExchangeCode.MIC.XNAS;	// always using XNAS for US as tentative solution
+		}
+		return code;
+	}
+
 	private Order toOrder(TrdCommon.Order order) {
 		return new Order(
-				order.getCode().replaceAll("^0+(?!$)", ""),
+				toSquoteCode(order.getCode(), order.getTrdMarket()),
 				order.getTrdSide() == TrdCommon.TrdSide.TrdSide_Buy_VALUE ? BUY : SELL,
 				(int) order.getQty(), order.getPrice(),
 				order.getOrderID(),
@@ -288,7 +307,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		exec.setQuantity(BigDecimal.valueOf(fill.getQty()));
 		exec.setPrice(BigDecimal.valueOf(fill.getPrice()));
 		exec.setSide(fill.getTrdSide() == TrdCommon.TrdSide.TrdSide_Buy_VALUE ? BUY : SELL);
-		exec.setCode(fill.getCode().replaceAll("^0+(?!$)", ""));
+		exec.setCode(toSquoteCode(fill.getCode(), fill.getTrdMarket()));
 		exec.setTime((long) (fill.getUpdateTimestamp() * 1000));
 		exec.setMarket(secMarketToMarket(fill.getSecMarket()));
 		return exec;
@@ -302,11 +321,11 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
         };
 	}
 
-	private int sendGetTodayOrderFillRequest() {
+	private int sendGetTodayOrderFillRequest(TrdCommon.TrdMarket trdMarket) {
 		TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
 				.setAccID(clientConfig.accountId())
 				.setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
-				.setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
+				.setTrdMarket(trdMarket.getNumber())
 				.build();
 		TrdGetOrderFillList.C2S c2s = TrdGetOrderFillList.C2S.newBuilder()
 				.setHeader(header)
@@ -353,20 +372,30 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 				.findFirst().get().getAccID();
 	}
 
+	private String toFutuCode(String squoteCode) {
+		var market = ExchangeCode.getMarketByStockCode(squoteCode);
+		return switch (market) {
+			case HK -> String.format("%05d", Integer.parseInt(squoteCode));
+			case US -> ExchangeCode.getBaseCodeFromTicker(squoteCode);
+		};
+	}
+
 	private int placeOrderRequest(SquoteConstants.Side side, String code, int quantity, double price) {
+		var market = ExchangeCode.getMarketByStockCode(code);
+
 		TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
 				.setAccID(clientConfig.accountId())
 				.setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
-				.setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
+				.setTrdMarket(toTrdMarket(market).getNumber())
 				.build();
 		TrdPlaceOrder.C2S c2s = TrdPlaceOrder.C2S.newBuilder()
 				.setPacketID(futuConnTrd.nextPacketID())
 				.setHeader(header)
 				.setTrdSide(side == BUY ? TrdCommon.TrdSide.TrdSide_Buy_VALUE : TrdCommon.TrdSide.TrdSide_Sell_VALUE)
 				.setOrderType(TrdCommon.OrderType.OrderType_Normal_VALUE)
-				.setSecMarket(TrdCommon.TrdSecMarket.TrdSecMarket_HK_VALUE)
+				.setSecMarket(toSecTrdMarket(market).getNumber())
 				.setTimeInForce(TrdCommon.TimeInForce.TimeInForce_GTC_VALUE)
-				.setCode(String.format("%05d", Integer.parseInt(code)))
+				.setCode(toFutuCode(code))
 				.setQty(quantity)
 				.setPrice(price)
 				.build();
@@ -386,11 +415,11 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		return futuConnQot.getSecuritySnapshot(req);
 	}
 
-	private int cancelOrderRequest(long orderId) {
+	private int cancelOrderRequest(long orderId, TrdCommon.TrdMarket trdMarket) {
 		TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
 				.setAccID(clientConfig.accountId())
 				.setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
-				.setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
+				.setTrdMarket(trdMarket.getNumber())
 				.build();
 		TrdModifyOrder.C2S c2s = TrdModifyOrder.C2S.newBuilder()
 				.setPacketID(futuConnTrd.nextPacketID())
@@ -402,11 +431,11 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		return futuConnTrd.modifyOrder(req);
 	}
 
-	private int sendGetOrderRequest() {
+	private int sendGetOrderRequest(TrdCommon.TrdMarket trdMarket) {
 		TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
 				.setAccID(clientConfig.accountId())
 				.setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
-				.setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
+				.setTrdMarket(trdMarket.getNumber())
 				.build();
 		TrdGetOrderList.C2S c2s = TrdGetOrderList.C2S.newBuilder()
 				.setHeader(header)

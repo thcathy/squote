@@ -60,12 +60,12 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
 //                    getAccounts();
  //      getTrades();
 //        getTodayFills();
-//        getPendingOrders();
+        getPendingOrders();
 //        unlockTrade();
 //        placeOrder();
 //        cancelOrder();
 //        requestKlines();
-            requestVOOKlines();
+//            requestVOOKlines();
 //          requestVOOSnapshotQuote();
         }
     }

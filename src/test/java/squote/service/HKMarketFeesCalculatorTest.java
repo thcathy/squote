@@ -1,17 +1,20 @@
 package squote.service;
 
 import org.junit.jupiter.api.Test;
+import squote.SquoteConstants;
 import squote.domain.Broker;
+import squote.domain.HoldingStock;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class HKEXMarketFeesCalculatorTest {
+class HKMarketFeesCalculatorTest {
 
     @Test
     public void test_IndividualFee() {
-        var calculator = new HKEXMarketFeesCalculator();
+        var calculator = new HKMarketFeesCalculator();
         assertEquals(BigDecimal.valueOf(0.5), calculator.tradingTariff());
 
         assertEquals(new BigDecimal("2.00"), calculator.settlementFee(BigDecimal.valueOf(0.1)));
@@ -30,8 +33,12 @@ class HKEXMarketFeesCalculatorTest {
 
     @Test
     public void test_TotalFee() {
-        var calculator = new HKEXMarketFeesCalculator();
-        assertEquals(BigDecimal.valueOf(19.89), calculator.totalFee(BigDecimal.valueOf(30930), false, Broker.FUTU.calculateCommission));
-        assertEquals(new BigDecimal("21.30"), calculator.totalFee(BigDecimal.valueOf(49356), false, Broker.FUTU.calculateCommission));
+        var calculator = new HKMarketFeesCalculator();
+        assertEquals(BigDecimal.valueOf(19.89), calculator.totalFee(
+                new HoldingStock("testUser", "2800", SquoteConstants.Side.BUY, 100, BigDecimal.valueOf(30930), new Date(), null),
+                false, Broker.FUTU.calculateCommission));
+        assertEquals(new BigDecimal("21.30"), calculator.totalFee(
+                new HoldingStock("testUser", "2800", SquoteConstants.Side.BUY, 100, BigDecimal.valueOf(49356), new Date(), null),
+                false, Broker.FUTU.calculateCommission));
     }
 }
