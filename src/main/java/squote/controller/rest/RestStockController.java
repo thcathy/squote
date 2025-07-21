@@ -133,9 +133,9 @@ public class RestStockController {
 		List<HoldingStock> holdingStocks = Lists.newArrayList(holdingStockRepo.findByUserIdOrderByDate(userId));
 		List<Fund> funds = fundRepo.findByUserId(userId);
 		Set<String> codeSet = uniqueStockCodes(codes, holdingStocks, funds);
-		Map<ExchangeCode.Market, Set<String>> separatedCodes = separateStockCodesByMarket(codeSet);
-		Future<HttpResponse<StockQuote[]>> hkStockQuotesFuture = separatedCodes.get(ExchangeCode.Market.HK).isEmpty() ? null : webParserService.getRealTimeQuotes(separatedCodes.get(ExchangeCode.Market.HK));
-		Set<String> USStockCodes = separatedCodes.get(ExchangeCode.Market.US);
+		Map<Market, Set<String>> separatedCodes = separateStockCodesByMarket(codeSet);
+		Future<HttpResponse<StockQuote[]>> hkStockQuotesFuture = separatedCodes.get(Market.HK).isEmpty() ? null : webParserService.getRealTimeQuotes(separatedCodes.get(Market.HK));
+		Set<String> USStockCodes = separatedCodes.get(Market.US);
 		yahooFinanceService.subscribeToSymbols(USStockCodes.toArray(new String[0]));
 
 		// After all concurrent jobs submitted
@@ -246,16 +246,16 @@ public class RestStockController {
 		);
 	}
 
-	private Map<ExchangeCode.Market, Set<String>> separateStockCodesByMarket(Set<String> codeSet) {
-		var result = new HashMap<ExchangeCode.Market, Set<String>>();
-		result.put(ExchangeCode.Market.US, new HashSet<>());
-		result.put(ExchangeCode.Market.HK, new HashSet<>());
+	private Map<Market, Set<String>> separateStockCodesByMarket(Set<String> codeSet) {
+		var result = new HashMap<Market, Set<String>>();
+		result.put(Market.US, new HashSet<>());
+		result.put(Market.HK, new HashSet<>());
 
 		for (String code : codeSet) {
-			if (ExchangeCode.isUSStockCode(code)) {
-				result.get(ExchangeCode.Market.US).add(code);
+			if (Market.isUSStockCode(code)) {
+				result.get(Market.US).add(code);
 			} else {
-				result.get(ExchangeCode.Market.HK).add(code);
+				result.get(Market.HK).add(code);
 			}
 		}
 

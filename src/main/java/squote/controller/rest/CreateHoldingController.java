@@ -7,13 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import squote.domain.Fund;
-import squote.domain.HoldingStock;
-import squote.domain.StockExecutionMessage;
-import squote.domain.StockExecutionMessageBuilder;
+import squote.domain.*;
 import squote.domain.repository.HoldingStockRepository;
 import squote.security.AuthenticationService;
-import squote.service.HKEXMarketFeesCalculator;
+import squote.service.HKMarketFeesCalculator;
+import squote.service.USMarketFeesCalculator;
 import squote.service.UpdateFundByHoldingService;
 import squote.service.WebParserRestService;
 
@@ -36,7 +34,6 @@ public class CreateHoldingController {
 	@Autowired UpdateFundByHoldingService updateFundService;
 	@Autowired WebParserRestService webService;
 	@Autowired AuthenticationService authenticationService;
-	HKEXMarketFeesCalculator feeCalculator = new HKEXMarketFeesCalculator();
 	
 	@RequestMapping(value="/create")
 	public HoldingStock createHoldingFromExecution(@RequestParam(value="message", required=false, defaultValue="") String exeMsg,
@@ -55,10 +52,18 @@ public class CreateHoldingController {
 	}
 
 	private Map<String, BigDecimal> calculateFees(HoldingStock holding, StockExecutionMessage executionMessage) {
-		return Map.of(
-				HKEXMarketFeesCalculator.INCLUDE_STAMP, feeCalculator.totalFee(holding.getGross(), true, executionMessage.broker.calculateCommission),
-				HKEXMarketFeesCalculator.EXCLUDE_STAMP, feeCalculator.totalFee(holding.getGross(), false, executionMessage.broker.calculateCommission)
-		);
+		var hkFeeCalculator = new HKMarketFeesCalculator();
+		var usFeeCalculator = new USMarketFeesCalculator();
+
+		return switch (Market.getMarketByStockCode(holding.getCode())) {
+			case US -> Map.of(
+					"US", usFeeCalculator.totalFee(holding, executionMessage.broker.calculateCommission)
+			);
+			case HK -> Map.of(
+					HKMarketFeesCalculator.INCLUDE_STAMP, hkFeeCalculator.totalFee(holding, true, executionMessage.broker.calculateCommission),
+					HKMarketFeesCalculator.EXCLUDE_STAMP, hkFeeCalculator.totalFee(holding, false, executionMessage.broker.calculateCommission)
+			);
+		};
 	}
 
 	@RequestMapping(value="/updatefund")

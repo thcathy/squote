@@ -34,7 +34,7 @@ syncstockexecutionstask:
 calculatedailysummarytask:
   enabled: true
   stdDevRange: 9,11,12,20
-  codes: 2800,3020,2840,QQQ.XNAS,IBIT.XNAS
+  codes: 2800,3020,2840,QQQ.US,IBIT.US,SPHB.US
 
 stocktradingtask:
   enabled: "{US: false, HK: false}"

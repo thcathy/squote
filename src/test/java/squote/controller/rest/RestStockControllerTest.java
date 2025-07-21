@@ -166,26 +166,26 @@ public class RestStockControllerTest extends IntegrationTest {
     @Test
     public void test_quote_WithUSStocks() throws ExecutionException, InterruptedException {
         authenticationServiceStub.userId = UUID.randomUUID().toString();
-        String codes = "AAPL.XNAS,2800";
-        StockQuote aaplQuote = new StockQuote("AAPL.XNAS").setPrice("150.75");
+        String codes = "AAPL.US,2800";
+        StockQuote aaplQuote = new StockQuote("AAPL.US").setPrice("150.75");
         
-        when(mockYahooFinanceService.getLatestTicker("AAPL.XNAS")).thenReturn(Optional.of(aaplQuote));
+        when(mockYahooFinanceService.getLatestTicker("AAPL.US")).thenReturn(Optional.of(aaplQuote));
         when(mockBinanceAPIService.getAllPrices()).thenReturn(Collections.emptyMap());
         
         Map<String, Object> resultMap = restStockController.quote(codes);
         Map<String, StockQuote> allQuotes = (Map<String, StockQuote>) resultMap.get("allQuotes");
         
-        assertThat(allQuotes).containsKey("AAPL.XNAS");
-        assertThat(allQuotes.get("AAPL.XNAS").getPrice()).isEqualTo("150.75");
-        Mockito.verify(mockYahooFinanceService).subscribeToSymbols("AAPL.XNAS");
+        assertThat(allQuotes).containsKey("AAPL.US");
+        assertThat(allQuotes.get("AAPL.US").getPrice()).isEqualTo("150.75");
+        Mockito.verify(mockYahooFinanceService).subscribeToSymbols("AAPL.US");
     }
 
     @Test
     public void test_quote_missingUSStockQuote_shouldNotContainNullInQuotes() throws ExecutionException, InterruptedException {
-        when(mockYahooFinanceService.getLatestTicker("QQQ.XNAS")).thenReturn(Optional.empty());
+        when(mockYahooFinanceService.getLatestTicker("QQQ.US")).thenReturn(Optional.empty());
         when(mockBinanceAPIService.getAllPrices()).thenReturn(Collections.emptyMap());
         
-        Map<String, Object> resultMap = restStockController.quote("QQQ.XNAS");
+        Map<String, Object> resultMap = restStockController.quote("QQQ.US");
         List<StockQuote> quotes = (List<StockQuote>) resultMap.get("quotes");
         assertThat(quotes).doesNotContainNull();
     }

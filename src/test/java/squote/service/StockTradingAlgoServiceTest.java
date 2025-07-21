@@ -3,6 +3,7 @@ package squote.service;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import com.mashape.unirest.http.HttpResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -17,6 +18,7 @@ import squote.scheduletask.FutuClientConfig;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,16 +33,19 @@ class StockTradingAlgoServiceTest {
     HoldingStockRepository holdingStockRepository = Mockito.mock(HoldingStockRepository.class);
     IBrokerAPIClient mockBrokerAPIClient = Mockito.mock(IBrokerAPIClient.class);
     TelegramAPIClient mockTelegramAPIClient = Mockito.mock(TelegramAPIClient.class);
+    WebParserRestService mockWebParserRestService = Mockito.mock(WebParserRestService.class);
 
     private StockTradingAlgoService stockTradingAlgoService;
     private ListAppender<ILoggingEvent> listAppender;
 
     private static final String stockCode = "code1";
+    private static final String stockCodeUS = "AAPL.US";
     int stdDevRange = 20;
     double stdDev = 1.35;
     double stdDevMultiplier = 0.95;
     Fund fundA = new Fund("UserA", "FundA");
     Fund fundB = new Fund("UserA", "FundB");
+    Fund fundUS = new Fund("UserA", "FundUS");
 
     @BeforeEach
     void setUp() {
@@ -56,21 +61,32 @@ class StockTradingAlgoServiceTest {
         when(dailyAssetSummaryRepo.findTopBySymbolOrderByDateDesc(any())).thenReturn(Optional.of(summary));
 
         when(mockBrokerAPIClient.placeOrder(any(), any(), anyInt(), anyDouble())).thenReturn(new FutuAPIClient.PlaceOrderResponse(1L, 0, null));
-        when(mockBrokerAPIClient.cancelOrder(anyLong()))
+        when(mockBrokerAPIClient.cancelOrder(anyLong(), anyString()))
                 .thenReturn(new FutuAPIClient.CancelOrderResponse(0, ""));
         when(mockTelegramAPIClient.sendMessage(any())).thenReturn(List.of("Message sent"));
 
+        // setup stock quote
         var quote = new StockQuote(stockCode);
         quote.setPrice("40");   // high price default to pass most of the cases
         when(mockBrokerAPIClient.getStockQuote(any())).thenReturn(quote);
 
-        stockTradingAlgoService = new StockTradingAlgoService(
-                dailyAssetSummaryRepo, mockFundRepo, holdingStockRepository, mockTelegramAPIClient);
+        var stockQuoteUS = new StockQuote(stockCodeUS);
+        stockQuoteUS.setPrice("200.0");
+        HttpResponse<StockQuote[]> mockHttpResponse = Mockito.mock(HttpResponse.class);
+        when(mockHttpResponse.getBody()).thenReturn(new StockQuote[]{stockQuoteUS});
+        var mockFuture = CompletableFuture.completedFuture(mockHttpResponse);
+        when(mockWebParserRestService.getRealTimeQuotes(List.of(stockCodeUS))).thenReturn(mockFuture);
 
+        // setup fund
         var algoConfig = new AlgoConfig(stockCode, 3500, null, stdDevRange, stdDevMultiplier);
         fundA.getAlgoConfigs().put(stockCode, algoConfig);
         fundB.getAlgoConfigs().put(stockCode, algoConfig);
-        when(mockFundRepo.findAll()).thenReturn(Arrays.asList(fundA, fundB));
+        var usAlgoConfig = new AlgoConfig(stockCodeUS, 100, null, stdDevRange, stdDevMultiplier);
+        fundUS.getAlgoConfigs().put(stockCodeUS, usAlgoConfig);
+        when(mockFundRepo.findAll()).thenReturn(Arrays.asList(fundA, fundB, fundUS));
+
+        stockTradingAlgoService = new StockTradingAlgoService(
+                dailyAssetSummaryRepo, mockFundRepo, holdingStockRepository, mockWebParserRestService, mockTelegramAPIClient);
     }
 
     private AlgoConfig getDefaultAlgoConfig() {
@@ -126,7 +142,7 @@ class StockTradingAlgoServiceTest {
         when(holdingStockRepository.findByUserIdOrderByDate("UserA"))
             .thenReturn(testData.holdings);
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -143,7 +159,7 @@ class StockTradingAlgoServiceTest {
                         HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(88000), "FundA", new Date(1736308260000L))
                 ));
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -170,10 +186,10 @@ class StockTradingAlgoServiceTest {
         var expectedPrice = 19.74; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of());
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of());
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 algoConfig,
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -193,10 +209,10 @@ class StockTradingAlgoServiceTest {
         quote.setPrice(String.valueOf(marketPrice));
         when(mockBrokerAPIClient.getStockQuote(any())).thenReturn(quote);
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of());
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of());
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -213,18 +229,18 @@ class StockTradingAlgoServiceTest {
         var expectedPrice = 19.74; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         var pendingOrderId = 123456L;
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of(
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of(
                 Order.newOrder(stockCode, BUY, 4000, expectedPrice * 1.0021, pendingOrderId)
         ));
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
         );
 
-        verify(mockBrokerAPIClient, times(1)).cancelOrder(eq(pendingOrderId));
+        verify(mockBrokerAPIClient, times(1)).cancelOrder(eq(pendingOrderId), eq(stockCode));
         verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Cancelled order (FundA): BUY"));
         verify(mockBrokerAPIClient, times(1)).placeOrder(eq(BUY), eq(stockCode), eq(3500), eq(expectedPrice));
         verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Placed order (FundA): BUY"));
@@ -235,12 +251,13 @@ class StockTradingAlgoServiceTest {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         var expectedPrice = 19.74; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of(
-                Order.newOrder(stockCode, BUY, 4000, expectedPrice * 1.0002, 123456L)   // price within threshold
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of(
+                Order.newOrder(stockCode, BUY, 4000, expectedPrice * 1.0002, 123456L) ,  // price within threshold
+                Order.newOrder("DifferentStock", BUY, 4000, expectedPrice * 1.0002, 123456L)
         ));
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -255,19 +272,19 @@ class StockTradingAlgoServiceTest {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         var expectedPrice = 19.74; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of(
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of(
                 Order.newOrder(stockCode, BUY, 4000, expectedPrice / 1.0002, 123456L),   // price within threshold,
                 Order.newOrder(stockCode, BUY, 3500, expectedPrice / 1.1, 123456L)   // price within threshold
         ));
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
         );
 
-        verify(mockBrokerAPIClient, times(2)).cancelOrder(anyLong());
+        verify(mockBrokerAPIClient, times(2)).cancelOrder(anyLong(), anyString());
         verify(mockTelegramAPIClient, times(2)).sendMessage(startsWith("Cancelled order due to multiple pending (FundA): BUY"));
         verify(mockBrokerAPIClient, times(1)).placeOrder(eq(BUY), eq(stockCode), eq(3500), eq(expectedPrice));
         verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Placed order (FundA): BUY"));
@@ -279,15 +296,15 @@ class StockTradingAlgoServiceTest {
         var expectedPrice = 19.72; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         var pendingOrderId = 123456L;
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of(
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of(
                 Order.newOrder(stockCode, BUY, 4000, expectedPrice * 1.0021, pendingOrderId)
         ));
-        when(mockBrokerAPIClient.cancelOrder(anyLong()))
+        when(mockBrokerAPIClient.cancelOrder(anyLong(), anyString()))
                 .thenReturn(new FutuAPIClient.CancelOrderResponse(400, "error for testing"));
 
         assertThrows(RuntimeException.class, () ->
                 stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -300,7 +317,7 @@ class StockTradingAlgoServiceTest {
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -321,7 +338,7 @@ class StockTradingAlgoServiceTest {
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -339,13 +356,13 @@ class StockTradingAlgoServiceTest {
 
         quote.setPrice(String.valueOf(marketPrice));
         when(mockBrokerAPIClient.getStockQuote(any())).thenReturn(quote);
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of(
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of(
                 Order.newOrder(stockCode, BUY, 4000, targetPrice + 0.02, 123456L)
         ));
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -363,10 +380,10 @@ class StockTradingAlgoServiceTest {
         var expectedPrice = 20.26; // 20.0 * (1 + (stdDev * stdDevMultiplier / 100));
         
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of());
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of());
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 algoConfig,
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -380,12 +397,12 @@ class StockTradingAlgoServiceTest {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         var expectedPrice = 20.26; // 20.0 * (1 + (stdDev * stdDevMultiplier / 100));
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of(
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of(
                 Order.newOrder(stockCode, SELL, 4000, expectedPrice / 1.0001, 123456L)
         ));
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -400,18 +417,18 @@ class StockTradingAlgoServiceTest {
         var expectedPrice = 20.26; // 20.0 * (1 + (stdDev * stdDevMultiplier / 100));
         var pendingOrderId = 123456L;
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of(
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of(
                 Order.newOrder(stockCode, BUY, 4000, expectedPrice * 1.0021, pendingOrderId)
         ));
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
         );
 
-        verify(mockBrokerAPIClient, times(1)).cancelOrder(eq(pendingOrderId));
+        verify(mockBrokerAPIClient, times(1)).cancelOrder(eq(pendingOrderId), eq(stockCode));
         verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Cancelled order (FundA): BUY"));
         verify(mockBrokerAPIClient, times(1)).placeOrder(eq(SELL), eq(stockCode), eq(4000), eq(expectedPrice));
     }
@@ -420,13 +437,13 @@ class StockTradingAlgoServiceTest {
     void hasPartialFill_doNothing() {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of(
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of(
                 new Order(stockCode, BUY, 4000, 20.5, 123456L, 1000, 20.48, new Date()),
                 Order.newOrder(stockCode, SELL, 4000, 19.5, 123456L)
         ));
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -471,9 +488,9 @@ class StockTradingAlgoServiceTest {
                 Map.entry("buy2", buyExecutionAtT2),
                 Map.entry("sell1", sellExecutionAtT1)
         ));
-        when(mockBrokerAPIClient.getHKStockTodayExecutions()).thenReturn(TdayExecutions);
+        when(mockBrokerAPIClient.getStockTodayExecutions(Market.HK)).thenReturn(TdayExecutions);
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -492,7 +509,7 @@ class StockTradingAlgoServiceTest {
         TdayExecutions.put("sell2", sellExecutionAtT2);
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -506,10 +523,10 @@ class StockTradingAlgoServiceTest {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
         var partialFilledOrder = new Order(stockCode, BUY, 4000, 20.5, 123456L, 3500, 20.48, new Date());
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of(partialFilledOrder));
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of(partialFilledOrder));
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -527,10 +544,10 @@ class StockTradingAlgoServiceTest {
         var algoConfig = getAlgoConfigWithQuantity(algoConfigQuantity);
         
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of());
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of());
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 algoConfig,
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -549,10 +566,10 @@ class StockTradingAlgoServiceTest {
         var expectedPrice = 19.74; // 20.0 / (1 + (stdDev * stdDevMultiplier / 100));
         
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
-        when(mockBrokerAPIClient.getPendingOrders()).thenReturn(List.of());
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of());
 
         stockTradingAlgoService.processSingleSymbol(
-                fundA,
+                fundA, Market.HK,
                 algoConfig,
                 FutuClientConfig.defaultConfig(),
                 mockBrokerAPIClient
@@ -562,5 +579,37 @@ class StockTradingAlgoServiceTest {
         verify(mockBrokerAPIClient, times(1)).placeOrder(eq(SELL), eq(stockCode), eq(executionQuantity), anyDouble());
         verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Placed order (FundA): BUY"));
         verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Placed order (FundA): SELL"));
+    }
+
+    @Test
+    void processSingleSymbol_testUSStockTrading() {
+        var usHolding = HoldingStock.simple(stockCodeUS, BUY, 10, BigDecimal.valueOf(2000), "FundA");
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(usHolding));
+
+        when(mockBrokerAPIClient.getPendingOrders(Market.US)).thenReturn(List.of(
+                Order.newOrder(stockCodeUS, BUY, 10, 199.17, 1L)    // match target price
+        ));
+        var buyExecutionAtT1 = new Execution();
+        buyExecutionAtT1.setSide(BUY);
+        buyExecutionAtT1.setCode(stockCodeUS);
+        buyExecutionAtT1.setOrderId("buy order 1");
+        buyExecutionAtT1.setPrice(new BigDecimal("500"));
+        buyExecutionAtT1.setQuantity(new BigDecimal("10"));
+        buyExecutionAtT1.setTime(1736308260000L);
+        var TdayExecutions = new HashMap<>(Map.ofEntries(
+                Map.entry("buy1", buyExecutionAtT1)
+        ));
+        when(mockBrokerAPIClient.getStockTodayExecutions(Market.US)).thenReturn(TdayExecutions);
+
+        stockTradingAlgoService.processSingleSymbol(
+                fundUS, Market.US,
+                fundUS.getAlgoConfigs().get(stockCodeUS),
+                FutuClientConfig.defaultConfig(),
+                mockBrokerAPIClient
+        );
+
+        verify(mockWebParserRestService, times(1)).getRealTimeQuotes(List.of(stockCodeUS));
+        verify(mockBrokerAPIClient, never()).getStockQuote(stockCodeUS);
+        verify(mockBrokerAPIClient, times(1)).getStockTodayExecutions(Market.US);
     }
 }

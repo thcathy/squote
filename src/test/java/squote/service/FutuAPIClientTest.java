@@ -11,7 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import squote.SquoteConstants;
-import squote.domain.ExchangeCode;
+import squote.domain.Market;
 import squote.scheduletask.FutuClientConfig;
 
 import java.math.BigDecimal;
@@ -84,7 +84,7 @@ class FutuAPIClientTest {
                         .setRetType(0).setS2C(S2CBuilder).build();
         when(FTAPIConnTrd.getHistoryOrderFillList(any())).thenReturn(1);
         client.onReply_GetHistoryOrderFillList(FTAPIConnTrd, 1, response);
-        var executions = client.getStockExecutions(new Date(), ExchangeCode.Market.HK);
+        var executions = client.getStockExecutions(new Date(), Market.HK);
         assertEquals(2, executions.size());
         var exec2828 = executions.get("1");
         var exec2800 = executions.get("2");

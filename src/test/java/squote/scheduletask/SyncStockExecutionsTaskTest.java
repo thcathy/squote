@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import squote.SquoteConstants;
-import squote.domain.ExchangeCode;
 import squote.domain.HoldingStock;
+import squote.domain.Market;
 import squote.domain.TaskConfig;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
@@ -76,19 +76,19 @@ class SyncStockExecutionsTaskTest {
                 .thenReturn(Optional.empty());
         task.executeHK();
         ArgumentCaptor<Date> dateCaptor = ArgumentCaptor.forClass(Date.class);
-        ArgumentCaptor<ExchangeCode.Market> marketCaptor = ArgumentCaptor.forClass(ExchangeCode.Market.class);
+        ArgumentCaptor<Market> marketCaptor = ArgumentCaptor.forClass(Market.class);
         verify(mockFutuAPIClient).getStockExecutions(dateCaptor.capture(), marketCaptor.capture());
         var date = dateCaptor.getValue();
         var market = marketCaptor.getValue();
         assertTrue(date.getTime() < new Date().getTime() - (27L * 24 * 60 * 60 * 1000));    // 1 month minus 1 day earlier
-        assertEquals(ExchangeCode.Market.HK, market);
+        assertEquals(Market.HK, market);
     }
 
     @Test
     void executeTask_useTimeFromConfig() throws ParseException {
         var holding = new HoldingStock("", "", SquoteConstants.Side.BUY, 1, null, new Date(), null);
         var formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        var lastExecutionTimes = Map.of(ExchangeCode.Market.HK, formatter.parse("2024-11-01 00:00:00"));
+        var lastExecutionTimes = Map.of(Market.HK, formatter.parse("2024-11-01 00:00:00"));
         var config = new SyncStockExecutionsTask.SyncStockExecutionsTaskConfig(lastExecutionTimes);
         var taskConfig = new TaskConfig(SyncStockExecutionsTask.class.toString(), SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.toJson(config));
         when(mockHoldingStockRepository.findTopByFundNameOrderByDateDesc(any()))
@@ -97,12 +97,12 @@ class SyncStockExecutionsTaskTest {
         task.executeHK();
 
         ArgumentCaptor<Date> dateCaptor = ArgumentCaptor.forClass(Date.class);
-        ArgumentCaptor<ExchangeCode.Market> marketCaptor = ArgumentCaptor.forClass(ExchangeCode.Market.class);
+        ArgumentCaptor<Market> marketCaptor = ArgumentCaptor.forClass(Market.class);
         verify(mockFutuAPIClient).getStockExecutions(dateCaptor.capture(), marketCaptor.capture());
         var date = dateCaptor.getValue();
         var market = marketCaptor.getValue();
         assertEquals(formatter.parse("2024-11-02 00:00:00"), date);
-        assertEquals(ExchangeCode.Market.HK, market);
+        assertEquals(Market.HK, market);
     }
 
     @Test
@@ -135,9 +135,9 @@ class SyncStockExecutionsTaskTest {
         ]""";
         task.executeUS();
         ArgumentCaptor<Date> dateCaptor = ArgumentCaptor.forClass(Date.class);
-        ArgumentCaptor<ExchangeCode.Market> marketCaptor = ArgumentCaptor.forClass(ExchangeCode.Market.class);
+        ArgumentCaptor<Market> marketCaptor = ArgumentCaptor.forClass(Market.class);
         verify(mockFutuAPIClient).getStockExecutions(dateCaptor.capture(), marketCaptor.capture());
         var market = marketCaptor.getValue();
-        assertEquals(ExchangeCode.Market.US, market);
+        assertEquals(Market.US, market);
     }
 }

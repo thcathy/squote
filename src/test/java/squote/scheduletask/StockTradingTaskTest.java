@@ -62,24 +62,24 @@ class StockTradingTaskTest {
     }
 
     @Test
-    void testExecuteTaskDisabled() {
+    void testExecuteHKDisabled() {
         stockTradingTask.enabledByMarket.put("HK", false);
-        stockTradingTask.executeTask();
+        stockTradingTask.executeHK();
 
         verifyNoInteractions(mockStockTradingAlgoService);
         verifyNoInteractions(mockFundRepo);
     }
 
     @Test
-    void executeTask_willCloseFutuConnection() {
-        stockTradingTask.executeTask();
+    void executeHK_willCloseFutuConnection() {
+        stockTradingTask.executeHK();
 
         verify(mockFutuAPIClient, atLeast(1)).close();
     }
 
     @Test
-    void executeTask_willUnlockTrade() {
-        stockTradingTask.executeTask();
+    void executeHK_willUnlockTrade() {
+        stockTradingTask.executeHK();
 
         verify(mockFutuAPIClient, atLeast(1)).unlockTrade(any());
     }
@@ -88,16 +88,16 @@ class StockTradingTaskTest {
     void unlockTradeFailed_willSendMessage() {
         when(mockFutuAPIClient.unlockTrade(any())).thenReturn(false);
 
-        stockTradingTask.executeTask();
+        stockTradingTask.executeHK();
 
-        verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("StockTradingTask: Unexpected exception: unlock trade failed"));
+        verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("StockTradingTask - HK: Unexpected exception: unlock trade failed"));
     }
 
     @Test
-    void executeTask_willCallProcessSingleSymbol() {
-        stockTradingTask.executeTask();
+    void executeHK_willCallProcessSingleSymbol() {
+        stockTradingTask.executeHK();
 
         verify(mockStockTradingAlgoService, atLeast(1))
-                .processSingleSymbol(any(), any(), any(), any());
+                .processSingleSymbol(any(), any(), any(), any(), any());
     }
 }

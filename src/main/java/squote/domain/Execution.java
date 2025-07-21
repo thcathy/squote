@@ -13,7 +13,7 @@ public class Execution {
     private BigDecimal quoteQuantity;
     private long time;
     private String code;
-    private ExchangeCode.Market market;
+    private Market market;
     private SquoteConstants.Side side;
     private String fillIds;
 
@@ -21,7 +21,7 @@ public class Execution {
     public String toString() {
         return new StringJoiner(", ", Execution.class.getSimpleName() + "[", "]")
                 .add(orderId + ":" + fillIds)
-                .add(side + " " + code + ".").add(market == null ? ExchangeCode.Market.HK.toString() : market.toString())
+                .add(side + " " + code + ".").add(market == null ? Market.HK.toString() : market.toString())
                 .add(quantity + "@" + price)
                 .add("quoteQuantity=" + quoteQuantity)
                 .add("time=" + time)
@@ -108,11 +108,11 @@ public class Execution {
         this.fillIds = fillIds;
     }
 
-    public ExchangeCode.Market getMarket() {
+    public Market getMarket() {
         return market;
     }
 
-    public void setMarket(ExchangeCode.Market market) {
+    public void setMarket(Market market) {
         this.market = market;
     }
 }

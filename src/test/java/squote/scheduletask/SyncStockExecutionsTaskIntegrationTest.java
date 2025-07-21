@@ -7,9 +7,9 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import squote.IntegrationTest;
-import squote.domain.ExchangeCode;
 import squote.domain.Execution;
 import squote.domain.Fund;
+import squote.domain.Market;
 import squote.domain.TaskConfig;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
@@ -87,10 +87,10 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         exec.setSide(BUY);
         exec.setCode("2800");
         exec.setTime(execDate.getTime());
-        exec.setMarket(ExchangeCode.Market.HK);
+        exec.setMarket(Market.HK);
         executions.put(exec.getOrderId(), exec);
 
-        when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(ExchangeCode.Market.HK))).thenReturn(executions);
+        when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(Market.HK))).thenReturn(executions);
         task.executeHK();
 
         var holdings = Lists.newArrayList(holdingRepo.findAll());
@@ -111,7 +111,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
 
         var configEntity = taskConfigRepo.findById(SyncStockExecutionsTask.class.toString()).orElseThrow();
         var config = SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.fromJson(configEntity.jsonConfig());
-        assertEquals(execDate, config.lastExecutionTimeByMarket().get(ExchangeCode.Market.HK));
+        assertEquals(execDate, config.lastExecutionTimeByMarket().get(Market.HK));
 
         // run the task again will not repeat same fill id
         task.executeHK();
@@ -131,7 +131,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
 
         var configDate = new Date();
         var jsonConfig = SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.toJson(
-                new SyncStockExecutionsTask.SyncStockExecutionsTaskConfig(Map.of(ExchangeCode.Market.HK, configDate)));
+                new SyncStockExecutionsTask.SyncStockExecutionsTaskConfig(Map.of(Market.HK, configDate)));
         taskConfigRepo.save(new TaskConfig(SyncStockExecutionsTask.class.toString(), jsonConfig));
 
         var executions = new HashMap<String, Execution>();
@@ -145,13 +145,13 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         exec.setCode("2800");
         exec.setTime(execDate.getTime());
         executions.put(exec.getOrderId(), exec);
-        when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(ExchangeCode.Market.HK))).thenReturn(executions);
+        when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(Market.HK))).thenReturn(executions);
 
         task.executeHK();
 
         var configEntity = taskConfigRepo.findById(SyncStockExecutionsTask.class.toString()).orElseThrow();
         var config = SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.fromJson(configEntity.jsonConfig());
-        assertTrue(configDate.getTime() < config.lastExecutionTimeByMarket().get(ExchangeCode.Market.HK).getTime());
+        assertTrue(configDate.getTime() < config.lastExecutionTimeByMarket().get(Market.HK).getTime());
     }
 
     @Test
@@ -175,10 +175,10 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         fundRepo.save(f);
 
         var executions = new HashMap<String, Execution>();
-        when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(ExchangeCode.Market.US))).thenReturn(executions);
+        when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(Market.US))).thenReturn(executions);
         
         task.executeUS();
         
-        verify(mockFutuAPIClient).getStockExecutions(any(Date.class), eq(ExchangeCode.Market.US));
+        verify(mockFutuAPIClient).getStockExecutions(any(Date.class), eq(Market.US));
     }
 }

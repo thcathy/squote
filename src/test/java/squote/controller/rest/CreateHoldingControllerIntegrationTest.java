@@ -14,7 +14,7 @@ import squote.domain.HoldingStock;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.security.AuthenticationServiceStub;
-import squote.service.HKEXMarketFeesCalculator;
+import squote.service.HKMarketFeesCalculator;
 import thc.util.DateUtils;
 
 import java.math.BigDecimal;
@@ -70,8 +70,8 @@ public class CreateHoldingControllerIntegrationTest extends IntegrationTest {
 		assertEquals(new BigDecimal(hscei), holding.getHsce());
 		assertEquals(holdingQty + 1, holdingRepo.count());
 		assertEquals(authenticationServiceStub.userId, holding.getUserId());
-		assertEquals(new BigDecimal("164.07"), holding.fees.get(HKEXMarketFeesCalculator.INCLUDE_STAMP));
-		assertEquals(new BigDecimal("102.07"), holding.fees.get(HKEXMarketFeesCalculator.EXCLUDE_STAMP));
+		assertEquals(new BigDecimal("164.07"), holding.fees.get(HKMarketFeesCalculator.INCLUDE_STAMP));
+		assertEquals(new BigDecimal("102.07"), holding.fees.get(HKMarketFeesCalculator.EXCLUDE_STAMP));
 	}
 	
 	@Test
