@@ -49,9 +49,9 @@ class YahooFinanceServiceTest {
         ticker.setTime(1704460200000L);
         latestTickers.put("AAPL", ticker);
 
-        Optional<StockQuote> result = yahooFinanceService.getLatestTicker("AAPL.XNAS");
+        Optional<StockQuote> result = yahooFinanceService.getLatestTicker("AAPL.US");
         StockQuote quote = result.get();
-        assertEquals("AAPL.XNAS", quote.getStockCode());
+        assertEquals("AAPL.US", quote.getStockCode());
         assertEquals("Apple Inc", quote.getStockName());
         assertEquals("150.750", quote.getPrice());
         assertEquals("155.000", quote.getHigh());
@@ -63,13 +63,13 @@ class YahooFinanceServiceTest {
 
     @Test
     void testGetLatestTicker_SymbolNotExists() {
-        Optional<StockQuote> result = yahooFinanceService.getLatestTicker("MSFT.XNAS");
+        Optional<StockQuote> result = yahooFinanceService.getLatestTicker("MSFT.US");
         assertFalse(result.isPresent());
     }
 
     @Test
     void testSubscribeToSymbols() {
-        yahooFinanceService.subscribeToSymbols("AAPL.XNAS", "MSFT.XNAS");
+        yahooFinanceService.subscribeToSymbols("AAPL.US", "MSFT.US");
         verify(mockWebSocketClient).subscribeToSymbols("AAPL", "MSFT");
         assertTrue(subscribedSymbols.contains("AAPL"));
         assertTrue(subscribedSymbols.contains("MSFT"));
@@ -88,7 +88,7 @@ class YahooFinanceServiceTest {
         latestTickers.put("AAPL", createSampleTicker("AAPL", 150.0f));
         latestTickers.put("MSFT", createSampleTicker("MSFT", 300.0f));
 
-        yahooFinanceService.unsubscribeFromSymbols("AAPL.XNAS");
+        yahooFinanceService.unsubscribeFromSymbols("AAPL.US");
 
         assertFalse(subscribedSymbols.contains("AAPL"));
         assertFalse(latestTickers.containsKey("AAPL"));

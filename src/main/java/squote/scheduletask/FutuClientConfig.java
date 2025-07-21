@@ -1,10 +1,10 @@
 package squote.scheduletask;
 
-import squote.domain.ExchangeCode;
+import squote.domain.Market;
 
 import java.util.List;
 
-public record FutuClientConfig(String ip, short port, String fundUserId, String fundName, long accountId, String unlockCode, List<ExchangeCode.Market> markets) {
+public record FutuClientConfig(String ip, short port, String fundUserId, String fundName, long accountId, String unlockCode, List<Market> markets) {
     public static FutuClientConfig defaultConfig() {
         return new FutuClientConfig(
                 "127.0.0.1",
@@ -13,7 +13,7 @@ public record FutuClientConfig(String ip, short port, String fundUserId, String 
                 "FundA",
                 0L,
                 "",
-                List.of(ExchangeCode.Market.HK)
+                List.of(Market.HK)
         );
     }
 }

@@ -55,7 +55,7 @@ public class CreateHoldingController {
 		var hkFeeCalculator = new HKMarketFeesCalculator();
 		var usFeeCalculator = new USMarketFeesCalculator();
 
-		return switch (ExchangeCode.getMarketByStockCode(holding.getCode())) {
+		return switch (Market.getMarketByStockCode(holding.getCode())) {
 			case US -> Map.of(
 					"US", usFeeCalculator.totalFee(holding, executionMessage.broker.calculateCommission)
 			);

@@ -15,10 +15,10 @@ class USMarketFeesCalculatorTest {
     @Test
     public void test_TotalFee_WithActualFUTUBroker() {
         var calculator = new USMarketFeesCalculator();
-        var buyHolding = createTestHolding("QQQ.XNAS", Side.BUY, 500, new BigDecimal("125000"));
+        var buyHolding = createTestHolding("QQQ.US", Side.BUY, 500, new BigDecimal("125000"));
         assertEquals(new BigDecimal("5.10"), calculator.totalFee(buyHolding, Broker.FUTU.calculateCommission));
 
-        var sellHolding = createTestHolding("QQQ.XNAS", Side.SELL, 500, new BigDecimal("125000"));
+        var sellHolding = createTestHolding("QQQ.US", Side.SELL, 500, new BigDecimal("125000"));
         assertEquals(new BigDecimal("5.18"), calculator.totalFee(sellHolding, Broker.FUTU.calculateCommission));
     }
 

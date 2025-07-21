@@ -19,7 +19,7 @@ public enum Broker {
     }
 
     static BigDecimal futuCommission(HoldingStock holding) {
-        var market = ExchangeCode.getMarketByStockCode(holding.getCode());
+        var market = Market.getMarketByStockCode(holding.getCode());
         return switch (market) {
             case HK -> new BigDecimal("15");
             case US -> {

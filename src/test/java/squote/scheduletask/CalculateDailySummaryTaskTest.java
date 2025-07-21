@@ -33,7 +33,7 @@ class CalculateDailySummaryTaskTest {
     private boolean enabled = true;
     private List<Integer> stdDevRanges = List.of(20, 30);
     ;
-    private List<String> codes = List.of("2800", "2828", "QQQ.XNAS");
+    private List<String> codes = List.of("2800", "2828", "QQQ.US");
 
     @BeforeEach
     void setUp() {

@@ -50,7 +50,7 @@ public class StockTradingAlgoService {
         }
     }
 
-    public void processSingleSymbol(Fund fund, ExchangeCode.Market market, AlgoConfig algoConfig, FutuClientConfig clientConfig, IBrokerAPIClient brokerAPIClient) {
+    public void processSingleSymbol(Fund fund, Market market, AlgoConfig algoConfig, FutuClientConfig clientConfig, IBrokerAPIClient brokerAPIClient) {
         log.info("start process for {} in {}", algoConfig.code(), fund.name);
         var stdDev = getStdDev(algoConfig.code(), algoConfig.stdDevRange());
         if (stdDev.isEmpty()) {
@@ -75,7 +75,7 @@ public class StockTradingAlgoService {
 
     private StockQuote getStockQuote(String code, IBrokerAPIClient brokerAPIClient) {
         try {
-            if (ExchangeCode.isUSStockCode(code)) {
+            if (Market.isUSStockCode(code)) {
                 return webParserRestService.getRealTimeQuotes(List.of(code)).get().getBody()[0];
             }
 
@@ -90,7 +90,7 @@ public class StockTradingAlgoService {
                 .flatMap(summary -> Optional.ofNullable(summary.stdDevs.get(stdDevRange)));
     }
 
-    private void processBaseExecution(IBrokerAPIClient brokerAPIClient, FutuClientConfig config, double stdDev, double stdDevMultiplier, Execution execution, StockQuote stockQuote, AlgoConfig algoConfig, ExchangeCode.Market market) {
+    private void processBaseExecution(IBrokerAPIClient brokerAPIClient, FutuClientConfig config, double stdDev, double stdDevMultiplier, Execution execution, StockQuote stockQuote, AlgoConfig algoConfig, Market market) {
         log.info("base price: {}", execution.price);    // used in test case
         log.info("process base execution: {}", execution);
 

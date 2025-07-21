@@ -5,9 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import squote.domain.AlgoConfig;
-import squote.domain.ExchangeCode;
 import squote.domain.Fund;
 import squote.domain.FundHolding;
+import squote.domain.Market;
 import squote.domain.repository.FundRepository;
 import squote.scheduletask.SyncStockExecutionsTask;
 import squote.security.AuthenticationService;
@@ -191,7 +191,7 @@ public class FundController {
 			throw new SecurityException("User not logged in");
 
         log.info("syncStockExec: {}", market);
-		syncStockExecutionsTask.sync(ExchangeCode.Market.valueOf(market));
+		syncStockExecutionsTask.sync(Market.valueOf(market));
 	}
 
 	@GetMapping(value = "/{fundName}/algo")

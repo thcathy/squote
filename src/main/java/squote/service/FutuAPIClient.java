@@ -5,8 +5,8 @@ import com.futu.openapi.pb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import squote.SquoteConstants;
-import squote.domain.ExchangeCode;
 import squote.domain.Execution;
+import squote.domain.Market;
 import squote.domain.Order;
 import squote.domain.StockQuote;
 import squote.scheduletask.FutuClientConfig;
@@ -200,7 +200,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		return (boolean) getResult(seq);
 	}
 
-	public Map<String, Execution> getStockTodayExecutions(ExchangeCode.Market market) {
+	public Map<String, Execution> getStockTodayExecutions(Market market) {
 		int seq = sendGetTodayOrderFillRequest(toTrdMarket(market));
 		log.info("Seq[{}] Send getTodayOrderFillList", seq);
 
@@ -213,21 +213,21 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		return executions;
 	}
 
-	private static TrdCommon.TrdMarket toTrdMarket(ExchangeCode.Market market) {
+	private static TrdCommon.TrdMarket toTrdMarket(Market market) {
         return switch (market) {
             case HK -> TrdCommon.TrdMarket.TrdMarket_HK;
             case US -> TrdCommon.TrdMarket.TrdMarket_US;
         };
 	}
 
-	private static TrdCommon.TrdSecMarket toSecTrdMarket(ExchangeCode.Market market) {
+	private static TrdCommon.TrdSecMarket toSecTrdMarket(Market market) {
 		return switch (market) {
 			case HK -> TrdCommon.TrdSecMarket.TrdSecMarket_HK;
 			case US -> TrdCommon.TrdSecMarket.TrdSecMarket_US;
 		};
 	}
 
-	public HashMap<String, Execution> getStockExecutions(Date fromDate, ExchangeCode.Market market) {
+	public HashMap<String, Execution> getStockExecutions(Date fromDate, Market market) {
 		int seq = sendGetHistoryOrderFillRequest(fromDate, toTrdMarket(market));
 		log.info("Seq[{}] Send getHistoryOrderFillList", seq);
 
@@ -247,14 +247,14 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 	}
 
 	public CancelOrderResponse cancelOrder(long orderId, String code) {
-		var market = ExchangeCode.getMarketByStockCode(code);
+		var market = Market.getMarketByStockCode(code);
 		int seq = cancelOrderRequest(orderId, toTrdMarket(market));
 		log.info("Seq[{}] Send cancelOrder", seq);
 		return (CancelOrderResponse) getResult(seq);
 	}
 
 	@Override
-	public List<Order> getPendingOrders(ExchangeCode.Market market) {
+	public List<Order> getPendingOrders(Market market) {
 		int seq = sendGetOrderRequest(toTrdMarket(market));
 		log.info("Seq[{}] Send getPendingOrders", seq);
 
@@ -284,7 +284,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 	private String toSquoteCode(String futuCode, int trdMarketValue) {
 		var code = futuCode.replaceAll("^0+(?!$)", "");
 		if (trdMarketValue == TrdCommon.TrdMarket.TrdMarket_US_VALUE) {
-			return code + "." + ExchangeCode.MIC.XNAS;	// always using XNAS for US as tentative solution
+			return code + "." + Market.US;
 		}
 		return code;
 	}
@@ -313,10 +313,10 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		return exec;
 	}
 
-	private ExchangeCode.Market secMarketToMarket(int secMarket) {
+	private Market secMarketToMarket(int secMarket) {
 		return switch (secMarket) {
-			case TrdCommon.TrdSecMarket.TrdSecMarket_HK_VALUE -> ExchangeCode.Market.HK;
-			case TrdCommon.TrdSecMarket.TrdSecMarket_US_VALUE -> ExchangeCode.Market.US;
+			case TrdCommon.TrdSecMarket.TrdSecMarket_HK_VALUE -> Market.HK;
+			case TrdCommon.TrdSecMarket.TrdSecMarket_US_VALUE -> Market.US;
             default -> throw new IllegalStateException("Unexpected value: " + secMarket);
         };
 	}
@@ -373,15 +373,15 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 	}
 
 	private String toFutuCode(String squoteCode) {
-		var market = ExchangeCode.getMarketByStockCode(squoteCode);
+		var market = Market.getMarketByStockCode(squoteCode);
 		return switch (market) {
 			case HK -> String.format("%05d", Integer.parseInt(squoteCode));
-			case US -> ExchangeCode.getBaseCodeFromTicker(squoteCode);
+			case US -> Market.getBaseCodeFromTicker(squoteCode);
 		};
 	}
 
 	private int placeOrderRequest(SquoteConstants.Side side, String code, int quantity, double price) {
-		var market = ExchangeCode.getMarketByStockCode(code);
+		var market = Market.getMarketByStockCode(code);
 
 		TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
 				.setAccID(clientConfig.accountId())
