@@ -64,7 +64,7 @@ public class CalculateDailySummaryTask {
         for (String symbol : codes) {
             log.info("Processing code: {}, {}-{}", symbol, fromDate, toDate);
             var symbols = symbol.split("\\.");
-            var mic = symbols.length > 1 ? symbols[1] : "XHKG";
+            var mic = symbols.length > 1 ? symbols[1] : "HK";
             var quotes = webService.getQuotesInRange(symbols[0], mic, fromDate, toDate).getBody();
             var closingPrices = Arrays.stream(quotes).mapToDouble(DailyStockQuote::close).boxed().toList();
             var summary = new DailyAssetSummary(symbol, today);
