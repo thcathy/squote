@@ -11,6 +11,9 @@ import squote.domain.Order;
 import squote.domain.StockQuote;
 import squote.service.IBrokerAPIClient;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,6 +37,8 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	private Map<Operation, Boolean> operationComplete = new ConcurrentHashMap<>();
 	private Map<String, Object> operationData = new ConcurrentHashMap<>();
 	private volatile long lastErrorCode = 0;
+
+	private final List<Bar> barList = new ArrayList<>();
 
 	public IBAPIClient(String host, int port, int clientId) {
 		signal = new EJavaSignal();
@@ -125,6 +130,37 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 			}
 			throw new IllegalArgumentException("Unsupported operation data type: " + type);
 		});
+	}
+
+	public void searchSPHBExchange() {
+		Contract contract = new Contract();
+		contract.symbol("SPHB");
+		contract.secType("STK");  // Stock
+		contract.currency("USD");
+		contract.exchange("SMART"); // Use SMART routing initially
+
+		client.reqContractDetails(1, contract);
+	}
+
+	public void reqHistoricalData() {
+		Contract SPHB = new Contract();
+		SPHB.symbol("SPHB");
+		SPHB.secType("STK");
+		SPHB.exchange("SMART");
+		SPHB.currency("USD");
+
+		client.reqHistoricalData(
+				1,              // ReqId
+				SPHB,            // Contract
+				"20250723 23:59:59 UTC",
+				"1 Y",
+				"5 mins",        // Bar size
+				"TRADES",       // WhatToShow
+				0,              // UseRTH
+				2,              // FormatDate
+				false,          // KeepUpToDate
+				null            // ChartOptions
+		);
 	}
 
 	@Override
@@ -271,7 +307,21 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void contractDetails(int reqId, ContractDetails contractDetails) {
+		Contract contract = contractDetails.contract();
 
+		System.out.println("=== SPHB Contract Details ===");
+		System.out.println("Symbol: " + contract.symbol());
+		System.out.println("Exchange: " + contract.exchange());
+		System.out.println("Primary Exchange: " + contract.primaryExch());
+		System.out.println("Currency: " + contract.currency());
+		System.out.println("Security Type: " + contract.secType());
+		System.out.println("Contract ID: " + contract.conid());
+		System.out.println("Local Symbol: " + contract.localSymbol());
+		System.out.println("Long Name: " + contractDetails.longName());
+		System.out.println("Market Name: " + contractDetails.marketName());
+		System.out.println("Min Tick: " + contractDetails.minTick());
+		System.out.println("Valid Exchanges: " + contractDetails.validExchanges());
+		System.out.println("================================");
 	}
 
 	@Override
@@ -281,7 +331,7 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void contractDetailsEnd(int reqId) {
-
+		System.out.println("Contract details search completed for request ID: " + reqId);
 	}
 
 	@Override
@@ -321,13 +371,27 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void historicalData(int reqId, Bar bar) {
-
+		barList.add(bar);
 	}
 
 	@Override
 	public void scannerParameters(String xml) {
 
 	}
+
+	// Save to CSV file
+	private void saveToCSV() throws IOException {
+		var fileName = "/tmp/SPHB-US-kline-5m.csv";
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+			writer.write("Time,Open,High,Low,Close,Volume,WAP,Count\n");
+			for (Bar bar : barList) {
+				writer.write(String.format("%s,%.2f,%.2f,%.2f,%.2f,%.0f,%.4f,%d\n",
+						bar.time(), bar.open(), bar.high(), bar.low(), bar.close(), bar.volume(), bar.wap(), bar.count()));
+			}
+		}
+		System.out.println("Saved to " + fileName);
+	}
+
 
 	@Override
 	public void scannerData(int reqId, int rank, ContractDetails contractDetails, String distance, String benchmark, String projection, String legsStr) {
@@ -452,6 +516,7 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	@Override
 	public void connectAck() {
 		log.info("IB connection acknowledged");
+		System.out.println("Server Version: " + client.serverVersion());
 	}
 
 	@Override
@@ -501,7 +566,12 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void historicalDataEnd(int reqId, String startDateStr, String endDateStr) {
-
+		System.out.println("End of historical data.");
+		try {
+			saveToCSV();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -686,6 +756,201 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void execDetailsEndProtoBuf(ExecutionDetailsEndProto.ExecutionDetailsEnd executionDetailsEnd) {
+
+	}
+
+	@Override
+	public void completedOrderProtoBuf(CompletedOrderProto.CompletedOrder completedOrder) {
+
+	}
+
+	@Override
+	public void completedOrdersEndProtoBuf(CompletedOrdersEndProto.CompletedOrdersEnd completedOrdersEnd) {
+
+	}
+
+	@Override
+	public void orderBoundProtoBuf(OrderBoundProto.OrderBound orderBound) {
+
+	}
+
+	@Override
+	public void contractDataProtoBuf(ContractDataProto.ContractData contractData) {
+
+	}
+
+	@Override
+	public void bondContractDataProtoBuf(ContractDataProto.ContractData contractData) {
+
+	}
+
+	@Override
+	public void contractDataEndProtoBuf(ContractDataEndProto.ContractDataEnd contractDataEnd) {
+
+	}
+
+	@Override
+	public void tickPriceProtoBuf(TickPriceProto.TickPrice tickPrice) {
+
+	}
+
+	@Override
+	public void tickSizeProtoBuf(TickSizeProto.TickSize tickSize) {
+
+	}
+
+	@Override
+	public void tickOptionComputationProtoBuf(TickOptionComputationProto.TickOptionComputation tickOptionComputation) {
+
+	}
+
+	@Override
+	public void tickGenericProtoBuf(TickGenericProto.TickGeneric tickGeneric) {
+
+	}
+
+	@Override
+	public void tickStringProtoBuf(TickStringProto.TickString tickString) {
+
+	}
+
+	@Override
+	public void tickSnapshotEndProtoBuf(TickSnapshotEndProto.TickSnapshotEnd tickSnapshotEnd) {
+
+	}
+
+	@Override
+	public void updateMarketDepthProtoBuf(MarketDepthProto.MarketDepth marketDepth) {
+
+	}
+
+	@Override
+	public void updateMarketDepthL2ProtoBuf(MarketDepthL2Proto.MarketDepthL2 marketDepthL2) {
+
+	}
+
+	@Override
+	public void marketDataTypeProtoBuf(MarketDataTypeProto.MarketDataType marketDataType) {
+
+	}
+
+	@Override
+	public void tickReqParamsProtoBuf(TickReqParamsProto.TickReqParams tickReqParams) {
+
+	}
+
+	@Override
+	public void updateAccountValueProtoBuf(AccountValueProto.AccountValue accountValue) {
+
+	}
+
+	@Override
+	public void updatePortfolioProtoBuf(PortfolioValueProto.PortfolioValue portfolioValue) {
+
+	}
+
+	@Override
+	public void updateAccountTimeProtoBuf(AccountUpdateTimeProto.AccountUpdateTime accountUpdateTime) {
+
+	}
+
+	@Override
+	public void accountDataEndProtoBuf(AccountDataEndProto.AccountDataEnd accountDataEnd) {
+
+	}
+
+	@Override
+	public void managedAccountsProtoBuf(ManagedAccountsProto.ManagedAccounts managedAccounts) {
+
+	}
+
+	@Override
+	public void positionProtoBuf(PositionProto.Position position) {
+
+	}
+
+	@Override
+	public void positionEndProtoBuf(PositionEndProto.PositionEnd positionEnd) {
+
+	}
+
+	@Override
+	public void accountSummaryProtoBuf(AccountSummaryProto.AccountSummary accountSummary) {
+
+	}
+
+	@Override
+	public void accountSummaryEndProtoBuf(AccountSummaryEndProto.AccountSummaryEnd accountSummaryEnd) {
+
+	}
+
+	@Override
+	public void positionMultiProtoBuf(PositionMultiProto.PositionMulti positionMulti) {
+
+	}
+
+	@Override
+	public void positionMultiEndProtoBuf(PositionMultiEndProto.PositionMultiEnd positionMultiEnd) {
+
+	}
+
+	@Override
+	public void accountUpdateMultiProtoBuf(AccountUpdateMultiProto.AccountUpdateMulti accountUpdateMulti) {
+
+	}
+
+	@Override
+	public void accountUpdateMultiEndProtoBuf(AccountUpdateMultiEndProto.AccountUpdateMultiEnd accountUpdateMultiEnd) {
+
+	}
+
+	@Override
+	public void historicalDataProtoBuf(HistoricalDataProto.HistoricalData historicalData) {
+		System.out.println("are you serious?");
+	}
+
+	@Override
+	public void historicalDataUpdateProtoBuf(HistoricalDataUpdateProto.HistoricalDataUpdate historicalDataUpdate) {
+
+	}
+
+	@Override
+	public void historicalDataEndProtoBuf(HistoricalDataEndProto.HistoricalDataEnd historicalDataEnd) {
+
+	}
+
+	@Override
+	public void realTimeBarTickProtoBuf(RealTimeBarTickProto.RealTimeBarTick realTimeBarTick) {
+
+	}
+
+	@Override
+	public void headTimestampProtoBuf(HeadTimestampProto.HeadTimestamp headTimestamp) {
+
+	}
+
+	@Override
+	public void histogramDataProtoBuf(HistogramDataProto.HistogramData histogramData) {
+
+	}
+
+	@Override
+	public void historicalTicksProtoBuf(HistoricalTicksProto.HistoricalTicks historicalTicks) {
+
+	}
+
+	@Override
+	public void historicalTicksBidAskProtoBuf(HistoricalTicksBidAskProto.HistoricalTicksBidAsk historicalTicksBidAsk) {
+
+	}
+
+	@Override
+	public void historicalTicksLastProtoBuf(HistoricalTicksLastProto.HistoricalTicksLast historicalTicksLast) {
+
+	}
+
+	@Override
+	public void tickByTickDataProtoBuf(TickByTickDataProto.TickByTickData tickByTickData) {
 
 	}
 

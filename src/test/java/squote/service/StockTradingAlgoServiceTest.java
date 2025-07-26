@@ -78,10 +78,10 @@ class StockTradingAlgoServiceTest {
         when(mockWebParserRestService.getRealTimeQuotes(List.of(stockCodeUS))).thenReturn(mockFuture);
 
         // setup fund
-        var algoConfig = new AlgoConfig(stockCode, 3500, null, stdDevRange, stdDevMultiplier);
+        var algoConfig = new AlgoConfig(stockCode, 3500, (Double) null, stdDevRange, stdDevMultiplier, null);
         fundA.getAlgoConfigs().put(stockCode, algoConfig);
         fundB.getAlgoConfigs().put(stockCode, algoConfig);
-        var usAlgoConfig = new AlgoConfig(stockCodeUS, 100, null, stdDevRange, stdDevMultiplier);
+        var usAlgoConfig = new AlgoConfig(stockCodeUS, 100, (Double) null, stdDevRange, stdDevMultiplier, null);
         fundUS.getAlgoConfigs().put(stockCodeUS, usAlgoConfig);
         when(mockFundRepo.findAll()).thenReturn(Arrays.asList(fundA, fundB, fundUS));
 
@@ -94,7 +94,7 @@ class StockTradingAlgoServiceTest {
     }
 
     private AlgoConfig getAlgoConfigWithQuantity(int quantity) {
-        return new AlgoConfig(stockCode, quantity, null, stdDevRange, stdDevMultiplier);
+        return new AlgoConfig(stockCode, quantity, (Double) null, stdDevRange, stdDevMultiplier, null);
     }
 
     static Stream<TestFindBasePriceData> testFindBasePriceDataProvider() {
@@ -611,5 +611,22 @@ class StockTradingAlgoServiceTest {
         verify(mockWebParserRestService, times(1)).getRealTimeQuotes(List.of(stockCodeUS));
         verify(mockBrokerAPIClient, never()).getStockQuote(stockCodeUS);
         verify(mockBrokerAPIClient, times(1)).getStockTodayExecutions(Market.US);
+    }
+
+    @Test
+    void processSingleSymbol_shouldCalculateQuantityFromGrossAmount() {
+        var grossAmountBasedConfig = new AlgoConfig(stockCode, 0, (Double) null, stdDevRange, stdDevMultiplier, 1000.0);
+        fundA.getAlgoConfigs().put(stockCode, grossAmountBasedConfig);
+        
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of());
+        when(mockBrokerAPIClient.getStockTodayExecutions(Market.HK)).thenReturn(new HashMap<>());
+
+        // Act
+        stockTradingAlgoService.processSingleSymbol(fundA, Market.HK, grossAmountBasedConfig,
+                FutuClientConfig.defaultConfig(), mockBrokerAPIClient);
+
+        verify(mockBrokerAPIClient, times(1)).placeOrder(eq(BUY), eq(stockCode), eq(50), anyDouble());
     }
 }

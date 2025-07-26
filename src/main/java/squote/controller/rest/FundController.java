@@ -208,10 +208,11 @@ public class FundController {
 											@RequestParam(name = "quantity", required = false) int quantity,
 											@RequestParam(name = "basePrice", required = false) Double basePrice,
 											@RequestParam(name = "stdDevRange", defaultValue = "11") int stdDevRange,
-											@RequestParam(name = "stdDevMultiplier", defaultValue = "0.7") double stdDevMultiplier) {
+											@RequestParam(name = "stdDevMultiplier", defaultValue = "0.7") double stdDevMultiplier,
+											@RequestParam(name = "grossAmount", required = false) Double grossAmount) {
 		var userId = authenticationService.getUserId().get();
 		
-		var newConfig = new AlgoConfig(code, quantity, basePrice, stdDevRange, stdDevMultiplier);
+		var newConfig = new AlgoConfig(code, quantity, basePrice, stdDevRange, stdDevMultiplier, grossAmount);
 		log.info("add or update algo config {} to fund {}", newConfig, fundName);
 
 		var fund = fundRepo.findByUserIdAndName(userId, fundName).get();

@@ -53,7 +53,7 @@ class StockTradingTaskTest {
                     ]
                 """;
 
-        var algoConfig = new AlgoConfig(stockCode, 3500, null, 10, 0.7);
+        var algoConfig = new AlgoConfig(stockCode, 3500, null, 10, 0.7, null);
         var fundA = new Fund("dummy", "FundA");
         fundA.getAlgoConfigs().put(stockCode, algoConfig);
         var fundB = new Fund("dummy", "FundB");

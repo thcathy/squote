@@ -105,7 +105,7 @@ public class SyncStockExecutionsTask {
             var fromDate = getFromDate(market);
 
             for (var config : futuClientConfigs) {
-                if (config.markets() ==null || !config.markets().contains(market)) continue;
+                if (config.markets()==null || !config.markets().contains(market)) continue;
 
                 logs.append(String.format("Process config=%s\n\nFund snapshot before:\n%s\n\n", config, fundRepo.findByUserIdAndName(userId, config.fundName())));
                 futuAPIClient = futuAPIClientFactory.build(config);

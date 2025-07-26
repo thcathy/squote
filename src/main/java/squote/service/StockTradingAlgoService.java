@@ -109,17 +109,20 @@ public class StockTradingAlgoService {
             return;
         }
 
-        int buyQuantity = algoConfig.quantity() > 0 ? algoConfig.quantity() : execution.quantity;
-        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, stdDevMultiplier, brokerAPIClient, config, stockQuote, buyQuantity);
-        handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, stdDevMultiplier, brokerAPIClient, config, stockQuote, execution.quantity);
+        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, stdDevMultiplier, brokerAPIClient, config, stockQuote, algoConfig);
+        handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, stdDevMultiplier, brokerAPIClient, config, stockQuote, algoConfig);
     }
 
-    private void handleOrderForBaseExecution(Side pendingOrderSide, Execution baseExec, List<Order> pendingOrders, double stdDev, double stdDevMultiplier, IBrokerAPIClient brokerAPIClient, FutuClientConfig clientConfig, StockQuote stockQuote, int quantity) {
+    private void handleOrderForBaseExecution(Side pendingOrderSide, Execution baseExec, List<Order> pendingOrders, 
+        double stdDev, double stdDevMultiplier, IBrokerAPIClient brokerAPIClient, FutuClientConfig clientConfig, 
+        StockQuote stockQuote, AlgoConfig algoConfig) {
         log.info("handle {} order", pendingOrders);
         if (pendingOrderSide == SELL && baseExec.side == SELL) return;
 
         var stockCode = baseExec.code;
         var targetPrice = calculateTargetPrice(pendingOrderSide, stockCode, baseExec, stdDev, stdDevMultiplier, Double.parseDouble(stockQuote.getPrice()));
+        var quantity = calculateOrderQuantity(pendingOrderSide, baseExec, algoConfig, targetPrice);
+
         var matchedPendingOrders = pendingOrders.stream()
                 .filter(o -> o.side() == pendingOrderSide &&  o.code().equals(baseExec.code))
                 .toList();
@@ -175,6 +178,23 @@ public class StockTradingAlgoService {
         targetPrice = (double) Math.round(targetPrice * 1000) / 1000;
         log.info("{}: targetPrice={}, basePrice={}, stdDev={}, mktPx={}", orderSide, targetPrice, basePrice, stdDev, marketPrice);
         return targetPrice;
+    }
+
+    private int calculateOrderQuantity(Side orderSide, Execution baseExec, AlgoConfig algoConfig, double targetPrice) {
+        if (orderSide == SELL) return baseExec.quantity;
+        
+        // BUY orders
+        int quantity;
+        if (algoConfig.grossAmount() != null && algoConfig.grossAmount() > 0) {
+            quantity = (int) Math.floor(algoConfig.grossAmount() / targetPrice);
+            log.info("Calculated buy quantity from grossAmount: {} / {} = {}", algoConfig.grossAmount(), targetPrice, quantity);
+        } else if (algoConfig.quantity() > 0) {
+            quantity = algoConfig.quantity();
+        } else {
+            quantity = baseExec.quantity;
+        }
+        log.info("Final buy quantity for {}: {}", baseExec.code, quantity);
+        return quantity;
     }
 
     private void placeOrder(IBrokerAPIClient brokerAPIClient, FutuClientConfig config, String stockCode, Side side, double price, int quantity) {

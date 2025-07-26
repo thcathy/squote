@@ -22,10 +22,24 @@ public class IBAPIClientPlayground {
         log.info("Starting IBAPIClient playground tests...");
 
 //        testConnectionTimeout();
-        // testIBGatewayConnection();
-        testGetPendingOrders();
+//         testIBGatewayConnection();
+//        testGetPendingOrders();
+        getSPHBBars();
 
         log.info("IBAPIClient playground tests completed.");
+    }
+
+    private void getSPHBBars() {
+        try {
+            IBAPIClient client = new IBAPIClient(HOST, PORT, BASE_CLIENT_ID + 2);
+//            client.reqHistoricalData();
+            client.searchSPHBExchange();
+
+            Thread.sleep(100000);
+            client.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void testConnectionTimeout() {
