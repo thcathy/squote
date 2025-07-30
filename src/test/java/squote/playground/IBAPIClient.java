@@ -1,7 +1,6 @@
 package squote.playground;
 
 import com.ib.client.*;
-import com.ib.client.protobuf.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import squote.SquoteConstants;
@@ -43,12 +42,15 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	public IBAPIClient(String host, int port, int clientId) {
 		signal = new EJavaSignal();
 		client = new EClientSocket(this, signal);
-		reader = new EReader(client, signal);
 
 		log.info("Connecting to IB API at {}:{} with clientId {}", host, port, clientId);
 		client.eDisconnect();
 		client.eConnect(host, port, clientId);
-		
+		if (!isConnected()) {
+			throw new RuntimeException("Failed to connect to IB API within " + connectionTimeoutSeconds + " seconds");
+		}
+
+		reader = new EReader(client, signal);
 		reader.start();
 		new Thread(() -> {
 			while (client.isConnected()) {
@@ -67,10 +69,6 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 			try {
 				Thread.sleep(500);
 			} catch (InterruptedException ignored) {}
-		}
-		
-		if (!isConnected()) {
-			throw new RuntimeException("Failed to connect to IB API within " + connectionTimeoutSeconds + " seconds");
 		}
 		
 		log.info("isConnected={}", isConnected());
@@ -135,32 +133,39 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	public void searchSPHBExchange() {
 		Contract contract = new Contract();
 		contract.symbol("SPHB");
-		contract.secType("STK");  // Stock
+		contract.secType("STK");
 		contract.currency("USD");
-		contract.exchange("SMART"); // Use SMART routing initially
+//		contract.exchange("SMART"); // Use SMART routing initially
 
 		client.reqContractDetails(1, contract);
 	}
 
 	public void reqHistoricalData() {
+		log.info("Requesting historical data for SPHB...");
+		
 		Contract SPHB = new Contract();
+		SPHB.conid(319357119);
 		SPHB.symbol("SPHB");
 		SPHB.secType("STK");
-		SPHB.exchange("SMART");
+		SPHB.exchange("ARCA");
 		SPHB.currency("USD");
 
+		barList.clear(); // Clear any previous data
+
 		client.reqHistoricalData(
-				1,              // ReqId
+				2,              // ReqId
 				SPHB,            // Contract
-				"20250723 23:59:59 UTC",
-				"1 Y",
+				"",             // endDateTime - empty means current time
+				"1 Y",          // durationStr
 				"5 mins",        // Bar size
 				"TRADES",       // WhatToShow
-				0,              // UseRTH
-				2,              // FormatDate
+				0,              // UseRTH (0 = include data outside regular trading hours)
+				2,              // FormatDate (2 = yyyymmdd hh:mm:ss)
 				false,          // KeepUpToDate
 				null            // ChartOptions
 		);
+		
+		log.info("Historical data request sent for SPHB (reqId=2)");
 	}
 
 	@Override
@@ -229,12 +234,12 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void tickPrice(int tickerId, int field, double price, TickAttrib attrib) {
-
+		log.info("Tick price received: tickerId={}, field={}, price={}", tickerId, field, price);
 	}
 
 	@Override
 	public void tickSize(int tickerId, int field, Decimal size) {
-
+		log.info("Tick size received: tickerId={}, field={}, size={}", tickerId, field, size);
 	}
 
 	@Override
@@ -258,7 +263,7 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	}
 
 	@Override
-	public void orderStatus(int i, String s, Decimal decimal, Decimal decimal1, double v, long l, int i1, double v1, int i2, String s1, double v2) {
+	public void orderStatus(int i, String s, Decimal decimal, Decimal decimal1, double v, int i1, int i2, double v1, int i3, String s1, double v2) {
 
 	}
 
@@ -302,6 +307,7 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void nextValidId(int orderId) {
+		log.info("nextValidId:" + orderId);
 		currentOrderId = orderId;
 	}
 
@@ -309,7 +315,11 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	public void contractDetails(int reqId, ContractDetails contractDetails) {
 		Contract contract = contractDetails.contract();
 
-		System.out.println("=== SPHB Contract Details ===");
+		log.info("Received contract details for reqId {}: symbol={}, exchange={}, conid={}", 
+			reqId, contract.symbol(), contract.exchange(), contract.conid());
+
+		System.out.println("=== TRADITIONAL CONTRACT DETAILS ===");
+		System.out.println("Request ID: " + reqId);
 		System.out.println("Symbol: " + contract.symbol());
 		System.out.println("Exchange: " + contract.exchange());
 		System.out.println("Primary Exchange: " + contract.primaryExch());
@@ -321,7 +331,7 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 		System.out.println("Market Name: " + contractDetails.marketName());
 		System.out.println("Min Tick: " + contractDetails.minTick());
 		System.out.println("Valid Exchanges: " + contractDetails.validExchanges());
-		System.out.println("================================");
+		System.out.println("===================================");
 	}
 
 	@Override
@@ -331,7 +341,10 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void contractDetailsEnd(int reqId) {
-		System.out.println("Contract details search completed for request ID: " + reqId);
+		log.info("Contract details request completed for reqId {}", reqId);
+		System.out.println("=== TRADITIONAL CONTRACT DETAILS END ===");
+		System.out.println("Request ID: " + reqId);
+		System.out.println("======================================");
 	}
 
 	@Override
@@ -361,7 +374,13 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void managedAccounts(String accountsList) {
+		log.info("Managed accounts received: {}", accountsList);
+	}
 
+	public void requestMarketDataType() {
+		log.info("Requesting market data type information...");
+		// Request market data type - 1=Live, 2=Frozen, 3=Delayed, 4=Delayed-Frozen
+		client.reqMarketDataType(1); // Try live first
 	}
 
 	@Override
@@ -371,6 +390,8 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void historicalData(int reqId, Bar bar) {
+		log.info("Received historical data: reqId={}, time={}, open={}, high={}, low={}, close={}, volume={}", 
+			reqId, bar.time(), bar.open(), bar.high(), bar.low(), bar.close(), bar.volume());
 		barList.add(bar);
 	}
 
@@ -430,11 +451,19 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void marketDataType(int reqId, int marketDataType) {
-
+		String dataTypeStr;
+		switch (marketDataType) {
+			case 1: dataTypeStr = "Live"; break;
+			case 2: dataTypeStr = "Frozen"; break;
+			case 3: dataTypeStr = "Delayed"; break;
+			case 4: dataTypeStr = "Delayed-Frozen"; break;
+			default: dataTypeStr = "Unknown(" + marketDataType + ")"; break;
+		}
+		log.info("Market data type for reqId {}: {} ({})", reqId, dataTypeStr, marketDataType);
 	}
 
 	@Override
-	public void commissionAndFeesReport(CommissionAndFeesReport commissionAndFeesReport) {
+	public void commissionReport(CommissionReport commissionReport) {
 
 	}
 
@@ -450,12 +479,13 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void accountSummary(int reqId, String account, String tag, String value, String currency) {
-
+		log.info("Account summary: reqId={}, account={}, tag={}, value={}, currency={}", 
+			reqId, account, tag, value, currency);
 	}
 
 	@Override
 	public void accountSummaryEnd(int reqId) {
-
+		log.info("Account summary request completed for reqId {}", reqId);
 	}
 
 	@Override
@@ -499,12 +529,33 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	}
 
 	@Override
-	public void error(int id, long errorTime, int errorCode, String errorMsg, String advancedOrderRejectJson) {
+	public void error(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
 		log.error("IB API error - id: {}, code: {}, msg: {}, advancedOrderRejectJson: {}", id, errorCode, errorMsg, advancedOrderRejectJson);
 		lastErrorCode = errorCode;
 
+		// Handle specific error codes
 		if (lastErrorCode == 506) {
 			log.error("Server requires newer API version than currently available. Download latest API from: https://interactivebrokers.github.io/");
+		} else if (lastErrorCode == 162) {
+			log.error("Historical Market Data Service error. This might be due to pacing violations or data subscription issues.");
+		} else if (lastErrorCode == 200) {
+			log.error("No security definition has been found for the request");
+		} else if (lastErrorCode == 321) {
+			log.error("Error validating request. Check contract details and parameters.");
+		} else if (lastErrorCode == 322) {
+			log.error("Error processing request. This might be a server-side issue.");
+		} else if (lastErrorCode == 10147) {
+			log.error("OrderId {} that needs to be cancelled is not found.", id);
+		} else if (lastErrorCode == 10148) {
+			log.error("OrderId {} that needs to be cancelled cannot be cancelled, state: {}", id, errorMsg);
+		} else if (lastErrorCode == 502) {
+			log.error("Couldn't connect to TWS. Confirm that 'Enable ActiveX and Socket Clients' is enabled and connection port is set correctly.");
+		}
+		
+		// If this is a historical data request, complete the operation with error
+		if ((id == 2 || id == 3) && (errorCode == 162 || errorCode == 200 || errorCode == 321 || errorCode == 322)) {
+			log.error("Historical data request (reqId={}) failed with error code {}, completing operation", id, errorCode);
+			completeOperation(Operation.HISTORICAL_DATA);
 		}
 	}
 
@@ -516,7 +567,7 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	@Override
 	public void connectAck() {
 		log.info("IB connection acknowledged");
-		System.out.println("Server Version: " + client.serverVersion());
+		log.info("Server Version: {}", client.serverVersion());
 	}
 
 	@Override
@@ -566,10 +617,17 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void historicalDataEnd(int reqId, String startDateStr, String endDateStr) {
+		log.info("Historical data request completed: reqId={}, startDate={}, endDate={}, total bars received={}", 
+			reqId, startDateStr, endDateStr, barList.size());
+		
+		// Complete the operation
+		completeOperation(Operation.HISTORICAL_DATA);
+		
 		System.out.println("End of historical data.");
 		try {
 			saveToCSV();
 		} catch (IOException e) {
+			log.error("Error saving historical data to CSV", e);
 			e.printStackTrace();
 		}
 	}
@@ -721,236 +779,6 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void userInfo(int reqId, String whiteBrandingId) {
-
-	}
-
-	@Override
-	public void currentTimeInMillis(long l) {
-
-	}
-
-	@Override
-	public void orderStatusProtoBuf(OrderStatusProto.OrderStatus orderStatus) {
-
-	}
-
-	@Override
-	public void openOrderProtoBuf(OpenOrderProto.OpenOrder openOrder) {
-
-	}
-
-	@Override
-	public void openOrdersEndProtoBuf(OpenOrdersEndProto.OpenOrdersEnd openOrdersEnd) {
-
-	}
-
-	@Override
-	public void errorProtoBuf(ErrorMessageProto.ErrorMessage errorMessage) {
-
-	}
-
-	@Override
-	public void execDetailsProtoBuf(ExecutionDetailsProto.ExecutionDetails executionDetails) {
-
-	}
-
-	@Override
-	public void execDetailsEndProtoBuf(ExecutionDetailsEndProto.ExecutionDetailsEnd executionDetailsEnd) {
-
-	}
-
-	@Override
-	public void completedOrderProtoBuf(CompletedOrderProto.CompletedOrder completedOrder) {
-
-	}
-
-	@Override
-	public void completedOrdersEndProtoBuf(CompletedOrdersEndProto.CompletedOrdersEnd completedOrdersEnd) {
-
-	}
-
-	@Override
-	public void orderBoundProtoBuf(OrderBoundProto.OrderBound orderBound) {
-
-	}
-
-	@Override
-	public void contractDataProtoBuf(ContractDataProto.ContractData contractData) {
-
-	}
-
-	@Override
-	public void bondContractDataProtoBuf(ContractDataProto.ContractData contractData) {
-
-	}
-
-	@Override
-	public void contractDataEndProtoBuf(ContractDataEndProto.ContractDataEnd contractDataEnd) {
-
-	}
-
-	@Override
-	public void tickPriceProtoBuf(TickPriceProto.TickPrice tickPrice) {
-
-	}
-
-	@Override
-	public void tickSizeProtoBuf(TickSizeProto.TickSize tickSize) {
-
-	}
-
-	@Override
-	public void tickOptionComputationProtoBuf(TickOptionComputationProto.TickOptionComputation tickOptionComputation) {
-
-	}
-
-	@Override
-	public void tickGenericProtoBuf(TickGenericProto.TickGeneric tickGeneric) {
-
-	}
-
-	@Override
-	public void tickStringProtoBuf(TickStringProto.TickString tickString) {
-
-	}
-
-	@Override
-	public void tickSnapshotEndProtoBuf(TickSnapshotEndProto.TickSnapshotEnd tickSnapshotEnd) {
-
-	}
-
-	@Override
-	public void updateMarketDepthProtoBuf(MarketDepthProto.MarketDepth marketDepth) {
-
-	}
-
-	@Override
-	public void updateMarketDepthL2ProtoBuf(MarketDepthL2Proto.MarketDepthL2 marketDepthL2) {
-
-	}
-
-	@Override
-	public void marketDataTypeProtoBuf(MarketDataTypeProto.MarketDataType marketDataType) {
-
-	}
-
-	@Override
-	public void tickReqParamsProtoBuf(TickReqParamsProto.TickReqParams tickReqParams) {
-
-	}
-
-	@Override
-	public void updateAccountValueProtoBuf(AccountValueProto.AccountValue accountValue) {
-
-	}
-
-	@Override
-	public void updatePortfolioProtoBuf(PortfolioValueProto.PortfolioValue portfolioValue) {
-
-	}
-
-	@Override
-	public void updateAccountTimeProtoBuf(AccountUpdateTimeProto.AccountUpdateTime accountUpdateTime) {
-
-	}
-
-	@Override
-	public void accountDataEndProtoBuf(AccountDataEndProto.AccountDataEnd accountDataEnd) {
-
-	}
-
-	@Override
-	public void managedAccountsProtoBuf(ManagedAccountsProto.ManagedAccounts managedAccounts) {
-
-	}
-
-	@Override
-	public void positionProtoBuf(PositionProto.Position position) {
-
-	}
-
-	@Override
-	public void positionEndProtoBuf(PositionEndProto.PositionEnd positionEnd) {
-
-	}
-
-	@Override
-	public void accountSummaryProtoBuf(AccountSummaryProto.AccountSummary accountSummary) {
-
-	}
-
-	@Override
-	public void accountSummaryEndProtoBuf(AccountSummaryEndProto.AccountSummaryEnd accountSummaryEnd) {
-
-	}
-
-	@Override
-	public void positionMultiProtoBuf(PositionMultiProto.PositionMulti positionMulti) {
-
-	}
-
-	@Override
-	public void positionMultiEndProtoBuf(PositionMultiEndProto.PositionMultiEnd positionMultiEnd) {
-
-	}
-
-	@Override
-	public void accountUpdateMultiProtoBuf(AccountUpdateMultiProto.AccountUpdateMulti accountUpdateMulti) {
-
-	}
-
-	@Override
-	public void accountUpdateMultiEndProtoBuf(AccountUpdateMultiEndProto.AccountUpdateMultiEnd accountUpdateMultiEnd) {
-
-	}
-
-	@Override
-	public void historicalDataProtoBuf(HistoricalDataProto.HistoricalData historicalData) {
-		System.out.println("are you serious?");
-	}
-
-	@Override
-	public void historicalDataUpdateProtoBuf(HistoricalDataUpdateProto.HistoricalDataUpdate historicalDataUpdate) {
-
-	}
-
-	@Override
-	public void historicalDataEndProtoBuf(HistoricalDataEndProto.HistoricalDataEnd historicalDataEnd) {
-
-	}
-
-	@Override
-	public void realTimeBarTickProtoBuf(RealTimeBarTickProto.RealTimeBarTick realTimeBarTick) {
-
-	}
-
-	@Override
-	public void headTimestampProtoBuf(HeadTimestampProto.HeadTimestamp headTimestamp) {
-
-	}
-
-	@Override
-	public void histogramDataProtoBuf(HistogramDataProto.HistogramData histogramData) {
-
-	}
-
-	@Override
-	public void historicalTicksProtoBuf(HistoricalTicksProto.HistoricalTicks historicalTicks) {
-
-	}
-
-	@Override
-	public void historicalTicksBidAskProtoBuf(HistoricalTicksBidAskProto.HistoricalTicksBidAsk historicalTicksBidAsk) {
-
-	}
-
-	@Override
-	public void historicalTicksLastProtoBuf(HistoricalTicksLastProto.HistoricalTicksLast historicalTicksLast) {
-
-	}
-
-	@Override
-	public void tickByTickDataProtoBuf(TickByTickDataProto.TickByTickData tickByTickData) {
 
 	}
 

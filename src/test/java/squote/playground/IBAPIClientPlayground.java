@@ -25,19 +25,24 @@ public class IBAPIClientPlayground {
 //         testIBGatewayConnection();
 //        testGetPendingOrders();
         getSPHBBars();
-
+        for (int i=0; i<1000000; i++) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
         log.info("IBAPIClient playground tests completed.");
     }
 
     private void getSPHBBars() {
         try {
-            IBAPIClient client = new IBAPIClient(HOST, PORT, BASE_CLIENT_ID + 2);
-//            client.reqHistoricalData();
-            client.searchSPHBExchange();
-
-            Thread.sleep(100000);
-            client.close();
+            IBAPIClient client = new IBAPIClient(HOST, PORT, BASE_CLIENT_ID + 3);
+            log.info("Successfully connected to IB Gateway for historical data test");
+            Thread.sleep(1000);
+            client.reqHistoricalData();
         } catch (Exception e) {
+            log.error("Error in getSPHBBars test", e);
             e.printStackTrace();
         }
     }
