@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Fund {
-	private static Logger log = LoggerFactory.getLogger(Fund.class);
+	private static final Logger log = LoggerFactory.getLogger(Fund.class);
 
 	public enum FundType {
 		STOCK, CRYPTO
@@ -112,7 +112,7 @@ public class Fund {
 				.forEach(entry -> entry.getValue().calculateNetProfit(new BigDecimal(quoteMap.get(entry.getKey()).getPrice())));
 
 		netProfit = holdings.values().stream()
-				.map(v -> v.netProfit())
+				.map(FundHolding::netProfit)
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
 
 		return this;
@@ -125,7 +125,7 @@ public class Fund {
 	@Transient
 	public BigDecimal gross() {
 		return holdings.values().stream()
-				.map(v -> v.getGross())
+				.map(FundHolding::getGross)
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
 	}
 
