@@ -168,4 +168,20 @@ public class Fund {
 	public void setAlgoConfigs(Map<String, AlgoConfig> algoConfigs) {
 		this.algoConfigs = algoConfigs;
 	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public void setHoldings(Map<String, FundHolding> holdings) {
+		this.holdings = holdings;
+	}
+
+	public void setDate(Date date) {
+		this.date = date;
+	}
 }
