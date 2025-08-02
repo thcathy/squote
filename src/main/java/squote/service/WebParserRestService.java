@@ -74,12 +74,12 @@ public class WebParserRestService {
                 .asObjectAsync(String.class);
     }
 
-    public HttpResponse<DailyStockQuote[]> getQuotesInRange(String code, String mic, String fromDate, String toDate) throws UnirestException {
+    public HttpResponse<DailyStockQuote[]> getQuotesInRange(String code, String market, String fromDate, String toDate) throws UnirestException {
         return Unirest.get(host + "/rest/quote/{code}/range/{fromDate}/{toDate}")
                 .routeParam("code", code)
                 .routeParam("fromDate", fromDate)
                 .routeParam("toDate", toDate)
-                .queryString("mic", mic)
+                .queryString("market", market)
                 .asObject(DailyStockQuote[].class);
     }
 }
