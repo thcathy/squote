@@ -264,4 +264,64 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 		// Clean up
 		fundController.deleteAlgoConfig(testFund.name, "2800");
 	}
+
+	@Test
+	public void testStockSymbolWithDots_shouldHandleDotsInHoldingsAndAlgoConfigs() {
+		String symbolWithDots = "BRK.A";
+		String symbolWithMultipleDots = "GOOG.L.US";
+
+		fundController.buy(testFund.name, symbolWithDots, "100", "450000");
+		fundController.buy(testFund.name, symbolWithMultipleDots, "50", "150000");
+		fundController.addOrUpdateAlgoConfig(testFund.name, symbolWithDots, 100, 4500.0, 10, 0.8, 45000.0);
+		fundController.addOrUpdateAlgoConfig(testFund.name, symbolWithMultipleDots, 50, 3000.0, 12, 0.9, 15000.0);
+		
+		// Act
+		Fund retrievedFund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
+		
+		// Verify holdings with dot symbols are properly stored and retrieved
+		assertThat(retrievedFund.getHoldings()).containsKey(symbolWithDots);
+		assertThat(retrievedFund.getHoldings()).containsKey(symbolWithMultipleDots);
+		
+		FundHolding brkHolding = retrievedFund.getHoldings().get(symbolWithDots);
+		assertThat(brkHolding.getCode()).isEqualTo(symbolWithDots);
+		assertThat(brkHolding.getQuantity()).isEqualTo(BigDecimal.valueOf(100));
+		assertThat(brkHolding.getGross()).isEqualTo(BigDecimal.valueOf(45000000)); // 100 * 450000
+		
+		FundHolding googHolding = retrievedFund.getHoldings().get(symbolWithMultipleDots);
+		assertThat(googHolding.getCode()).isEqualTo(symbolWithMultipleDots);
+		assertThat(googHolding.getQuantity()).isEqualTo(BigDecimal.valueOf(50));
+		assertThat(googHolding.getGross()).isEqualTo(BigDecimal.valueOf(7500000)); // 50 * 150000
+		
+		// Verify algo configs with dot symbols are properly stored and retrieved
+		assertThat(retrievedFund.getAlgoConfigs()).containsKey(symbolWithDots);
+		assertThat(retrievedFund.getAlgoConfigs()).containsKey(symbolWithMultipleDots);
+		
+		AlgoConfig brkConfig = retrievedFund.getAlgoConfigs().get(symbolWithDots);
+		assertThat(brkConfig.code()).isEqualTo(symbolWithDots);
+		assertThat(brkConfig.quantity()).isEqualTo(100);
+		assertThat(brkConfig.basePrice()).isEqualTo(4500.0);
+		assertThat(brkConfig.stdDevRange()).isEqualTo(10);	
+		assertThat(brkConfig.stdDevMultiplier()).isEqualTo(0.8);
+		assertThat(brkConfig.grossAmount()).isEqualTo(45000.0);
+		
+		AlgoConfig googConfig = retrievedFund.getAlgoConfigs().get(symbolWithMultipleDots);
+		assertThat(googConfig.code()).isEqualTo(symbolWithMultipleDots);
+		assertThat(googConfig.quantity()).isEqualTo(50);
+		assertThat(googConfig.basePrice()).isEqualTo(3000.0);
+		assertThat(googConfig.stdDevRange()).isEqualTo(12);
+		assertThat(googConfig.stdDevMultiplier()).isEqualTo(0.9);
+		assertThat(googConfig.grossAmount()).isEqualTo(15000.0);
+		
+		// Test selling stock with dots
+		fundController.sell(testFund.name, symbolWithDots, "25", "4600");
+		Fund updatedFund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
+		FundHolding updatedBrkHolding = updatedFund.getHoldings().get(symbolWithDots);
+		assertThat(updatedBrkHolding.getQuantity()).isEqualTo(BigDecimal.valueOf(75));
+		
+		// Clean up
+		fundController.removeStock(testFund.name, symbolWithDots);
+		fundController.removeStock(testFund.name, symbolWithMultipleDots);
+		fundController.deleteAlgoConfig(testFund.name, symbolWithDots);
+		fundController.deleteAlgoConfig(testFund.name, symbolWithMultipleDots);
+	}
 }

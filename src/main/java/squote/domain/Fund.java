@@ -12,9 +12,11 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class Fund {
 	private static final Logger log = LoggerFactory.getLogger(Fund.class);
+	private static final String DOT_REPLACEMENT = "___DOT___";
 
 	public enum FundType {
 		STOCK, CRYPTO
@@ -53,32 +55,68 @@ public class Fund {
 		return this;
 	}
 
+	private String encodeKey(String key) {
+		return key.replace(".", DOT_REPLACEMENT);
+	}
+
+	private String decodeKey(String encodedKey) {
+		return encodedKey.replace(DOT_REPLACEMENT, ".");
+	}
+
+	private boolean isHoldingsContainsKey(String code) {
+		return holdings.containsKey(encodeKey(code));
+	}
+
+	private FundHolding getHolding(String code) {
+		return holdings.get(encodeKey(code));
+	}
+
+	private void putHolding(String code, FundHolding holding) {
+		holdings.put(encodeKey(code), holding);
+	}
+
+	private void removeHolding(String code) {
+		holdings.remove(encodeKey(code));
+	}
+
+	public void removeStock(String code) {
+		removeHolding(code);
+	}
+
+	public void putAlgoConfig(String code, AlgoConfig algoConfig) {
+		algoConfigs.put(encodeKey(code), algoConfig);
+	}
+
+	public void removeAlgoConfig(String code) {
+		algoConfigs.remove(encodeKey(code));
+	}
+
 	public void buyStock(String code, BigDecimal qty, BigDecimal gross) {
-		if (holdings.containsKey(code)) {
-			holdings.put(code, increaseHolding(holdings.get(code), qty, gross));
+		if (isHoldingsContainsKey(code)) {
+			putHolding(code, increaseHolding(getHolding(code), qty, gross));
 		} else {
-			holdings.put(code, FundHolding.create(code, qty, gross));
+			putHolding(code, FundHolding.create(code, qty, gross));
 		}
 	}
 
 	public void sellStock(String code, BigDecimal qty, BigDecimal gross) {
-		if (!holdings.containsKey(code)) {
+		if (!isHoldingsContainsKey(code)) {
 			log.warn("Fund does not hold " + code);
 			return;
 		}
 
-		FundHolding updatedHolding = decreaseHolding(holdings.get(code), qty, gross);
+		FundHolding updatedHolding = decreaseHolding(getHolding(code), qty, gross);
 		if (updatedHolding.getQuantity().compareTo(BigDecimal.ZERO) <= 0 && updatedHolding.getLatestTradeTime() <= 0)
-			holdings.remove(code);
+			removeHolding(code);
 		else
-			holdings.put(code, updatedHolding);
+			putHolding(code, updatedHolding);
 	}
 
 	public FundHolding payInterest(String code, BigDecimal interest) {
-		FundHolding holding = holdings.get(code);
+		FundHolding holding = getHolding(code);
 		if (holding != null) {
 			holding = FundHolding.create(code, holding.getQuantity(), holding.getGross().subtract(interest));
-			holdings.put(code, holding);
+			putHolding(code, holding);
 		}
 		return holding;
 	}
@@ -89,7 +127,15 @@ public class Fund {
 	}
 
 	public Date getDate() { return this.date; }
-	public Map<String, FundHolding> getHoldings() { return holdings; }
+	public Map<String, FundHolding> getHoldings() {
+		return holdings.entrySet().stream()
+			.collect(Collectors.toMap(
+				entry -> decodeKey(entry.getKey()),
+				Map.Entry::getValue,
+				(existing, replacement) -> replacement,
+				ConcurrentHashMap::new
+			));
+	}
 
 	private FundHolding increaseHolding(FundHolding fundHolding, BigDecimal qty, BigDecimal gross) {
 		return FundHolding.create(fundHolding.getCode(), fundHolding.getQuantity().add(qty), gross.add(fundHolding.getGross()))
@@ -158,16 +204,28 @@ public class Fund {
 	}
 
 	public boolean containSymbol(String symbol) {
-		return holdings.containsKey(symbol);
+		return isHoldingsContainsKey(symbol);
 	}
 
 	public Map<String, AlgoConfig> getAlgoConfigs() {
-		return algoConfigs;
+		return algoConfigs.entrySet().stream()
+			.collect(Collectors.toMap(
+				entry -> decodeKey(entry.getKey()),
+				Map.Entry::getValue,
+				(existing, replacement) -> replacement,
+				ConcurrentHashMap::new
+			));
 	}
 
-	public void setAlgoConfigs(Map<String, AlgoConfig> algoConfigs) {
-		this.algoConfigs = algoConfigs;
-	}
+//	public void setAlgoConfigs(Map<String, AlgoConfig> algoConfigs) {
+//		this.algoConfigs = algoConfigs.entrySet().stream()
+//			.collect(Collectors.toMap(
+//				entry -> encodeKey(entry.getKey()),
+//				Map.Entry::getValue,
+//				(existing, replacement) -> replacement,
+//				ConcurrentHashMap::new
+//			));
+//	}
 
 	public String getId() {
 		return id;
@@ -177,9 +235,15 @@ public class Fund {
 		this.id = id;
 	}
 
-	public void setHoldings(Map<String, FundHolding> holdings) {
-		this.holdings = holdings;
-	}
+//	public void setHoldings(Map<String, FundHolding> holdings) {
+//		this.holdings = holdings.entrySet().stream()
+//			.collect(Collectors.toMap(
+//				entry -> encodeKey(entry.getKey()),
+//				Map.Entry::getValue,
+//				(existing, replacement) -> replacement,
+//				ConcurrentHashMap::new
+//			));
+//	}
 
 	public void setDate(Date date) {
 		this.date = date;

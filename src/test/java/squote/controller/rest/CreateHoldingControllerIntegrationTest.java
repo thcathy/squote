@@ -44,6 +44,7 @@ public class CreateHoldingControllerIntegrationTest extends IntegrationTest {
 
 	@BeforeEach
 	public void setup() {
+		fundRepo.deleteAll();
 		fundRepo.save(testFund);
 		authenticationServiceStub.userId = userId;
 	}

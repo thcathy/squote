@@ -55,9 +55,9 @@ class StockTradingTaskTest {
 
         var algoConfig = new AlgoConfig(stockCode, 3500, null, 10, 0.7, null);
         var fundA = new Fund("dummy", "FundA");
-        fundA.getAlgoConfigs().put(stockCode, algoConfig);
+        fundA.putAlgoConfig(stockCode, algoConfig);
         var fundB = new Fund("dummy", "FundB");
-        fundB.getAlgoConfigs().put(stockCode, algoConfig);
+        fundB.putAlgoConfig(stockCode, algoConfig);
         when(mockFundRepo.findAll()).thenReturn(Arrays.asList(fundA, fundB));
     }
 

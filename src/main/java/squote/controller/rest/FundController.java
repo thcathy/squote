@@ -90,7 +90,7 @@ public class FundController {
 		String userId = authenticationService.getUserId().get();
 		log.info("remove stock {} from fund {}:{}", code, userId, fundName);
 		Fund fund = fundRepo.findByUserIdAndName(userId, fundName).get();
-		fund.getHoldings().remove(code);
+		fund.removeStock(code);
 		fundRepo.save(fund);
 		log.info("Updated Fund: {}", fund);
 		return fund;
@@ -216,7 +216,7 @@ public class FundController {
 		log.info("add or update algo config {} to fund {}", newConfig, fundName);
 
 		var fund = fundRepo.findByUserIdAndName(userId, fundName).get();
-		fund.getAlgoConfigs().put(code, newConfig);
+		fund.putAlgoConfig(code, newConfig);
 		fundRepo.save(fund);
 		log.info("Updated algos: {}", fund.getAlgoConfigs());
 		return newConfig;
@@ -228,7 +228,7 @@ public class FundController {
 		log.info("remove algo config {} from fund {}", code, fundName);
 
 		var fund = fundRepo.findByUserIdAndName(userId, fundName).get();
-		fund.getAlgoConfigs().remove(code);
+		fund.removeAlgoConfig(code);
 		fundRepo.save(fund);
 		log.info("Updated algos: {}", fund.getAlgoConfigs());
 	}

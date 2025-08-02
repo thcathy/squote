@@ -79,10 +79,10 @@ class StockTradingAlgoServiceTest {
 
         // setup fund
         var algoConfig = new AlgoConfig(stockCode, 3500, (Double) null, stdDevRange, stdDevMultiplier, null);
-        fundA.getAlgoConfigs().put(stockCode, algoConfig);
-        fundB.getAlgoConfigs().put(stockCode, algoConfig);
+        fundA.putAlgoConfig(stockCode, algoConfig);
+        fundB.putAlgoConfig(stockCode, algoConfig);
         var usAlgoConfig = new AlgoConfig(stockCodeUS, 100, (Double) null, stdDevRange, stdDevMultiplier, null);
-        fundUS.getAlgoConfigs().put(stockCodeUS, usAlgoConfig);
+        fundUS.putAlgoConfig(stockCodeUS, usAlgoConfig);
         when(mockFundRepo.findAll()).thenReturn(Arrays.asList(fundA, fundB, fundUS));
 
         stockTradingAlgoService = new StockTradingAlgoService(
@@ -616,7 +616,7 @@ class StockTradingAlgoServiceTest {
     @Test
     void processSingleSymbol_shouldCalculateQuantityFromGrossAmount() {
         var grossAmountBasedConfig = new AlgoConfig(stockCode, 0, (Double) null, stdDevRange, stdDevMultiplier, 1000.0);
-        fundA.getAlgoConfigs().put(stockCode, grossAmountBasedConfig);
+        fundA.putAlgoConfig(stockCode, grossAmountBasedConfig);
         
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
