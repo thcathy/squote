@@ -80,7 +80,7 @@ public class SyncStockExecutionsTask {
         }
     }
 
-    @Scheduled(cron = "0 5 00 * * TUE-SAT", zone = "America/New_York")
+    @Scheduled(cron = "0 0 0 * * TUE-SAT", zone = "America/New_York")
     public void executeUS() {
         if (isMarketDisabled(Market.US) || StringUtils.isEmpty(clientConfigJson)) {
             log.info("US Task Disabled");
