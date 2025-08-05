@@ -3,7 +3,6 @@ package squote.service;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import com.mashape.unirest.http.HttpResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,7 +17,6 @@ import squote.scheduletask.FutuClientConfig;
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +32,7 @@ class StockTradingAlgoServiceTest {
     IBrokerAPIClient mockBrokerAPIClient = Mockito.mock(IBrokerAPIClient.class);
     TelegramAPIClient mockTelegramAPIClient = Mockito.mock(TelegramAPIClient.class);
     WebParserRestService mockWebParserRestService = Mockito.mock(WebParserRestService.class);
+    YahooFinanceService mockYahooFinanceService = Mockito.mock(YahooFinanceService.class);
 
     private StockTradingAlgoService stockTradingAlgoService;
     private ListAppender<ILoggingEvent> listAppender;
@@ -72,21 +71,19 @@ class StockTradingAlgoServiceTest {
 
         var stockQuoteUS = new StockQuote(stockCodeUS);
         stockQuoteUS.setPrice("200.0");
-        HttpResponse<StockQuote[]> mockHttpResponse = Mockito.mock(HttpResponse.class);
-        when(mockHttpResponse.getBody()).thenReturn(new StockQuote[]{stockQuoteUS});
-        var mockFuture = CompletableFuture.completedFuture(mockHttpResponse);
-        when(mockWebParserRestService.getRealTimeQuotes(List.of(stockCodeUS))).thenReturn(mockFuture);
+        when(mockYahooFinanceService.getLatestTicker(any())).thenReturn(Optional.of(stockQuoteUS));
 
         // setup fund
-        var algoConfig = new AlgoConfig(stockCode, 3500, (Double) null, stdDevRange, stdDevMultiplier, null);
+        var algoConfig = new AlgoConfig(stockCode, 3500, null, stdDevRange, stdDevMultiplier, null);
         fundA.putAlgoConfig(stockCode, algoConfig);
         fundB.putAlgoConfig(stockCode, algoConfig);
-        var usAlgoConfig = new AlgoConfig(stockCodeUS, 100, (Double) null, stdDevRange, stdDevMultiplier, null);
+        var usAlgoConfig = new AlgoConfig(stockCodeUS, 100, null, stdDevRange, stdDevMultiplier, null);
         fundUS.putAlgoConfig(stockCodeUS, usAlgoConfig);
         when(mockFundRepo.findAll()).thenReturn(Arrays.asList(fundA, fundB, fundUS));
 
         stockTradingAlgoService = new StockTradingAlgoService(
-                dailyAssetSummaryRepo, mockFundRepo, holdingStockRepository, mockWebParserRestService, mockTelegramAPIClient);
+                dailyAssetSummaryRepo, mockFundRepo, holdingStockRepository, mockWebParserRestService,
+                mockTelegramAPIClient, mockYahooFinanceService);
     }
 
     private AlgoConfig getDefaultAlgoConfig() {
@@ -608,7 +605,6 @@ class StockTradingAlgoServiceTest {
                 mockBrokerAPIClient
         );
 
-        verify(mockWebParserRestService, times(1)).getRealTimeQuotes(List.of(stockCodeUS));
         verify(mockBrokerAPIClient, never()).getStockQuote(stockCodeUS);
         verify(mockBrokerAPIClient, times(1)).getStockTodayExecutions(Market.US);
     }

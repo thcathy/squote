@@ -78,6 +78,11 @@ public class StockTradingTask {
             for (var fund : fundRepo.findAll()) {
                 if (fund.getAlgoConfigs().isEmpty()) continue;
 
+                var algoConfigsMatchMarket = fund.getAlgoConfigs().values().stream()
+                        .filter(c -> market.equals(Market.getMarketByStockCode(c.code())))
+                        .toList();
+                if (algoConfigsMatchMarket.isEmpty()) continue;
+
                 var fundName = fund.name;
                 log.info("Start process fund [{}]", fundName);
                 var clientConfig = futuClientConfigs.get(fundName);
@@ -88,8 +93,7 @@ public class StockTradingTask {
                 FutuAPIClient futuAPIClient = futuAPIClientFactory.build(clientConfig);
 
                 unlockTrade(futuAPIClient, clientConfig.unlockCode());
-                fund.getAlgoConfigs().values().stream()
-                        .filter(c -> market.equals(Market.getMarketByStockCode(c.code())))
+                algoConfigsMatchMarket
                         .forEach(c -> algoService.processSingleSymbol(fund, market, c, clientConfig, futuAPIClient));
                 futuAPIClient.close();
             }

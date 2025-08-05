@@ -5,25 +5,28 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import squote.domain.AlgoConfig;
+import squote.domain.Fund;
 import squote.domain.StockQuote;
+import squote.domain.repository.FundRepository;
 import squote.service.yahoo.YahooFinanceWebSocketClient;
 import squote.service.yahoo.YahooTicker;
 
 import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class YahooFinanceServiceTest {
     @Mock
     private YahooFinanceWebSocketClient mockWebSocketClient;
+    
+    @Mock
+    private FundRepository mockFundRepository;
 
     private YahooFinanceService yahooFinanceService;
     private Map<String, YahooTicker> latestTickers;
@@ -31,7 +34,7 @@ class YahooFinanceServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        yahooFinanceService = new YahooFinanceService();
+        yahooFinanceService = new YahooFinanceService(mockFundRepository);
         latestTickers = new ConcurrentHashMap<>();
         subscribedSymbols = new CopyOnWriteArraySet<>();
         setPrivateField("webSocketClient", mockWebSocketClient);
@@ -103,6 +106,41 @@ class YahooFinanceServiceTest {
         ticker.setShortName(id.equals("AAPL") ? "Apple Inc" : id.equals("MSFT") ? "Microsoft Corp" : "Tesla Inc");
         ticker.setTime(System.currentTimeMillis());
         return ticker;
+    }
+
+    @Test
+    void testLoadUsMarketAlgoConfigs() {
+        // Create test funds with algo configs
+        Fund fundWithUsStocks = createFundWithAlgoConfigs("fund1", "userId1", 
+                Arrays.asList("AAPL.US", "MSFT.US", "2800")); // Mix of US and HK stocks
+        Fund fundWithHkStocks = createFundWithAlgoConfigs("fund2", "userId2", 
+                Arrays.asList("0005", "2828")); // Only HK stocks
+        Fund fundWithMixedStocks = createFundWithAlgoConfigs("fund3", "userId3", 
+                Arrays.asList("TSLA.US", "0700")); // Mix of US and HK stocks
+        when(mockFundRepository.findAll()).thenReturn(Arrays.asList(
+                fundWithUsStocks, fundWithHkStocks, fundWithMixedStocks));
+
+        yahooFinanceService.initialize();
+
+        assertEquals(3, subscribedSymbols.size());
+    }
+
+    @Test
+    void testLoadUsMarketAlgoConfigs_EmptyRepository() {
+        when(mockFundRepository.findAll()).thenReturn(Arrays.asList());
+        yahooFinanceService.initialize();
+
+        assertEquals(0, subscribedSymbols.size());
+    }
+
+    private Fund createFundWithAlgoConfigs(String fundName, String userId, List<String> stockCodes) {
+        Fund fund = new Fund(userId, fundName);
+        fund.setType(Fund.FundType.STOCK);
+        for (String stockCode : stockCodes) {
+            AlgoConfig algoConfig = new AlgoConfig(stockCode, 100, null, 10, 0.8, null);
+            fund.putAlgoConfig(stockCode, algoConfig);
+        }
+        return fund;
     }
 
     private void setPrivateField(String fieldName, Object value) throws Exception {

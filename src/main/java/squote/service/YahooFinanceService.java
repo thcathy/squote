@@ -4,7 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import squote.domain.AlgoConfig;
+import squote.domain.Market;
 import squote.domain.StockQuote;
+import squote.domain.repository.FundRepository;
 import squote.service.yahoo.YahooFinanceWebSocketClient;
 import squote.service.yahoo.YahooTicker;
 
@@ -20,19 +23,44 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
 
 @Service
 public class YahooFinanceService {
 
     private static final Logger log = LoggerFactory.getLogger(YahooFinanceService.class);
+    private final FundRepository fundRepository;
     private YahooFinanceWebSocketClient webSocketClient;
     private final Map<String, YahooTicker> latestTickers = new ConcurrentHashMap<>();
     private final Set<String> subscribedSymbols = new CopyOnWriteArraySet<>();
 
+    public YahooFinanceService(FundRepository fundRepository) {
+        this.fundRepository = fundRepository;
+    }
+
     @PostConstruct
     public void initialize() {
         createAndConnectClient();
+        loadUsMarketAlgoConfigs();
         log.info("YahooFinanceService initialized");
+    }
+
+    private void loadUsMarketAlgoConfigs() {
+        try {
+            var usMarketAlgoConfigs = StreamSupport.stream(fundRepository.findAll().spliterator(), false)
+                    .flatMap(fund -> fund.getAlgoConfigs().values().stream())
+                    .filter(algoConfig -> Market.US.equals(Market.getMarketByStockCode(algoConfig.code())))
+                    .toList();
+            
+            log.info("Found {} US market algo configs from all funds", usMarketAlgoConfigs.size());
+            if (!usMarketAlgoConfigs.isEmpty()) {
+                var symbols = usMarketAlgoConfigs.stream()
+                        .map(AlgoConfig::code).distinct().toArray(String[]::new);
+                subscribeToSymbols(symbols);
+            }
+        } catch (Exception e) {
+            log.error("Failed to load US market algo configs", e);
+        }
     }
 
     @PreDestroy
@@ -43,17 +71,17 @@ public class YahooFinanceService {
         }
     }
 
-    public void subscribeToSymbols(String... codeWithMIC) {
-        if (codeWithMIC.length == 0) return;
+    public void subscribeToSymbols(String... codeWithMarketCode) {
+        if (codeWithMarketCode.length == 0) return;
 
-        var codesWithoutSuffix = Arrays.stream(codeWithMIC).map(YahooFinanceService::getPrefix).toList();
+        var codesWithoutSuffix = Arrays.stream(codeWithMarketCode).map(YahooFinanceService::getPrefix).toList();
         log.info("subscribeToSymbols: {}", String.join(",", codesWithoutSuffix));
         subscribedSymbols.addAll(codesWithoutSuffix);
         webSocketClient.subscribeToSymbols(codesWithoutSuffix.toArray(new String[0]));
     }
 
-    public void unsubscribeFromSymbols(String... codeWithMIC) {
-        var codesWithoutSuffix = Arrays.stream(codeWithMIC).map(YahooFinanceService::getPrefix).toList();
+    public void unsubscribeFromSymbols(String... codeWithMarketCode) {
+        var codesWithoutSuffix = Arrays.stream(codeWithMarketCode).map(YahooFinanceService::getPrefix).toList();
         log.info("unsubscribeFromSymbols: {}", String.join(",", codesWithoutSuffix));
         for (var code : codesWithoutSuffix) {
             subscribedSymbols.remove(code);
@@ -144,6 +172,7 @@ public class YahooFinanceService {
         webSocketClient.addTickerCallback(this::onTickerUpdate);
         webSocketClient.connect();
         log.info("Connecting to Yahoo Finance WebSocket...");
+        webSocketClient.waitForConnection(10, TimeUnit.SECONDS);
     }
 
     private void onTickerUpdate(YahooTicker ticker) {

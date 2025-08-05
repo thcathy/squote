@@ -28,6 +28,7 @@ public class StockTradingAlgoService {
     final HoldingStockRepository holdingStockRepository;
     final WebParserRestService webParserRestService;
     final TelegramAPIClient telegramAPIClient;
+    final YahooFinanceService yahooFinanceService;
     final Map<String, Double> tickSizes = Map.of("2800", 0.02, "code1", 0.02);
 
     @Autowired
@@ -35,12 +36,14 @@ public class StockTradingAlgoService {
                                    FundRepository fundRepo,
                                    HoldingStockRepository holdingStockRepository,
                                    WebParserRestService webParserService,
-                                   TelegramAPIClient telegramAPIClient) {
+                                   TelegramAPIClient telegramAPIClient,
+                                   YahooFinanceService yahooFinanceService) {
         this.dailyAssetSummaryRepo = dailyAssetSummaryRepo;
         this.fundRepo = fundRepo;
         this.telegramAPIClient = telegramAPIClient;
         this.holdingStockRepository = holdingStockRepository;
         this.webParserRestService = webParserService;
+        this.yahooFinanceService = yahooFinanceService;
     }
 
     public record Execution(String code, Side side, int quantity, double price, boolean isToday, Date date) {
@@ -59,6 +62,11 @@ public class StockTradingAlgoService {
         }
 
         var stockQuote = getStockQuote(algoConfig.code(), brokerAPIClient);
+        if (!stockQuote.hasPrice()) {
+            log.error("Cannot find stock quote for {}, skip processing", algoConfig.code());
+            return;
+        }
+
         var holdings = holdingStockRepository.findByUserIdOrderByDate(fund.userId)
                 .stream().filter(h -> h.getCode().equals(algoConfig.code()) && h.getFundName().equals(fund.name))
                 .toList();
@@ -76,7 +84,7 @@ public class StockTradingAlgoService {
     private StockQuote getStockQuote(String code, IBrokerAPIClient brokerAPIClient) {
         try {
             if (Market.isUSStockCode(code)) {
-                return webParserRestService.getRealTimeQuotes(List.of(code)).get().getBody()[0];
+                return yahooFinanceService.getLatestTicker(code).orElse(new StockQuote(code));
             }
 
             return brokerAPIClient.getStockQuote(code);
