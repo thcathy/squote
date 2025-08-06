@@ -16,6 +16,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -302,15 +303,26 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 
 	private Execution toExecution(TrdCommon.OrderFill fill) {
 		var exec = new Execution();
+		var market = secMarketToMarket(fill.getSecMarket());
 		exec.setOrderId(String.valueOf(fill.getOrderID()));
 		exec.setFillIds(String.valueOf(fill.getFillID()));
 		exec.setQuantity(BigDecimal.valueOf(fill.getQty()));
 		exec.setPrice(BigDecimal.valueOf(fill.getPrice()));
 		exec.setSide(fill.getTrdSide() == TrdCommon.TrdSide.TrdSide_Buy_VALUE ? BUY : SELL);
 		exec.setCode(toSquoteCode(fill.getCode(), fill.getTrdMarket()));
-		exec.setTime((long) (fill.getUpdateTimestamp() * 1000));
-		exec.setMarket(secMarketToMarket(fill.getSecMarket()));
+		exec.setTime(getExecutionTime(fill.getCreateTime(), market));
+		exec.setMarket(market);
 		return exec;
+	}
+
+	private long getExecutionTime(String timeStr, Market market) {
+		var zoneId = switch (market) {
+            case US -> ZoneId.of("America/New_York");
+            case HK -> ZoneId.of("Asia/Hong_Kong");
+        };
+		var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+		var localDateTime = LocalDateTime.parse(timeStr, formatter);
+		return localDateTime.atZone(zoneId).toInstant().toEpochMilli();
 	}
 
 	private Market secMarketToMarket(int secMarket) {
@@ -335,8 +347,17 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 	}
 
 	private int sendGetHistoryOrderFillRequest(Date fromDate, TrdCommon.TrdMarket trdMarket) {
-		var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		var oneDayAfter = LocalDateTime.now().plusDays(1);
+		var timezone = switch (trdMarket) {
+            case TrdMarket_HK -> TimeZone.getTimeZone("Asia/Hong_Kong");
+            case TrdMarket_US -> TimeZone.getTimeZone(ZoneId.of("America/New_York"));
+			default -> TimeZone.getTimeZone("UTC");
+        };
+		var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		dateFormat.setTimeZone(timezone);
+		var anAfterNow = Date.from(LocalDateTime.now().plusHours(1).atZone(timezone.toZoneId()).toInstant());
+		var beginTime = dateFormat.format(fromDate);
+		var endTime = dateFormat.format(anAfterNow);
+		log.info("Get history order between {} and {}", beginTime, endTime);
 
 		var header = TrdCommon.TrdHeader.newBuilder()
 				.setAccID(clientConfig.accountId())
@@ -344,8 +365,8 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 				.setTrdMarket(trdMarket.getNumber())
 				.build();
 		var filter = TrdCommon.TrdFilterConditions.newBuilder()
-				.setBeginTime(dateFormat.format(fromDate))
-				.setEndTime(dateFormat.format(Date.from(oneDayAfter.atZone(ZoneId.systemDefault()).toInstant())))
+				.setBeginTime(beginTime)
+				.setEndTime(endTime)
 				.build();
 		TrdGetHistoryOrderFillList.C2S c2s = TrdGetHistoryOrderFillList.C2S.newBuilder()
 				.setHeader(header)
@@ -399,6 +420,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 				.setQty(quantity)
 				.setPrice(price)
 				.build();
+
 		TrdPlaceOrder.Request req = TrdPlaceOrder.Request.newBuilder().setC2S(c2s).build();
 		return futuConnTrd.placeOrder(req);
 	}

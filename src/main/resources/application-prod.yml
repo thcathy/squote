@@ -3,4 +3,4 @@ syncstockexecutionstask:
   sendTelegram: true
 
 stocktradingtask:
-  enabled: "{US: false, HK: true}"
+  enabled: "{US: true, HK: true}"

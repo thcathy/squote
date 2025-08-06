@@ -9,7 +9,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.Date;
 
 public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
     FTAPI_Conn_Trd trd = new FTAPI_Conn_Trd();
@@ -58,9 +64,9 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
         if (inited >= 2) {
 //            requestSnapshotQuote();
 //                    getAccounts();
- //      getTrades();
+       getTrades();
 //        getTodayFills();
-        getPendingOrders();
+//        getPendingOrders();
 //        unlockTrade();
 //        placeOrder();
 //        cancelOrder();
@@ -138,14 +144,23 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
     }
 
     private void getTrades() {
+        String dateStr = "Aug 05 09:32:19 HKT 2025";
+        var formatter = DateTimeFormatter.ofPattern("MMM dd HH:mm:ss zzz yyyy");
+        var zdt = ZonedDateTime.parse(dateStr, formatter);
+        var fromDate = Date.from(zdt.toInstant());
+        var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        var oneDayAfter = LocalDateTime.now().plusDays(1);
+        var beginTime = "2025-08-05 09:32:19";
+        var endTime = dateFormat.format(Date.from(oneDayAfter.atZone(ZoneId.systemDefault()).toInstant()));
+
         TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
                 .setAccID(accId)
                 .setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
                 .setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
                 .build();
         TrdCommon.TrdFilterConditions filter = TrdCommon.TrdFilterConditions.newBuilder()
-                .setBeginTime("2025-02-12 00:00:00")
-                .setEndTime("2025-02-13 00:00:00")
+                .setBeginTime(beginTime)
+                .setEndTime(endTime)
                 .build();
         TrdGetHistoryOrderFillList.C2S c2s = TrdGetHistoryOrderFillList.C2S.newBuilder()
                 .setHeader(header)

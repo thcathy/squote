@@ -87,8 +87,8 @@ class SyncStockExecutionsTaskTest {
     @Test
     void executeTask_useTimeFromConfig() throws ParseException {
         var holding = new HoldingStock("", "", SquoteConstants.Side.BUY, 1, null, new Date(), null);
-        var formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        var lastExecutionTimes = Map.of(Market.HK, formatter.parse("2024-11-01 00:00:00"));
+        var formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        var lastExecutionTimes = Map.of(Market.HK, formatter.parse("2024-11-01 00:00:00.001"));
         var config = new SyncStockExecutionsTask.SyncStockExecutionsTaskConfig(lastExecutionTimes);
         var taskConfig = new TaskConfig(SyncStockExecutionsTask.class.toString(), SyncStockExecutionsTask.SyncStockExecutionsTaskConfig.toJson(config));
         when(mockHoldingStockRepository.findTopByFundNameOrderByDateDesc(any()))
@@ -101,7 +101,7 @@ class SyncStockExecutionsTaskTest {
         verify(mockFutuAPIClient).getStockExecutions(dateCaptor.capture(), marketCaptor.capture());
         var date = dateCaptor.getValue();
         var market = marketCaptor.getValue();
-        assertEquals(formatter.parse("2024-11-02 00:00:00"), date);
+        assertEquals(formatter.parse("2024-11-01 00:00:00.002"), date);
         assertEquals(Market.HK, market);
     }
 

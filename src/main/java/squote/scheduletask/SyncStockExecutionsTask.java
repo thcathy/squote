@@ -19,8 +19,6 @@ import squote.domain.repository.TaskConfigRepository;
 import squote.service.*;
 
 import java.math.BigDecimal;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.*;
 
 @Component
@@ -202,7 +200,7 @@ fee=%.2f profit=%.2f""",
 
     private Date getFromDate(Market market) {
         var date = getLastExecutionTime(market).orElseGet(this::getLastMonth);
-        return getTomorrowAtMidnight(date);
+        return new Date(date.getTime() + 1);
     }
 
     private Optional<Date> getLastExecutionTime(Market market) {
@@ -219,13 +217,6 @@ fee=%.2f profit=%.2f""",
             log.info("Cannot get last execution time for {}: {}", market, e.toString());
             return Optional.empty();
         }
-    }
-
-    public static Date getTomorrowAtMidnight(Date date) {
-        ZonedDateTime zonedDateTime = date.toInstant().atZone(ZoneId.systemDefault());
-        ZonedDateTime tomorrowMidnight = zonedDateTime.plusDays(1)
-                .withHour(0).withMinute(0).withSecond(0).withNano(0);
-        return Date.from(tomorrowMidnight.toInstant());
     }
 
     private Date getLastMonth() {
