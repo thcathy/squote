@@ -409,7 +409,7 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 				.setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
 				.setTrdMarket(toTrdMarket(market).getNumber())
 				.build();
-		TrdPlaceOrder.C2S c2s = TrdPlaceOrder.C2S.newBuilder()
+		TrdPlaceOrder.C2S.Builder c2sBuilder = TrdPlaceOrder.C2S.newBuilder()
 				.setPacketID(futuConnTrd.nextPacketID())
 				.setHeader(header)
 				.setTrdSide(side == BUY ? TrdCommon.TrdSide.TrdSide_Buy_VALUE : TrdCommon.TrdSide.TrdSide_Sell_VALUE)
@@ -418,10 +418,14 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 				.setTimeInForce(TrdCommon.TimeInForce.TimeInForce_GTC_VALUE)
 				.setCode(toFutuCode(code))
 				.setQty(quantity)
-				.setPrice(price)
-				.build();
+				.setPrice(price);
 
-		TrdPlaceOrder.Request req = TrdPlaceOrder.Request.newBuilder().setC2S(c2s).build();
+		if (market == Market.US) {
+			c2sBuilder.setSession(Common.Session.Session_ETH_VALUE);
+			c2sBuilder.setFillOutsideRTH(true);
+		}
+
+		TrdPlaceOrder.Request req = TrdPlaceOrder.Request.newBuilder().setC2S(c2sBuilder.build()).build();
 		return futuConnTrd.placeOrder(req);
 	}
 

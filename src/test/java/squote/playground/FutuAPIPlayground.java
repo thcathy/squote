@@ -64,11 +64,11 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
         if (inited >= 2) {
 //            requestSnapshotQuote();
 //                    getAccounts();
-       getTrades();
+//       getTrades();
 //        getTodayFills();
 //        getPendingOrders();
 //        unlockTrade();
-//        placeOrder();
+        placeOrder();
 //        cancelOrder();
 //        requestKlines();
 //            requestVOOKlines();
@@ -80,18 +80,20 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
         TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
                 .setAccID(accId)
                 .setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
-                .setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
+                .setTrdMarket(TrdCommon.TrdMarket.TrdMarket_US_VALUE)
                 .build();
         TrdPlaceOrder.C2S c2s = TrdPlaceOrder.C2S.newBuilder()
                 .setPacketID(trd.nextPacketID())
                 .setHeader(header)
+                .setFillOutsideRTH(true)
+                .setSession(Common.Session.Session_ETH_VALUE)
                 .setTrdSide(TrdCommon.TrdSide.TrdSide_Buy_VALUE)
                 .setOrderType(TrdCommon.OrderType.OrderType_Normal_VALUE)
-                .setSecMarket(TrdCommon.TrdSecMarket.TrdSecMarket_HK_VALUE)
+                .setSecMarket(TrdCommon.TrdSecMarket.TrdSecMarket_US_VALUE)
                 .setTimeInForce(TrdCommon.TimeInForce.TimeInForce_GTC_VALUE)
-                .setCode("02800")
-                .setQty(500)
-                .setPrice(15.1)
+                .setCode("QQQ")
+                .setQty(10)
+                .setPrice(500)
                 .build();
         TrdPlaceOrder.Request req = TrdPlaceOrder.Request.newBuilder().setC2S(c2s).build();
         int seqNo = trd.placeOrder(req);

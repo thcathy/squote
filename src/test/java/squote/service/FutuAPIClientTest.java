@@ -2,9 +2,7 @@ package squote.service;
 
 import com.futu.openapi.FTAPI_Conn_Qot;
 import com.futu.openapi.FTAPI_Conn_Trd;
-import com.futu.openapi.pb.TrdCommon;
-import com.futu.openapi.pb.TrdGetAccList;
-import com.futu.openapi.pb.TrdGetHistoryOrderFillList;
+import com.futu.openapi.pb.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -143,5 +141,39 @@ class FutuAPIClientTest {
         TrdGetHistoryOrderFillList.Request request = captor.getValue();
 
         assertEquals("2025-08-04 21:35:02.188", request.getC2S().getFilterConditions().getBeginTime());
+    }
+
+    @Test
+    void placeOrderRequest_USMarket_SetsSessionAndFillOutsideRTH() {
+        var captor = ArgumentCaptor.forClass(TrdPlaceOrder.Request.class);
+        var mockPacketId = Common.PacketID.newBuilder().setConnID(1L).setSerialNo(1).build();
+        when(FTAPIConnTrd.nextPacketID()).thenReturn(mockPacketId);
+        when(FTAPIConnTrd.placeOrder(any())).thenReturn(1);
+        client.onReply_PlaceOrder(FTAPIConnTrd, 1, TrdPlaceOrder.Response.newBuilder().setRetType(0).build());
+
+        client.placeOrder(SquoteConstants.Side.BUY, "AAPL.US", 100, 150.0);
+        verify(FTAPIConnTrd).placeOrder(captor.capture());
+
+        var request = captor.getValue();
+        var c2s = request.getC2S();
+        assertEquals(Common.Session.Session_ETH_VALUE, c2s.getSession());
+        assertEquals(true, c2s.getFillOutsideRTH());
+    }
+
+    @Test
+    void placeOrderRequest_HKMarket_DoesNotSetSessionAndFillOutsideRTH() {
+        var captor = ArgumentCaptor.forClass(TrdPlaceOrder.Request.class);
+        var mockPacketId = Common.PacketID.newBuilder().setConnID(1L).setSerialNo(1).build();
+        when(FTAPIConnTrd.nextPacketID()).thenReturn(mockPacketId);
+        when(FTAPIConnTrd.placeOrder(any())).thenReturn(1);
+        client.onReply_PlaceOrder(FTAPIConnTrd, 1, TrdPlaceOrder.Response.newBuilder().setRetType(0).build());
+
+        client.placeOrder(SquoteConstants.Side.BUY, "2800", 100, 18.5);
+        verify(FTAPIConnTrd).placeOrder(captor.capture());
+
+        var request = captor.getValue();
+        var c2s = request.getC2S();
+        assertEquals(0, c2s.getSession());
+        assertEquals(false, c2s.getFillOutsideRTH());
     }
 }
