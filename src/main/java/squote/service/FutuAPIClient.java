@@ -354,9 +354,9 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
         };
 		var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 		dateFormat.setTimeZone(timezone);
-		var anAfterNow = Date.from(LocalDateTime.now().plusHours(1).atZone(timezone.toZoneId()).toInstant());
+		var anHourAfterNow = new Date(new Date().getTime() +  60 * 60 * 1000);
 		var beginTime = dateFormat.format(fromDate);
-		var endTime = dateFormat.format(anAfterNow);
+		var endTime = dateFormat.format(anHourAfterNow);
 		log.info("Get history order between {} and {}", beginTime, endTime);
 
 		var header = TrdCommon.TrdHeader.newBuilder()
