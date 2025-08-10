@@ -68,12 +68,28 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
 //        getTodayFills();
 //        getPendingOrders();
 //        unlockTrade();
-        placeOrder();
+//        placeOrder();
 //        cancelOrder();
 //        requestKlines();
 //            requestVOOKlines();
 //          requestVOOSnapshotQuote();
+            subscribeQuote();
         }
+    }
+
+    private void subscribeQuote() {
+        QotCommon.Security sec = QotCommon.Security.newBuilder()
+                .setMarket(QotCommon.QotMarket.QotMarket_US_Security_VALUE)
+                .setCode("QQQ")
+                .build();
+        QotSub.C2S c2s = QotSub.C2S.newBuilder()
+                .addSecurityList(sec)
+                .addSubTypeList(QotCommon.SubType.SubType_Basic_VALUE)
+                .setIsSubOrUnSub(true)
+                .build();
+        QotSub.Request req = QotSub.Request.newBuilder().setC2S(c2s).build();
+        int seqNo = qot.sub(req);
+        System.out.printf("Send QotSub: %d\n", seqNo);
     }
 
     private void placeOrder() {
@@ -417,6 +433,37 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
             }
         }
     }
+
+    @Override
+    public void onReply_Sub(FTAPI_Conn client, int nSerialNo, QotSub.Response rsp) {
+        if (rsp.getRetType() != 0) {
+            System.out.printf("QotSub failed: %s\n", rsp.getRetMsg());
+        }
+        else {
+            try {
+                String json = JsonFormat.printer().print(rsp);
+                System.out.printf("Receive QotSub: %s\n", json);
+            } catch (InvalidProtocolBufferException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onPush_UpdateBasicQuote(FTAPI_Conn client, QotUpdateBasicQot.Response rsp) {
+        if (rsp.getRetType() != 0) {
+            System.out.printf("QotUpdateBasicQuote failed: %s\n", rsp.getRetMsg());
+        }
+        else {
+            try {
+                String json = JsonFormat.printer().print(rsp);
+                System.out.printf("Receive QotUpdateBasicQuote: %s\n", json);
+            } catch (InvalidProtocolBufferException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     public static void main(String[] args) {
         FTAPI.init();
