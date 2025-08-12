@@ -142,7 +142,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
         var logMatched = listAppender.list.stream().anyMatch(l -> l.getFormattedMessage().startsWith(testData.expectedLog));
         assertThat(logMatched).isTrue();
@@ -159,7 +159,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
         var logMatched = listAppender.list.stream().anyMatch(
                 l -> l.getFormattedMessage().matches("Unexpected executions: SELL code1 4000@20.00 .* 2025 < BUY code1 4000@22.00 .* 2025"));
@@ -189,7 +189,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 algoConfig,
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, times(1)).placeOrder(eq(BUY), eq(stockCode), eq(algoConfigQuantity), eq(expectedPrice));
@@ -212,7 +212,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, times(1)).placeOrder(eq(BUY), eq(stockCode), eq(3500), eq(maxBuyPrice));
@@ -234,7 +234,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, times(1)).cancelOrder(eq(pendingOrderId), eq(stockCode));
@@ -257,7 +257,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, never()).placeOrder(eq(BUY), any(), anyInt(), anyDouble());
@@ -278,7 +278,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, times(2)).cancelOrder(anyLong(), anyString());
@@ -304,7 +304,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         ));
     }
 
@@ -317,7 +317,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, never()).placeOrder(eq(SELL), any(), anyInt(), anyDouble());
@@ -338,7 +338,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, times(1)).placeOrder(eq(BUY), eq(stockCode), eq(3500), eq(expectedPrice));
@@ -362,7 +362,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, never()).placeOrder(eq(BUY), any(), anyInt(), anyDouble());
@@ -383,7 +383,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 algoConfig,
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, times(1)).placeOrder(eq(SELL), eq(stockCode), eq(executionQuantity), eq(expectedPrice));
@@ -402,7 +402,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, never()).placeOrder(eq(SELL), any(), anyInt(), anyDouble());
@@ -422,7 +422,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, times(1)).cancelOrder(eq(pendingOrderId), eq(stockCode));
@@ -443,7 +443,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, never()).placeOrder(any(), any(), anyInt(), anyDouble());
@@ -490,7 +490,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
         var logMatched = listAppender.list.stream().anyMatch(l -> l.getFormattedMessage().startsWith("base price: 19.3"));
         assertThat(logMatched).isTrue();
@@ -509,7 +509,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
         var logMatched2 = listAppender.list.stream().anyMatch(l -> l.getFormattedMessage().startsWith("base price: 19.5"));
         assertThat(logMatched2).isTrue();
@@ -526,7 +526,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockTelegramAPIClient, times(1)).sendMessage(contains("WARN: Partial filled BUY 4000@20.50. filled=3500"));
@@ -547,7 +547,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 algoConfig,
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, times(1)).placeOrder(eq(BUY), eq(stockCode), eq(algoConfigQuantity), anyDouble());
@@ -569,7 +569,7 @@ class StockTradingAlgoServiceTest {
                 fundA, Market.HK,
                 algoConfig,
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, times(1)).placeOrder(eq(BUY), eq(stockCode), eq(executionQuantity), eq(expectedPrice));
@@ -602,7 +602,7 @@ class StockTradingAlgoServiceTest {
                 fundUS, Market.US,
                 fundUS.getAlgoConfigs().get(stockCodeUS),
                 FutuClientConfig.defaultConfig(),
-                mockBrokerAPIClient
+                mockBrokerAPIClient, null
         );
 
         verify(mockBrokerAPIClient, never()).getStockQuote(stockCodeUS);
@@ -621,8 +621,26 @@ class StockTradingAlgoServiceTest {
 
         // Act
         stockTradingAlgoService.processSingleSymbol(fundA, Market.HK, grossAmountBasedConfig,
-                FutuClientConfig.defaultConfig(), mockBrokerAPIClient);
+                FutuClientConfig.defaultConfig(), mockBrokerAPIClient, null);
 
         verify(mockBrokerAPIClient, times(1)).placeOrder(eq(BUY), eq(stockCode), eq(50), anyDouble());
+    }
+
+    @Test
+    void processSingleSymbol_withProvidedQuote_shouldUseProvidedQuote() {
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockBrokerAPIClient.getPendingOrders(Market.US)).thenReturn(List.of());
+        var providedQuote = new StockQuote(stockCode);
+        providedQuote.setPrice("35.50");
+
+        stockTradingAlgoService.processSingleSymbol(
+                fundA, Market.HK,
+                getDefaultAlgoConfig(),
+                FutuClientConfig.defaultConfig(),
+                mockBrokerAPIClient, providedQuote
+        );
+
+        verify(mockYahooFinanceService, never()).getLatestTicker(any());
     }
 }

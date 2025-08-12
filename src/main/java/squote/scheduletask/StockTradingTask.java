@@ -4,20 +4,26 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.futu.openapi.FTAPI_Conn_Qot;
 import com.futu.openapi.FTAPI_Conn_Trd;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import squote.domain.AlgoConfig;
 import squote.domain.Market;
+import squote.domain.StockQuote;
 import squote.domain.repository.FundRepository;
 import squote.service.FutuAPIClient;
 import squote.service.StockTradingAlgoService;
 import squote.service.TelegramAPIClient;
+import squote.service.TiingoAPIClient;
 
+import javax.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -32,6 +38,7 @@ public class StockTradingTask {
     final FundRepository fundRepo;
     private final StockTradingAlgoService algoService;
     final TelegramAPIClient telegramAPIClient;
+    final TiingoAPIClient tiingoAPIClient;
 
     public FutuAPIClientFactory futuAPIClientFactory = (futuClientConfig) -> new FutuAPIClient(futuClientConfig, new FTAPI_Conn_Trd(), new FTAPI_Conn_Qot(), rsaKey, true);
 
@@ -39,10 +46,12 @@ public class StockTradingTask {
     public StockTradingTask(
             FundRepository fundRepo,
             StockTradingAlgoService algoService,
-            TelegramAPIClient telegramAPIClient) {
+            TelegramAPIClient telegramAPIClient,
+            TiingoAPIClient tiingoAPIClient) {
         this.fundRepo = fundRepo;
         this.algoService = algoService;
         this.telegramAPIClient = telegramAPIClient;
+        this.tiingoAPIClient = tiingoAPIClient;
     }
 
     private boolean isMarketDisabled(Market market) {
@@ -58,6 +67,11 @@ public class StockTradingTask {
         }
 
         innerExecute(Market.HK);
+    }
+
+    @PostConstruct
+    public void init() {
+        innerExecute(Market.US);
     }
 
     @Scheduled(cron = "0 */5 4-19 * * MON-FRI", zone = "America/New_York")
@@ -91,10 +105,10 @@ public class StockTradingTask {
                     continue;
                 }
                 FutuAPIClient futuAPIClient = futuAPIClientFactory.build(clientConfig);
-
                 unlockTrade(futuAPIClient, clientConfig.unlockCode());
-                algoConfigsMatchMarket
-                        .forEach(c -> algoService.processSingleSymbol(fund, market, c, clientConfig, futuAPIClient));
+
+                var usQuotes = getUSStockQuote(algoConfigsMatchMarket, fundName);
+                algoConfigsMatchMarket.forEach(c -> algoService.processSingleSymbol(fund, market, c, clientConfig, futuAPIClient, usQuotes.get(Market.getBaseCodeFromTicker(c.code()))));
                 futuAPIClient.close();
             }
         } catch (Exception e) {
@@ -102,6 +116,28 @@ public class StockTradingTask {
             var message = String.format("StockTradingTask - %s: Unexpected exception: %s \n %s", market, e.getMessage(), ExceptionUtils.getStackTrace(e));
             telegramAPIClient.sendMessage(message);
         }
+    }
+
+    @NotNull
+    private Map<String, StockQuote> getUSStockQuote(List<AlgoConfig> algoConfigsMatchMarket, String fundName) {
+        var usStockCodes = algoConfigsMatchMarket.stream()
+                .map(AlgoConfig::code)
+                .filter(Market::isUSStockCode)
+                .map(Market::getBaseCodeFromTicker)
+                .distinct().toList();
+
+        var usQuotes = new HashMap<String, StockQuote>();
+
+        if (usStockCodes.isEmpty()) return usQuotes;
+
+        try {
+            var quotes = tiingoAPIClient.getPrices(usStockCodes).get();
+            quotes.forEach(quote -> usQuotes.put(quote.getStockCode(), quote));
+            log.info("Fetched {} quotes from Tiingo for fund {}: {}", quotes.size(), fundName, usStockCodes);
+        } catch (Exception e) {
+            log.warn("Failed to fetch quotes from Tiingo for fund {}. Exception={}", fundName, e.getMessage());
+        }
+        return usQuotes;
     }
 
     public void unlockTrade(FutuAPIClient futuAPIClient, String code) {

@@ -9,13 +9,17 @@ import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 import squote.domain.AlgoConfig;
 import squote.domain.Fund;
+import squote.domain.StockQuote;
 import squote.domain.repository.FundRepository;
 import squote.service.FutuAPIClient;
 import squote.service.StockTradingAlgoService;
 import squote.service.TelegramAPIClient;
+import squote.service.TiingoAPIClient;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.Mockito.*;
 
@@ -24,6 +28,7 @@ class StockTradingTaskTest {
     FutuAPIClientFactory mockFactory = Mockito.mock(FutuAPIClientFactory.class);
     FutuAPIClient mockFutuAPIClient = Mockito.mock(FutuAPIClient.class);
     TelegramAPIClient mockTelegramAPIClient = Mockito.mock(TelegramAPIClient.class);
+    TiingoAPIClient mockTiingoAPIClient = Mockito.mock(TiingoAPIClient.class);
     StockTradingAlgoService mockStockTradingAlgoService = Mockito.mock(StockTradingAlgoService.class);
 
     private StockTradingTask stockTradingTask;
@@ -41,11 +46,13 @@ class StockTradingTaskTest {
 
         when(mockFactory.build(any())).thenReturn(mockFutuAPIClient);
         when(mockFutuAPIClient.unlockTrade(any())).thenReturn(true);
+        when(mockTiingoAPIClient.getPrices(any())).thenReturn(CompletableFuture.completedFuture(List.of()));
 
-        stockTradingTask = new StockTradingTask(mockFundRepo, mockStockTradingAlgoService, mockTelegramAPIClient);
+        stockTradingTask = new StockTradingTask(mockFundRepo, mockStockTradingAlgoService, mockTelegramAPIClient, mockTiingoAPIClient);
         stockTradingTask.futuAPIClientFactory = mockFactory;
         stockTradingTask.enabledByMarket = new HashMap<>();
         stockTradingTask.enabledByMarket.put("HK", true);
+        stockTradingTask.enabledByMarket.put("US", true);
         stockTradingTask.clientConfigJson = """
                     [
                         {"fundName": "FundA", "fundUserId": "UserA", "accountId": 1, "ip": "192.0.0.1", "port": 80, "unlockCode": "dummy code"},
@@ -98,6 +105,34 @@ class StockTradingTaskTest {
         stockTradingTask.executeHK();
 
         verify(mockStockTradingAlgoService, atLeast(1))
-                .processSingleSymbol(any(), any(), any(), any(), any());
+                .processSingleSymbol(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void executeUS_withUSStocks_willCallTiingoAPI() {
+        var algoConfig = new AlgoConfig("QQQ.US", 3500, null, 10, 0.7, null);
+        var fundA = new Fund("dummy", "FundA");
+        fundA.putAlgoConfig("QQQ.US", algoConfig);
+        when(mockFundRepo.findAll()).thenReturn(List.of(fundA));
+        
+        var mockQuote = new StockQuote("QQQ");
+        mockQuote.setPrice("150.00");
+        when(mockTiingoAPIClient.getPrices(List.of("QQQ")))
+                .thenReturn(CompletableFuture.completedFuture(List.of(mockQuote)));
+
+        stockTradingTask.executeUS();
+
+        verify(mockTiingoAPIClient, times(1)).getPrices(List.of("QQQ"));
+        verify(mockStockTradingAlgoService, atLeast(1))
+                .processSingleSymbol(any(), any(), any(), any(), any(), eq(mockQuote));
+    }
+
+    @Test
+    void executeHK_withNoUSStocks_willNotCallTiingoAPI() {
+        stockTradingTask.executeHK();
+
+        verify(mockTiingoAPIClient, never()).getPrices(any());
+        verify(mockStockTradingAlgoService, atLeast(1))
+                .processSingleSymbol(any(), any(), any(), any(), any(), isNull());
     }
 }

@@ -52,8 +52,8 @@ public class StockTradingAlgoService {
             return String.format("%s %s %d@%.2f (isToday=%s) %s", side, code, quantity, price, isToday, date);
         }
     }
-
-    public void processSingleSymbol(Fund fund, Market market, AlgoConfig algoConfig, FutuClientConfig clientConfig, IBrokerAPIClient brokerAPIClient) {
+    
+    public void processSingleSymbol(Fund fund, Market market, AlgoConfig algoConfig, FutuClientConfig clientConfig, IBrokerAPIClient brokerAPIClient, StockQuote providedQuote) {
         log.info("start process for {} in {}", algoConfig.code(), fund.name);
         var stdDev = getStdDev(algoConfig.code(), algoConfig.stdDevRange());
         if (stdDev.isEmpty()) {
@@ -61,7 +61,7 @@ public class StockTradingAlgoService {
             return;
         }
 
-        var stockQuote = getStockQuote(algoConfig.code(), brokerAPIClient);
+        var stockQuote = providedQuote != null ? providedQuote : getStockQuote(algoConfig.code(), brokerAPIClient);
         if (!stockQuote.hasPrice()) {
             log.error("Cannot find stock quote for {}, skip processing", algoConfig.code());
             return;

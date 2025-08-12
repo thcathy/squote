@@ -20,11 +20,15 @@ public class IBAPIClientPlayground {
 
     public void execute() {
         log.info("Starting IBAPIClient playground tests...");
+        IBAPIClient client = new IBAPIClient(HOST, PORT, BASE_CLIENT_ID + 4);
+        log.info("Successfully connected to IB Gateway for historical data test");
+
+        client.subscribeMarketData();
 
 //        testConnectionTimeout();
 //         testIBGatewayConnection();
 //        testGetPendingOrders();
-        getSPHBBars();
+//        getSPHBBars();
         for (int i=0; i<1000000; i++) {
             try {
                 Thread.sleep(1000);

@@ -140,6 +140,22 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 		client.reqContractDetails(1, contract);
 	}
 
+	public void subscribeMarketData() {
+		Contract contract = new Contract();
+		contract.symbol("SPHB");                    // Symbol
+		contract.secType("STK");                   // Security type: Stock/ETF
+		contract.currency("USD");                  // Currency
+		contract.exchange("SMART");                // Smart routing
+//		contract.primaryExch("NASDAQ");            // Primary exchange
+
+		// Market data options (empty list for basic data)
+		List<TagValue> mktDataOptions = new ArrayList<>();
+
+		client.reqMktData(1001, contract, "", false, false, mktDataOptions);
+
+		System.out.println("Subscribed market data");
+	}
+
 	public void reqHistoricalData() {
 		log.info("Requesting historical data for SPHB...");
 		
