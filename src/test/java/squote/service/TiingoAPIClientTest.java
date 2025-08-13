@@ -112,6 +112,11 @@ class TiingoAPIClientTest {
                 "ticker": "AAPL",
                 "timestamp": "2025-08-11T12:30:00.123456-07:00",
                 "tngoLast": 180.50
+              },
+              {
+                "ticker": "SPHB",
+                "timestamp": "2025-08-12T11:46:01.604694867-04:00",
+                "tngoLast": 25.50
               }
             ]
             """;
@@ -119,12 +124,15 @@ class TiingoAPIClientTest {
         mockWebServer.enqueue(new MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json")
                 .setBody(mockResponse));
 
-        var quotes = client.getPrices(Arrays.asList("QQQ", "AAPL")).get();
+        var quotes = client.getPrices(Arrays.asList("QQQ", "AAPL", "SPHB")).get();
 
         var qqqQuote = quotes.stream().filter(q -> "QQQ".equals(q.getStockCode())).findFirst().orElse(null);
         assertEquals("2025-08-11 15:30:00", qqqQuote.getLastUpdate()); // Already UTC
 
         StockQuote aaplQuote = quotes.stream().filter(q -> "AAPL".equals(q.getStockCode())).findFirst().orElse(null);
         assertEquals("2025-08-11 19:30:00", aaplQuote.getLastUpdate()); // PST-07:00 -> UTC+00:00
+
+        var sphbQuote = quotes.stream().filter(q -> "SPHB".equals(q.getStockCode())).findFirst().orElse(null);
+        assertEquals("2025-08-12 15:46:01", sphbQuote.getLastUpdate()); // EDT-04:00 -> UTC+00:00, nanosecond precision
     }
 }

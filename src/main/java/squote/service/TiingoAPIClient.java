@@ -111,7 +111,7 @@ public class TiingoAPIClient {
                 var timestamp = timestampValue.toString();
                 
                 // Parse and convert to UTC
-                var inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss[.SSSSSS][.SSSSS][.SSSS][.SSS][.SS][.S]XXX");
+                var inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss[.SSSSSSSSS][.SSSSSSSS][.SSSSSSS][.SSSSSS][.SSSSS][.SSSS][.SSS][.SS][.S]XXX");
                 var outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                 var zonedDateTime = ZonedDateTime.parse(timestamp, inputFormatter);
                 var utcDateTime = zonedDateTime.withZoneSameInstant(ZoneId.of("UTC"));
