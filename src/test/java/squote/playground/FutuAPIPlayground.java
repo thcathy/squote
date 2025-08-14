@@ -10,12 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
     FTAPI_Conn_Trd trd = new FTAPI_Conn_Trd();
@@ -64,7 +61,7 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
         if (inited >= 2) {
 //            requestSnapshotQuote();
 //                    getAccounts();
-//       getTrades();
+       getTrades();
 //        getTodayFills();
 //        getPendingOrders();
 //        unlockTrade();
@@ -73,7 +70,7 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
 //        requestKlines();
 //            requestVOOKlines();
 //          requestVOOSnapshotQuote();
-            subscribeQuote();
+//            subscribeQuote();
         }
     }
 
@@ -162,14 +159,11 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
     }
 
     private void getTrades() {
-        String dateStr = "Aug 05 09:32:19 HKT 2025";
-        var formatter = DateTimeFormatter.ofPattern("MMM dd HH:mm:ss zzz yyyy");
-        var zdt = ZonedDateTime.parse(dateStr, formatter);
-        var fromDate = Date.from(zdt.toInstant());
-        var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        var oneDayAfter = LocalDateTime.now().plusDays(1);
-        var beginTime = "2025-08-05 09:32:19";
-        var endTime = dateFormat.format(Date.from(oneDayAfter.atZone(ZoneId.systemDefault()).toInstant()));
+        var timezone = TimeZone.getTimeZone("Asia/Hong_Kong");
+        var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        dateFormat.setTimeZone(timezone);
+        var beginTime = dateFormat.format(new Date(1755148580532L));
+        var endTime = dateFormat.format(new Date(new Date().getTime() +  60 * 60 * 1000));
 
         TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
                 .setAccID(accId)

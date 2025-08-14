@@ -180,27 +180,34 @@ fee=%.2f profit=%.2f""",
     }
 
     private void saveLastExecutionTime(StringBuilder logs, Market market, Date fromDate, HashMap<String, Execution> executions) {
-        if (executions.isEmpty()) {
-            log.info("Do not update last execution time when no executions proceed");
+        var marketExecutions = executions.values().stream()
+                .filter(exec -> exec.getMarket() == market)
+                .toList();
+        
+        if (marketExecutions.isEmpty()) {
+            log.info("Do not update last execution time when no executions proceed for market {}", market);
             return;
         }
 
-        long maxTime = executions.values().stream()
+        long maxTime = marketExecutions.stream()
                 .mapToLong(Execution::getTime)
                 .max().orElseThrow();
         var date = new Date(Math.max(maxTime, fromDate.getTime()));
 
-        var taskConfig = taskConfigRepo.findById(this.getClass().toString()).orElseGet(() -> new TaskConfig(this.getClass().toString(), ""));
-        var config = taskConfig.jsonConfig().isEmpty() ? new SyncStockExecutionsTaskConfig(new HashMap<>()) : SyncStockExecutionsTaskConfig.fromJson(taskConfig.jsonConfig());
+        var taskConfig = taskConfigRepo.findById(this.getClass().toString())
+                .orElseGet(() -> new TaskConfig(this.getClass().toString(), ""));
+        var config = taskConfig.jsonConfig().isEmpty()
+                ? new SyncStockExecutionsTaskConfig(new HashMap<>())
+                : SyncStockExecutionsTaskConfig.fromJson(taskConfig.jsonConfig());
         config.lastExecutionTimeByMarket.put(market, date);
         taskConfigRepo.save(new TaskConfig(this.getClass().toString(), SyncStockExecutionsTaskConfig.toJson(config)));
-        log.info("Saved last execution time: {}", date);
-        logs.append(String.format("Saved last execution time: %s\n\n", date));
+        log.info("Saved last execution time for market {}: {}", market, date);
+        logs.append(String.format("Saved last execution time for market %s: %s\n\n", market, date));
     }
 
     private Date getFromDate(Market market) {
         var date = getLastExecutionTime(market).orElseGet(this::getLastMonth);
-        return new Date(date.getTime() + 1);
+        return new Date(date.getTime() + 1000); // 1 second
     }
 
     private Optional<Date> getLastExecutionTime(Market market) {

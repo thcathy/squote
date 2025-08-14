@@ -14,9 +14,7 @@ import squote.scheduletask.FutuClientConfig;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -316,13 +314,18 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 	}
 
 	private long getExecutionTime(String timeStr, Market market) {
-		var zoneId = switch (market) {
-            case US -> ZoneId.of("America/New_York");
-            case HK -> ZoneId.of("Asia/Hong_Kong");
+		var timezone = switch (market) {
+            case US -> TimeZone.getTimeZone("America/New_York");
+            case HK -> TimeZone.getTimeZone("Asia/Hong_Kong");
         };
-		var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
-		var localDateTime = LocalDateTime.parse(timeStr, formatter);
-		return localDateTime.atZone(zoneId).toInstant().toEpochMilli();
+		var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		dateFormat.setTimeZone(timezone);
+		try {
+			return dateFormat.parse(timeStr).getTime();
+		} catch (Exception e) {
+			log.error("Failed to parse execution time: {}", timeStr, e);
+			return System.currentTimeMillis();
+		}
 	}
 
 	private Market secMarketToMarket(int secMarket) {

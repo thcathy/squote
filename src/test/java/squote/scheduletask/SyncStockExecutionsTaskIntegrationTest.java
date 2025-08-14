@@ -90,6 +90,19 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         exec.setMarket(Market.HK);
         executions.put(exec.getOrderId(), exec);
 
+        // Add US execution with newer timestamp to test market filtering
+        var usExec = new Execution();
+        var usExecDate = new Date(execDate.getTime() + 3600000); // 1 hour later
+        usExec.setOrderId("usOrderId1");
+        usExec.setFillIds(",usFillId1");
+        usExec.setQuantity(BigDecimal.valueOf(200));
+        usExec.setPrice(BigDecimal.valueOf(30));
+        usExec.setSide(BUY);
+        usExec.setCode("AAPL");
+        usExec.setTime(usExecDate.getTime());
+        usExec.setMarket(Market.US);
+        executions.put(usExec.getOrderId(), usExec);
+
         when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(Market.HK))).thenReturn(executions);
         task.executeHK();
 
@@ -144,6 +157,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         exec.setSide(BUY);
         exec.setCode("2800");
         exec.setTime(execDate.getTime());
+        exec.setMarket(Market.HK);
         executions.put(exec.getOrderId(), exec);
         when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(Market.HK))).thenReturn(executions);
 
@@ -181,4 +195,6 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         
         verify(mockFutuAPIClient).getStockExecutions(any(Date.class), eq(Market.US));
     }
+
+
 }
