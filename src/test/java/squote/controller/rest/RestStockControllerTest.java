@@ -191,11 +191,15 @@ public class RestStockControllerTest extends IntegrationTest {
     }
 
     private HoldingStock createSell2800Holding(String userId) {
-        return new HoldingStock(userId, "2800", SquoteConstants.Side.SELL, 2000, new BigDecimal("40400"), new Date(), null);
+        var holding = new HoldingStock(userId, "2800", SquoteConstants.Side.SELL, 2000, new BigDecimal("40400"), new Date(), null);
+        holding.setFee(BigDecimal.valueOf(25));
+        return holding;
     }
 
     private HoldingStock createBuy2800Holding(String userId) {
-        return new HoldingStock(userId, "2800", SquoteConstants.Side.BUY, 2000, new BigDecimal("40000"), new Date(), null);
+        var holding = new HoldingStock(userId, "2800", SquoteConstants.Side.BUY, 2000, new BigDecimal("40000"), new Date(), null);
+        holding.setFee(BigDecimal.valueOf(20));
+        return holding;
     }
 
     private Fund createCryptoFund(String userId) {

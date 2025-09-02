@@ -68,7 +68,10 @@ public class RestStockController {
 		var holding2Optional = holdingStockRepo.findById(id2);
 		if (holding1Optional.isPresent() && holding2Optional.isPresent()) {
 			var holding1 = holding1Optional.get();
-			var earning = holding1Optional.get().getGross().subtract(holding2Optional.get().getGross()).abs().doubleValue();
+			var holding2 = holding2Optional.get();
+			var earning = holding1.getGross().subtract(holding2.getGross()).abs();
+			if (holding1.getFee() != null) earning = earning.subtract(holding1.getFee());
+			if (holding2.getFee() != null) earning = earning.subtract(holding2.getFee());
 			log.info("{}({}) earn {}", holding1.getUserId(), holding1.getFundName(), earning);
 		}
 
