@@ -114,6 +114,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         assertEquals("A", holding.getFundName());
         assertEquals(1000, holding.getQuantity());
         assertEquals(execDate, holding.getDate());
+        assertEquals(19.43, holding.getFee().doubleValue());
         verify(mockTelegramAPIClient, times(1)).sendMessage(startsWith("Created holding for A"));
 
         var fund = fundRepo.findByUserIdAndName(userId, "A").get();

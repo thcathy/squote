@@ -30,6 +30,7 @@ public class HoldingStock {
 	private SquoteConstants.Side side;
 	private String fundName;
 	private String fillIds;
+	private BigDecimal fee;
 
 	@Transient
 	public Map<String, BigDecimal> fees;
@@ -121,4 +122,8 @@ public class HoldingStock {
 	public HoldingStock setFundName(String fundName) { this.fundName = fundName; return this; }
 	public String getFillIds() { return fillIds; }
 	public HoldingStock setFillIds(String fillIds) { this.fillIds = fillIds; return this; }
+
+	public BigDecimal getFee() {return fee;}
+
+	public void setFee(BigDecimal fee) {this.fee = fee;}
 }

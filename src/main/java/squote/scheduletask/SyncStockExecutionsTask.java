@@ -128,6 +128,7 @@ public class SyncStockExecutionsTask {
                     BigDecimal fees = (stockMarket == Market.US) 
                         ? usFeeCalculator.totalFee(holding, Broker.FUTU.calculateCommission)
                         : hkFeeCalculator.totalFee(holding, false, Broker.FUTU.calculateCommission);
+                    holding.setFee(fees);
                     var fund = updateFundService.updateFundByHolding(userId, config.fundName(), holding, fees);
                     fundRepo.save(fund);
                     holdingRepo.save(holding);
