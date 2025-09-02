@@ -127,13 +127,15 @@ public class CreateHoldingControllerIntegrationTest extends IntegrationTest {
 	public void updatefund_GivenHoldingStock_ShouldUpdateAndPersist() throws Exception {
 		HoldingStock holding = holdingRepo.save(createSell2800Holding());
 
-		controller.updateFundByHolding(testFund.name, holding.getId(), new BigDecimal("20.98"));
+		var fee = new BigDecimal("20.98");
+		controller.updateFundByHolding(testFund.name, holding.getId(), fee);
 		var fund = fundRepo.findByUserIdAndName(userId, testFund.name).get();
 		holding = holdingRepo.findById(holding.getId()).get();
 		assertNotNull(fund);
 		assertEquals(BigDecimal.valueOf(700), fund.getHoldings().get(holding.getCode()).getQuantity());
 		assertEquals(new BigDecimal("669.02"), fund.getProfit().setScale(2));
 		assertEquals(fund.name, holding.getFundName());
+		assertEquals(fee, holding.getFee());
 	}
 
 }

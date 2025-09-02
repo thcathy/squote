@@ -31,6 +31,7 @@ public class UpdateFundByHoldingService {
 
 	public Fund updateFundByHoldingAndPersist(String userId, String fundName, String holdingId, BigDecimal fee) {
 		var holding = holdingRepo.findById(holdingId).get();
+		holding.setFee(fee);
 		var fund = updateFundByHolding(userId, fundName, holding, fee);
 		fundRepo.save(fund);
 		holdingRepo.save(holding);
