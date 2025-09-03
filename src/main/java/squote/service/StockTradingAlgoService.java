@@ -53,7 +53,7 @@ public class StockTradingAlgoService {
         }
     }
     
-    public void processSingleSymbol(Fund fund, Market market, AlgoConfig algoConfig, FutuClientConfig clientConfig, IBrokerAPIClient brokerAPIClient, StockQuote providedQuote) {
+    public void processSingleSymbol(Fund fund, Market market, AlgoConfig algoConfig, FutuClientConfig clientConfig, IBrokerAPIClient brokerAPIClient, StockQuote providedQuote, Date lastExecutionDate) {
         log.info("start process for {} in {}", algoConfig.code(), fund.name);
         var stdDev = getStdDev(algoConfig.code(), algoConfig.stdDevRange());
         if (stdDev.isEmpty()) {
@@ -70,7 +70,8 @@ public class StockTradingAlgoService {
         var holdings = holdingStockRepository.findByUserIdOrderByDate(fund.userId)
                 .stream().filter(h -> h.getCode().equals(algoConfig.code()) && h.getFundName().equals(fund.name))
                 .toList();
-        var allTodayExecutions = brokerAPIClient.getStockTodayExecutions(market).values().stream()
+        var allTodayExecutions = brokerAPIClient.getStockExecutions(lastExecutionDate, market).values()
+                .stream()
                 .filter(e -> e.getCode().equals(algoConfig.code()))
                 .toList();
         log.info("{} holdings, {} T day executions", holdings.size(), allTodayExecutions.size());

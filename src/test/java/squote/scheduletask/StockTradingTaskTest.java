@@ -7,20 +7,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
-import squote.domain.AlgoConfig;
-import squote.domain.Fund;
-import squote.domain.StockQuote;
+import squote.domain.*;
 import squote.domain.repository.FundRepository;
+import squote.domain.repository.TaskConfigRepository;
 import squote.service.FutuAPIClient;
 import squote.service.StockTradingAlgoService;
 import squote.service.TelegramAPIClient;
 import squote.service.TiingoAPIClient;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 class StockTradingTaskTest {
@@ -29,6 +27,7 @@ class StockTradingTaskTest {
     FutuAPIClient mockFutuAPIClient = Mockito.mock(FutuAPIClient.class);
     TelegramAPIClient mockTelegramAPIClient = Mockito.mock(TelegramAPIClient.class);
     TiingoAPIClient mockTiingoAPIClient = Mockito.mock(TiingoAPIClient.class);
+    TaskConfigRepository mockTaskConfigRepo = Mockito.mock(TaskConfigRepository.class);
     StockTradingAlgoService mockStockTradingAlgoService = Mockito.mock(StockTradingAlgoService.class);
 
     private StockTradingTask stockTradingTask;
@@ -47,8 +46,10 @@ class StockTradingTaskTest {
         when(mockFactory.build(any())).thenReturn(mockFutuAPIClient);
         when(mockFutuAPIClient.unlockTrade(any())).thenReturn(true);
         when(mockTiingoAPIClient.getPrices(any())).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockTaskConfigRepo.findById(any())).thenReturn(Optional.empty());
 
-        stockTradingTask = new StockTradingTask(mockFundRepo, mockStockTradingAlgoService, mockTelegramAPIClient, mockTiingoAPIClient);
+        stockTradingTask = new StockTradingTask(mockFundRepo, mockTaskConfigRepo,
+                mockStockTradingAlgoService, mockTelegramAPIClient, mockTiingoAPIClient);
         stockTradingTask.futuAPIClientFactory = mockFactory;
         stockTradingTask.enabledByMarket = new HashMap<>();
         stockTradingTask.enabledByMarket.put("HK", true);
@@ -105,7 +106,7 @@ class StockTradingTaskTest {
         stockTradingTask.executeHK();
 
         verify(mockStockTradingAlgoService, atLeast(1))
-                .processSingleSymbol(any(), any(), any(), any(), any(), any());
+                .processSingleSymbol(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -124,7 +125,7 @@ class StockTradingTaskTest {
 
         verify(mockTiingoAPIClient, times(1)).getPrices(List.of("QQQ"));
         verify(mockStockTradingAlgoService, atLeast(1))
-                .processSingleSymbol(any(), any(), any(), any(), any(), eq(mockQuote));
+                .processSingleSymbol(any(), any(), any(), any(), any(), eq(mockQuote), any());
     }
 
     @Test
@@ -133,6 +134,23 @@ class StockTradingTaskTest {
 
         verify(mockTiingoAPIClient, never()).getPrices(any());
         verify(mockStockTradingAlgoService, atLeast(1))
-                .processSingleSymbol(any(), any(), any(), any(), any(), isNull());
+                .processSingleSymbol(any(), any(), any(), any(), any(), isNull(), any());
+    }
+
+    @Test
+    void getLastExecutionTime_whenConfigExists_shouldReturnDatePlusOneSecond() {
+        var baseDate = new Date(1736308260000L);
+        var expectedDate = new Date(baseDate.getTime() + 1000); // Plus 1 second
+
+        var configMap = Map.of(Market.HK, baseDate, Market.US, new Date(1736308300000L));
+        var taskConfig = SyncStockExecutionsTaskConfig.toJson(
+                new SyncStockExecutionsTaskConfig(configMap)
+        );
+
+        when(mockTaskConfigRepo.findById(SyncStockExecutionsTask.class.toString()))
+                .thenReturn(Optional.of(new TaskConfig(SyncStockExecutionsTask.class.toString(), taskConfig)));
+
+        var result = stockTradingTask.getLastExecutionTime(Market.HK);
+        assertEquals(expectedDate, result);
     }
 }

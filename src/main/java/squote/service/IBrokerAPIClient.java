@@ -6,6 +6,7 @@ import squote.domain.Market;
 import squote.domain.Order;
 import squote.domain.StockQuote;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +16,10 @@ public interface IBrokerAPIClient {
     Map<String, Execution> getStockTodayExecutions(Market market);
     PlaceOrderResponse placeOrder(SquoteConstants.Side side, String code, int quantity, double price);
     CancelOrderResponse cancelOrder(long orderId, String code);
+    Map<String, Execution> getStockExecutions(Date fromDate, Market market);
 
     record PlaceOrderResponse(long orderId, long errorCode, String message) {}
     record CancelOrderResponse(long errorCode, String message) {}
+
+
 }

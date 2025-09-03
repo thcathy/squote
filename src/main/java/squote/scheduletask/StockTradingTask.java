@@ -15,16 +15,13 @@ import squote.domain.AlgoConfig;
 import squote.domain.Market;
 import squote.domain.StockQuote;
 import squote.domain.repository.FundRepository;
+import squote.domain.repository.TaskConfigRepository;
 import squote.service.FutuAPIClient;
 import squote.service.StockTradingAlgoService;
 import squote.service.TelegramAPIClient;
 import squote.service.TiingoAPIClient;
 
-import javax.annotation.PostConstruct;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -39,12 +36,13 @@ public class StockTradingTask {
     private final StockTradingAlgoService algoService;
     final TelegramAPIClient telegramAPIClient;
     final TiingoAPIClient tiingoAPIClient;
+    final TaskConfigRepository taskConfigRepo;
 
     public FutuAPIClientFactory futuAPIClientFactory = (futuClientConfig) -> new FutuAPIClient(futuClientConfig, new FTAPI_Conn_Trd(), new FTAPI_Conn_Qot(), rsaKey, true);
 
     @Autowired
     public StockTradingTask(
-            FundRepository fundRepo,
+            FundRepository fundRepo, TaskConfigRepository taskConfigRepo,
             StockTradingAlgoService algoService,
             TelegramAPIClient telegramAPIClient,
             TiingoAPIClient tiingoAPIClient) {
@@ -52,6 +50,7 @@ public class StockTradingTask {
         this.algoService = algoService;
         this.telegramAPIClient = telegramAPIClient;
         this.tiingoAPIClient = tiingoAPIClient;
+        this.taskConfigRepo = taskConfigRepo;
     }
 
     private boolean isMarketDisabled(Market market) {
@@ -69,11 +68,6 @@ public class StockTradingTask {
         innerExecute(Market.HK);
     }
 
-    @PostConstruct
-    public void init() {
-        innerExecute(Market.US);
-    }
-
     @Scheduled(cron = "0 */5 4-19 * * MON-FRI", zone = "America/New_York")
     public void executeUS() {
         if (isMarketDisabled(Market.US)) {
@@ -88,6 +82,7 @@ public class StockTradingTask {
         try {
             log.info("Starting stock trading task for market: {}", market);
             var futuClientConfigs = parseFutuClientConfigs();
+            var lastExecutionTime = getLastExecutionTime(market);
 
             for (var fund : fundRepo.findAll()) {
                 if (fund.getAlgoConfigs().isEmpty()) continue;
@@ -108,7 +103,12 @@ public class StockTradingTask {
                 unlockTrade(futuAPIClient, clientConfig.unlockCode());
 
                 var usQuotes = getUSStockQuote(algoConfigsMatchMarket, fundName);
-                algoConfigsMatchMarket.forEach(c -> algoService.processSingleSymbol(fund, market, c, clientConfig, futuAPIClient, usQuotes.get(Market.getBaseCodeFromTicker(c.code()))));
+                algoConfigsMatchMarket.forEach(c ->
+                        algoService.processSingleSymbol(fund, market, c,
+                                clientConfig, futuAPIClient,
+                                usQuotes.get(Market.getBaseCodeFromTicker(c.code())),
+                                lastExecutionTime)
+                );
                 futuAPIClient.close();
             }
         } catch (Exception e) {
@@ -116,6 +116,16 @@ public class StockTradingTask {
             var message = String.format("StockTradingTask - %s: Unexpected exception: %s \n %s", market, e.getMessage(), ExceptionUtils.getStackTrace(e));
             telegramAPIClient.sendMessage(message);
         }
+    }
+
+    Date getLastExecutionTime(Market market) {
+        var config = taskConfigRepo.findById(SyncStockExecutionsTask.class.toString());
+        if (config.isEmpty()) return new Date();
+
+        var date = SyncStockExecutionsTaskConfig.fromJson(config.get().jsonConfig())
+                .lastExecutionTimeByMarket()
+                .getOrDefault(market, new Date());
+        return new Date(date.getTime() + 1000); // 1 second
     }
 
     @NotNull

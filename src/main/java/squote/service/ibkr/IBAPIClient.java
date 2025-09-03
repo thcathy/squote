@@ -1,6 +1,7 @@
-package squote.playground;
+package squote.service.ibkr;
 
 import com.ib.client.*;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import squote.SquoteConstants;
@@ -13,16 +14,20 @@ import squote.service.IBrokerAPIClient;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+
+import static squote.SquoteConstants.Side.BUY;
+import static squote.SquoteConstants.Side.SELL;
 
 public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	
 	// Operations that can be tracked for completion
-	private enum Operation {PENDING_ORDERS, EXECUTIONS, HISTORICAL_DATA, CONTRACT_DETAILS, STOCK_QUOTE}
+	private enum Operation {GET_PENDING_ORDERS, GET_EXECUTIONS, HISTORICAL_DATA, CONTRACT_DETAILS, STOCK_QUOTE, PLACE_ORDER}
 	
 	private final Map<Integer, Object> resultMap = new ConcurrentHashMap<>();
 	private final EJavaSignal signal;
@@ -38,6 +43,16 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	private volatile long lastErrorCode = 0;
 
 	private final List<Bar> barList = new ArrayList<>();
+	private final Map<Integer, OrderDetail> orderDetails = new ConcurrentHashMap<>();
+	private final Map<Integer, OrderStatusDetail> orderStatusDetails = new ConcurrentHashMap<>();
+	private final Map<String, ExecDetail> executions = new ConcurrentHashMap<>();
+
+	// for unit test
+	public IBAPIClient(EJavaSignal signal, EClientSocket client, EReader reader) {
+		this.signal = signal;
+		this.client = client;
+		this.reader = reader;
+	}
 
 	public IBAPIClient(String host, int port, int clientId) {
 		signal = new EJavaSignal();
@@ -63,14 +78,7 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 			}
 		}).start();
 
-		Instant timeout = Instant.now().plusSeconds(connectionTimeoutSeconds);
-		while (timeout.isAfter(Instant.now()) && !isConnected()) {
-			log.info("waiting for connected");
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException ignored) {}
-		}
-		
+		waitForCondition(() -> currentOrderId > -1);
 		log.info("isConnected={}", isConnected());
 	}
 
@@ -84,125 +92,86 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 		return client != null && client.isConnected();
 	}
 
-	private boolean waitForCondition(java.util.function.BooleanSupplier condition, String operationName) {
+	private boolean waitForCondition(java.util.function.BooleanSupplier condition) {
 		Instant timeout = Instant.now().plusSeconds(timeoutSeconds);
-		while (timeout.isAfter(Instant.now()) && !condition.getAsBoolean()) {
+		while (timeout.isAfter(Instant.now())) {
 			try {
+				if (condition.getAsBoolean()) return true;
+
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
-				log.error("Interrupted while waiting for {}", operationName, e);
+				log.error("Interrupted while waiting", e);
 				return false;
 			}
 		}
-		
-		if (!condition.getAsBoolean()) {
-			log.warn("Timeout waiting for {} response", operationName);
-			return false;
-		}
-		
-		return true;
-	}
 
-	private void startOperation(Operation operation) {
-		operationComplete.put(operation, false);
+		log.warn("Timeout waiting for response");
+		return false;
 	}
 
 	private void completeOperation(Operation operation) {
 		operationComplete.put(operation, true);
 	}
 
-	private boolean waitForOperation(Operation operation) {
-		return waitForCondition(() -> Boolean.TRUE.equals(operationComplete.get(operation)), operation.name());
-	}
+	// comment out until pay for mkt data
+//	public void subscribeMarketData() {
+		// comment out until pay for mkt data
+//		Contract contract = new Contract();
+//		contract.symbol("SPHB");                    // Symbol
+//		contract.secType("STK");                   // Security type: Stock/ETF
+//		contract.currency("USD");                  // Currency
+//		contract.exchange("SMART");                // Smart routing
+//		List<TagValue> mktDataOptions = new ArrayList<>();
+//
+//		client.reqMktData(1001, contract, "", false, false, mktDataOptions);
+//
+//		System.out.println("Subscribed market data");
+//	}
 
-	@SuppressWarnings("unchecked")
-	private <T> T getOperationData(Operation operation, Class<T> type) {
-		String key = operation.name() + "_" + type.getSimpleName().toUpperCase();
-		return (T) operationData.computeIfAbsent(key, k -> {
-			if (type == List.class) {
-				return new CopyOnWriteArrayList<>();
-			} else if (type == Map.class) {
-				return new ConcurrentHashMap<>();
-			} else if (type == Set.class) {
-				return ConcurrentHashMap.newKeySet();
-			}
-			throw new IllegalArgumentException("Unsupported operation data type: " + type);
-		});
-	}
-
-	public void searchSPHBExchange() {
-		Contract contract = new Contract();
-		contract.symbol("SPHB");
-		contract.secType("STK");
-		contract.currency("USD");
-//		contract.exchange("SMART"); // Use SMART routing initially
-
-		client.reqContractDetails(1, contract);
-	}
-
-	public void subscribeMarketData() {
-		Contract contract = new Contract();
-		contract.symbol("SPHB");                    // Symbol
-		contract.secType("STK");                   // Security type: Stock/ETF
-		contract.currency("USD");                  // Currency
-		contract.exchange("SMART");                // Smart routing
-//		contract.primaryExch("NASDAQ");            // Primary exchange
-
-		// Market data options (empty list for basic data)
-		List<TagValue> mktDataOptions = new ArrayList<>();
-
-		client.reqMktData(1001, contract, "", false, false, mktDataOptions);
-
-		System.out.println("Subscribed market data");
-	}
-
-	public void reqHistoricalData() {
-		log.info("Requesting historical data for SPHB...");
-		
-		Contract SPHB = new Contract();
-		SPHB.conid(319357119);
-		SPHB.symbol("SPHB");
-		SPHB.secType("STK");
-		SPHB.exchange("ARCA");
-		SPHB.currency("USD");
-
-		barList.clear(); // Clear any previous data
-
-		client.reqHistoricalData(
-				2,              // ReqId
-				SPHB,            // Contract
-				"",             // endDateTime - empty means current time
-				"1 Y",          // durationStr
-				"5 mins",        // Bar size
-				"TRADES",       // WhatToShow
-				0,              // UseRTH (0 = include data outside regular trading hours)
-				2,              // FormatDate (2 = yyyymmdd hh:mm:ss)
-				false,          // KeepUpToDate
-				null            // ChartOptions
-		);
-		
-		log.info("Historical data request sent for SPHB (reqId=2)");
-	}
+//	public void reqHistoricalData() {
+//		log.info("Requesting historical data for SPHB...");
+//
+//		Contract SPHB = new Contract();
+//		SPHB.conid(319357119);
+//		SPHB.symbol("SPHB");
+//		SPHB.secType("STK");
+//		SPHB.exchange("ARCA");
+//		SPHB.currency("USD");
+//
+//		barList.clear(); // Clear any previous data
+//
+//		client.reqHistoricalData(
+//				2,              // ReqId
+//				SPHB,            // Contract
+//				"",             // endDateTime - empty means current time
+//				"1 Y",          // durationStr
+//				"5 mins",        // Bar size
+//				"TRADES",       // WhatToShow
+//				0,              // UseRTH (0 = include data outside regular trading hours)
+//				2,              // FormatDate (2 = yyyymmdd hh:mm:ss)
+//				false,          // KeepUpToDate
+//				null            // ChartOptions
+//		);
+//
+//		log.info("Historical data request sent for SPHB (reqId=2)");
+//	}
 
 	@Override
 	public List<Order> getPendingOrders(Market market) {
-		// Request all open orders
-		startOperation(Operation.PENDING_ORDERS);
-		
-		client.reqAllOpenOrders();
-		
-		// Wait for orders to be populated via openOrder callbacks
-		waitForOperation(Operation.PENDING_ORDERS);
-		
-		List<com.ib.client.Order> pendingOrders = getOperationData(Operation.PENDING_ORDERS, List.class);
-		log.info("Retrieved {} pending orders", pendingOrders.size());
-		
-		return pendingOrders.stream()
-				.peek(o -> log.info("order received [orderId={}, symbol={}, action={}, totalQty={}]", 
-					o.orderId(), getSymbolFromOrder(o), o.action(), o.totalQuantity()))
-				.map(this::toOrder)
-				.filter(Objects::nonNull)
-				.toList();
+		client.reqOpenOrders();
+
+		waitForCondition(() -> operationComplete.getOrDefault(Operation.GET_PENDING_ORDERS, false));
+
+		// workaround for market filtering
+		var currency = switch (market) {
+			case HK -> "HKD";
+			case US -> "USD";
+		};
+
+		return orderDetails.entrySet().stream()
+				.filter(e -> e.getValue().orderState.status().isActive() && currency.equals(e.getValue().contract.currency()))
+				.peek(e -> log.info("order {} received={}", e.getKey(), e.getValue()))
+				.map(e -> toOrder(e.getValue(), market)).toList();
 	}
 
 	@Override
@@ -213,39 +182,98 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public Map<String, Execution> getStockTodayExecutions(Market market) {
-		// TODO: Implement IB-specific today executions logic
+		executions.clear();
+		client.reqExecutions(currentOrderId++, new ExecutionFilter());
+
+		waitForCondition(() ->
+				operationComplete.getOrDefault(Operation.GET_EXECUTIONS, false));
+
+		var results = new HashMap<String, Execution>();
+		for (var execDetail : executions.values())
+			results.merge(Long.toString(execDetail.execution.orderId()),
+					toExecution(execDetail),
+					Execution::addExecution);
+
 		return Collections.emptyMap();
+	}
+
+	private Execution toExecution(ExecDetail execDetail) {
+		var exec = new Execution();
+		exec.setOrderId(String.valueOf(execDetail.execution.orderId()));
+		exec.setFillIds(execDetail.execution.execId());
+		exec.setQuantity(execDetail.execution.shares().value());
+		exec.setPrice(BigDecimal.valueOf(execDetail.execution.price()));
+		exec.setSide(execDetail.execution.side().equals("BUY") ? BUY : SELL);
+		exec.setCode(execDetail.contract.symbol() + ".US"); // hardcoded until trading outside US
+		exec.setTime(getExecutionTime(execDetail.execution.time(), Market.US)); // hardcoded until trading outside US
+		exec.setMarket(Market.US); // hardcoded until trading outside US
+		return exec;
+	}
+
+	private long getExecutionTime(String timeStr, Market market) {
+		var timezone = switch (market) {
+			case US -> TimeZone.getTimeZone("America/New_York");
+			case HK -> TimeZone.getTimeZone("Asia/Hong_Kong");
+		};
+		var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		dateFormat.setTimeZone(timezone);
+		try {
+			return dateFormat.parse(timeStr).getTime();
+		} catch (Exception e) {
+			log.error("Failed to parse execution time: {}", timeStr, e);
+			return System.currentTimeMillis();
+		}
 	}
 
 	@Override
 	public PlaceOrderResponse placeOrder(SquoteConstants.Side side, String code, int quantity, double price) {
-		// TODO: Implement IB-specific place order logic
-		return new PlaceOrderResponse(0, -1, "Not implemented");
+		if (currentOrderId == -1) {
+			log.error("No valid order ID available - connection may not be established");
+			return new PlaceOrderResponse(0, -1, "No valid order ID - connection not established");
+		}
+
+		try {
+			var contract = createContract(code);
+			var order = createIBOrder(side, quantity, price);
+			var orderId = currentOrderId++;
+			log.info("Placing order: orderId={}, symbol={}, action={}, qty={}, price={}", 
+				orderId, code, side, quantity, price);
+			
+			client.placeOrder(orderId, contract, order);
+			boolean success = waitForCondition(
+				() -> orderDetails.containsKey(orderId) && orderDetails.get(orderId).orderState.status().isActive()
+			);
+			
+			if (success) {
+				log.info("Order placed successfully: orderId={}", orderId);
+				return new PlaceOrderResponse(orderId, 0L, "");
+			} else {
+				log.error("Order placement failed or timed out: orderId={}", orderId);
+				return new PlaceOrderResponse(0, lastErrorCode, "Order placement failed or timed out");
+			}
+		} catch (Exception e) {
+			log.error("Error placing order for {}", code, e);
+			return new PlaceOrderResponse(0, -1, "Error placing order: " + e.getMessage());
+		}
 	}
 
 	@Override
 	public CancelOrderResponse cancelOrder(long orderId, String code) {
-		// TODO: Implement IB-specific cancel order logic
-		return new CancelOrderResponse(-1, "Not implemented");
+		var ibOrderId = (int) orderId;
+		client.cancelOrder(ibOrderId, new OrderCancel());
+		var success = waitForCondition(() ->
+				orderStatusDetails.containsKey(ibOrderId)
+						&& "Cancelled".equals(orderStatusDetails.get(ibOrderId).status)
+		);
+
+		return success
+				? new CancelOrderResponse(-1, "Cancelled")
+				: new CancelOrderResponse(1, "Cancel failed");
 	}
 
-	private Object getResult(int seq) {
-		Instant timeout = Instant.now().plusSeconds(timeoutSeconds);
-		while (timeout.isAfter(Instant.now())) {
-			var result = resultMap.get(seq);
-			if (result != null) {
-				return resultMap.remove(seq);
-			}
-
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				log.error("Seq[{}] unexpected exception", seq, e);
-			}
-		}
-
-		log.error("Seq[{}] Cannot get result", seq);
-		return null;
+	@Override
+	public Map<String, Execution> getStockExecutions(Date fromDate, Market market) {
+		return Map.of();
 	}
 
 	@Override
@@ -279,26 +307,35 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	}
 
 	@Override
-	public void orderStatus(int i, String s, Decimal decimal, Decimal decimal1, double v, int i1, int i2, double v1, int i3, String s1, double v2) {
-
+	public void orderStatus(int orderId, String status, Decimal filled, Decimal remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
+		log.info("Order status update: orderId={}, status={}, filled={}, remaining={}", orderId, status, filled, remaining);
+		orderStatusDetails.put(orderId, new OrderStatusDetail(orderId, status, filled, remaining, avgFillPrice));
 	}
+
+	record OrderStatusDetail(int orderId, String status, Decimal filled, Decimal remaining, double avgFillPrice) {}
+
+	record OrderDetail(int orderId, Contract contract, com.ib.client.Order order, OrderState orderState, Date updatedAt) {
+		@NotNull
+		@Override
+		public String toString() {
+			return "%s:%s:%s@%s (state=%s, execQty=%s)".formatted(order.action(), contract.symbol(), order.totalQuantity(), order.lmtPrice(),
+					orderState.status(), order.filledQuantity());
+		}
+	}
+
+	record ExecDetail(Contract contract, com.ib.client.Execution execution) {}
 
 	@Override
 	public void openOrder(int orderId, Contract contract, com.ib.client.Order order, OrderState orderState) {
-		log.debug("Received open order: orderId={}, symbol={}, action={}, qty={}", 
+		log.info("Received open order: orderId={}, symbol={}, action={}, qty={}",
 			orderId, contract.symbol(), order.action(), order.totalQuantity());
-		
-		List<com.ib.client.Order> pendingOrders = getOperationData(Operation.PENDING_ORDERS, List.class);
-		pendingOrders.add(order);
-		
-		Map<Integer, Contract> orderContracts = getOperationData(Operation.PENDING_ORDERS, Map.class);
-		orderContracts.put(orderId, contract);
+		orderDetails.put(orderId, new OrderDetail(orderId, contract, order, orderState, new Date()));
 	}
 
 	@Override
 	public void openOrderEnd() {
-		log.debug("Open orders request completed");
-		completeOperation(Operation.PENDING_ORDERS);
+		log.info("Open orders request completed");
+		completeOperation(Operation.GET_PENDING_ORDERS);
 	}
 
 	@Override
@@ -365,12 +402,13 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	@Override
 	public void execDetails(int reqId, Contract contract, com.ib.client.Execution execution) {
-
+		executions.put(execution.execId(), new ExecDetail(contract, execution));
 	}
 
 	@Override
 	public void execDetailsEnd(int reqId) {
-
+        log.info("execDetailsEnd: {}", reqId);
+		completeOperation(Operation.GET_EXECUTIONS);
 	}
 
 	@Override
@@ -798,32 +836,48 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 
 	}
 
-	private String getSymbolFromOrder(com.ib.client.Order order) {
-		Map<Integer, Contract> orderContracts = getOperationData(Operation.PENDING_ORDERS, Map.class);
-		Contract contract = orderContracts.get(order.orderId());
-		return contract != null ? contract.symbol() : "UNKNOWN";
+	private Contract createContract(String code) {
+		Market market = Market.getMarketByStockCode(code);
+		String symbol = Market.getBaseCodeFromTicker(code);
+		
+		Contract contract = new Contract();
+		contract.symbol(symbol);
+		contract.secType("STK");
+		contract.exchange("SMART");
+		
+		switch (market) {
+			case US:
+				contract.currency("USD");
+				break;
+			case HK:
+				contract.currency("HKD");
+				break;
+		}
+		
+		return contract;
 	}
-
-	private Order toOrder(com.ib.client.Order ibOrder) {
+	
+	private com.ib.client.Order createIBOrder(SquoteConstants.Side side, int quantity, double price) {
+		com.ib.client.Order order = new com.ib.client.Order();
+		order.action(side == SquoteConstants.Side.BUY ? "BUY" : "SELL");
+		order.totalQuantity(Decimal.get(quantity));
+		order.orderType("LMT");
+		order.lmtPrice(price);
+		order.tif("GTC");
+		order.outsideRth(true);
+		return order;
+	}
+	
+	private Order toOrder(OrderDetail orderDetail, Market market) {
 		try {
-			Map<Integer, Contract> orderContracts = getOperationData(Operation.PENDING_ORDERS, Map.class);
-			Contract contract = orderContracts.get(ibOrder.orderId());
-			if (contract == null) {
-				log.warn("No contract found for order {}", ibOrder.orderId());
-				return null;
-			}
-			
-			String code = contract.symbol();
-			SquoteConstants.Side side = "BUY".equals(ibOrder.action()) ? 
-				SquoteConstants.Side.BUY : SquoteConstants.Side.SELL;
-			int quantity = ibOrder.totalQuantity().value().intValue();
-			double price = ibOrder.lmtPrice();
-			long orderId = ibOrder.orderId();
-			int fillQty = ibOrder.filledQuantity().value().intValue();
-			double fillAvgPrice = 0.0; // IB doesn't provide this in Order object
-			Date createTime = new Date(); // IB doesn't provide creation time in Order object
-			
-			return new Order(code, side, quantity, price, orderId, fillQty, fillAvgPrice, createTime);
+			var side = orderDetail.order.action() == Types.Action.BUY ? SquoteConstants.Side.BUY : SquoteConstants.Side.SELL;
+			var execDetail = orderStatusDetails.get(orderDetail.orderId());
+			double fillAvgPrice = execDetail == null ? 0 : execDetail.avgFillPrice;
+			return new Order(orderDetail.contract.symbol() + "." + market, side,
+					orderDetail.order.totalQuantity().value().intValue(),
+					orderDetail.order.lmtPrice(), orderDetail.orderId,
+					orderDetail.order.filledQuantity().value().intValue(),
+					fillAvgPrice, orderDetail.updatedAt);
 		} catch (Exception e) {
 			log.error("Error converting IB order to Order object", e);
 			return null;

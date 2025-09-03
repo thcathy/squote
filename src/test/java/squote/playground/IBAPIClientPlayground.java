@@ -2,8 +2,10 @@ package squote.playground;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import squote.SquoteConstants;
 import squote.domain.Market;
 import squote.domain.Order;
+import squote.service.ibkr.IBAPIClient;
 
 import java.util.List;
 
@@ -20,15 +22,17 @@ public class IBAPIClientPlayground {
 
     public void execute() {
         log.info("Starting IBAPIClient playground tests...");
-        IBAPIClient client = new IBAPIClient(HOST, PORT, BASE_CLIENT_ID + 4);
-        log.info("Successfully connected to IB Gateway for historical data test");
+        IBAPIClient client = new IBAPIClient(HOST, PORT, BASE_CLIENT_ID);
+        log.info("Successfully connected to IB Gateway");
 
-        client.subscribeMarketData();
+        var response = client.placeOrder(SquoteConstants.Side.BUY, "SPHB.US", 1, 80);
 
-//        testConnectionTimeout();
-//         testIBGatewayConnection();
-//        testGetPendingOrders();
-//        getSPHBBars();
+        var orders = client.getPendingOrders(Market.US);
+        System.out.println(orders.size());
+
+        var cancelResponse = client.cancelOrder(orders.get(0).orderId(), orders.get(0).code());
+        System.out.println(cancelResponse.errorCode());
+
         for (int i=0; i<1000000; i++) {
             try {
                 Thread.sleep(1000);
@@ -44,7 +48,7 @@ public class IBAPIClientPlayground {
             IBAPIClient client = new IBAPIClient(HOST, PORT, BASE_CLIENT_ID + 3);
             log.info("Successfully connected to IB Gateway for historical data test");
             Thread.sleep(1000);
-            client.reqHistoricalData();
+//            client.reqHistoricalData();
         } catch (Exception e) {
             log.error("Error in getSPHBBars test", e);
             e.printStackTrace();

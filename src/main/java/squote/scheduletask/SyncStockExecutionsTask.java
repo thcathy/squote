@@ -1,6 +1,5 @@
 package squote.scheduletask;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.futu.openapi.FTAPI_Conn_Qot;
 import com.futu.openapi.FTAPI_Conn_Trd;
@@ -23,23 +22,6 @@ import java.util.*;
 
 @Component
 public class SyncStockExecutionsTask {
-    record SyncStockExecutionsTaskConfig(Map<Market, Date> lastExecutionTimeByMarket) {
-        static String toJson(SyncStockExecutionsTaskConfig config) {
-            try {
-                return new ObjectMapper().writeValueAsString(config);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        static SyncStockExecutionsTaskConfig fromJson(String json) {
-            try {
-                return new ObjectMapper().readValue(json, SyncStockExecutionsTaskConfig.class);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -200,7 +182,7 @@ fee=%.2f profit=%.2f""",
         var config = taskConfig.jsonConfig().isEmpty()
                 ? new SyncStockExecutionsTaskConfig(new HashMap<>())
                 : SyncStockExecutionsTaskConfig.fromJson(taskConfig.jsonConfig());
-        config.lastExecutionTimeByMarket.put(market, date);
+        config.lastExecutionTimeByMarket().put(market, date);
         taskConfigRepo.save(new TaskConfig(this.getClass().toString(), SyncStockExecutionsTaskConfig.toJson(config)));
         log.info("Saved last execution time for market {}: {}", market, date);
         logs.append(String.format("Saved last execution time for market %s: %s\n\n", market, date));
@@ -215,10 +197,10 @@ fee=%.2f profit=%.2f""",
         try {
             var entity = taskConfigRepo.findById(this.getClass().toString()).orElseThrow();
             var config = SyncStockExecutionsTaskConfig.fromJson(entity.jsonConfig());
-            if (config.lastExecutionTimeByMarket == null || !config.lastExecutionTimeByMarket.containsKey(market))
+            if (config.lastExecutionTimeByMarket() == null || !config.lastExecutionTimeByMarket().containsKey(market))
                 return Optional.empty();
 
-            var time = config.lastExecutionTimeByMarket.get(market);
+            var time = config.lastExecutionTimeByMarket().get(market);
             log.info("lastExecutionTime in config: {}", time);
             return Optional.ofNullable(time); // 1 hour
         } catch (Exception e) {
