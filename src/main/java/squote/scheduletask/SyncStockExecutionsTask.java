@@ -182,7 +182,8 @@ fee=%.2f profit=%.2f""",
         var config = taskConfig.jsonConfig().isEmpty()
                 ? new SyncStockExecutionsTaskConfig(new HashMap<>())
                 : SyncStockExecutionsTaskConfig.fromJson(taskConfig.jsonConfig());
-        config.lastExecutionTimeByMarket().put(market, date);
+        var maxDate = new Date(Math.max(config.lastExecutionTimeByMarket().getOrDefault(market, fromDate).getTime(), date.getTime()));
+        config.lastExecutionTimeByMarket().put(market, maxDate);
         taskConfigRepo.save(new TaskConfig(this.getClass().toString(), SyncStockExecutionsTaskConfig.toJson(config)));
         log.info("Saved last execution time for market {}: {}", market, date);
         logs.append(String.format("Saved last execution time for market %s: %s\n\n", market, date));
