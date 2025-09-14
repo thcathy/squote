@@ -1,0 +1,45 @@
+---
+description: edge-case-handling
+alwaysApply: true
+---
+# Cursor Rules for Squote Project
+
+## Edge Case Handling Rule
+**CRITICAL: Do not auto-handle too many edge cases**
+
+When implementing or modifying code, follow these guidelines:
+
+1. **Limit Auto-Handling**: Avoid automatically handling more than 2-3 edge cases per method/operation
+2. **Fail Fast**: For critical operations (trading, order placement, account operations), prefer failing fast over auto-handling edge cases
+3. **Manual Review**: When encountering edge cases, suggest manual review rather than automatic handling
+4. **Logging**: Always log edge cases that are not auto-handled for visibility
+5. **Documentation**: Document edge cases that require manual intervention
+
+## Specific Guidelines
+
+### Trading Operations
+- Order placement, cancellation, and modification should fail fast on edge cases
+- Do not auto-retry failed orders more than once
+- Log all trading edge cases for manual review
+
+### API Operations
+- Limit retry attempts to maximum 2 for external API calls
+- Do not auto-handle authentication failures or rate limiting
+- Log API edge cases with sufficient context
+
+### Data Processing
+- Validate input data strictly rather than auto-correcting
+- Do not auto-handle malformed data - log and fail
+- Limit data transformation edge cases to 1-2 per operation
+
+### Error Handling
+- Prefer explicit error handling over generic catch blocks
+- Do not suppress exceptions unless absolutely necessary
+- Always provide meaningful error messages for edge cases
+
+## Code Quality Standards
+- Write clear, readable code with minimal complexity
+- Use meaningful variable and method names
+- Add comments for complex business logic
+- Follow existing code patterns and conventions
+- Ensure proper error handling without over-engineering

@@ -1,0 +1,5 @@
+---
+description: no-comments-until-unreadable
+alwaysApply: false
+---
+Do not add comments until the code is not easy to read

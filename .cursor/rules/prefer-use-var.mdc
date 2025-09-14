@@ -1,0 +1,5 @@
+---
+description: prefer-use-var
+alwaysApply: true
+---
+Prefer use var in variable if possible
