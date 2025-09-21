@@ -77,7 +77,7 @@ class SyncStockExecutionsTaskTest {
         task.executeHK();
         ArgumentCaptor<Date> dateCaptor = ArgumentCaptor.forClass(Date.class);
         ArgumentCaptor<Market> marketCaptor = ArgumentCaptor.forClass(Market.class);
-        verify(mockFutuAPIClient).getStockExecutions(dateCaptor.capture(), marketCaptor.capture());
+        verify(mockFutuAPIClient).getRecentExecutions(dateCaptor.capture(), marketCaptor.capture());
         var date = dateCaptor.getValue();
         var market = marketCaptor.getValue();
         assertTrue(date.getTime() < new Date().getTime() - (27L * 24 * 60 * 60 * 1000));    // 1 month minus 1 day earlier
@@ -98,10 +98,10 @@ class SyncStockExecutionsTaskTest {
 
         ArgumentCaptor<Date> dateCaptor = ArgumentCaptor.forClass(Date.class);
         ArgumentCaptor<Market> marketCaptor = ArgumentCaptor.forClass(Market.class);
-        verify(mockFutuAPIClient).getStockExecutions(dateCaptor.capture(), marketCaptor.capture());
+        verify(mockFutuAPIClient).getRecentExecutions(dateCaptor.capture(), marketCaptor.capture());
         var date = dateCaptor.getValue();
         var market = marketCaptor.getValue();
-        assertEquals(formatter.parse("2024-11-01 00:00:01.000"), date);
+        assertEquals(formatter.parse("2024-11-01 00:00:00.000"), date);
         assertEquals(Market.HK, market);
     }
 
@@ -136,7 +136,7 @@ class SyncStockExecutionsTaskTest {
         task.executeUS();
         ArgumentCaptor<Date> dateCaptor = ArgumentCaptor.forClass(Date.class);
         ArgumentCaptor<Market> marketCaptor = ArgumentCaptor.forClass(Market.class);
-        verify(mockFutuAPIClient).getStockExecutions(dateCaptor.capture(), marketCaptor.capture());
+        verify(mockFutuAPIClient).getRecentExecutions(dateCaptor.capture(), marketCaptor.capture());
         var market = marketCaptor.getValue();
         assertEquals(Market.US, market);
     }

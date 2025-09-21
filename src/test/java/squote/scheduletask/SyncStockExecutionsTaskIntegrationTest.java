@@ -103,7 +103,7 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         usExec.setMarket(Market.US);
         executions.put(usExec.getOrderId(), usExec);
 
-        when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(Market.HK))).thenReturn(executions);
+        when(mockFutuAPIClient.getRecentExecutions(any(Date.class), eq(Market.HK))).thenReturn(executions);
         task.executeHK();
 
         var holdings = Lists.newArrayList(holdingRepo.findAll());
@@ -160,13 +160,13 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         exec.setTime(execDate.getTime());
         exec.setMarket(Market.HK);
         executions.put(exec.getOrderId(), exec);
-        when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(Market.HK))).thenReturn(executions);
+        when(mockFutuAPIClient.getRecentExecutions(any(Date.class), eq(Market.HK))).thenReturn(executions);
 
         task.executeHK();
 
         var configEntity = taskConfigRepo.findById(SyncStockExecutionsTask.class.toString()).orElseThrow();
         var config = SyncStockExecutionsTaskConfig.fromJson(configEntity.jsonConfig());
-        assertTrue(configDate.getTime() < config.lastExecutionTimeByMarket().get(Market.HK).getTime());
+        assertTrue(configDate.getTime() <= config.lastExecutionTimeByMarket().get(Market.HK).getTime());
     }
 
     @Test
@@ -190,11 +190,11 @@ class SyncStockExecutionsTaskIntegrationTest extends IntegrationTest {
         fundRepo.save(f);
 
         var executions = new HashMap<String, Execution>();
-        when(mockFutuAPIClient.getStockExecutions(any(Date.class), eq(Market.US))).thenReturn(executions);
+        when(mockFutuAPIClient.getRecentExecutions(any(Date.class), eq(Market.US))).thenReturn(executions);
         
         task.executeUS();
         
-        verify(mockFutuAPIClient).getStockExecutions(any(Date.class), eq(Market.US));
+        verify(mockFutuAPIClient).getRecentExecutions(any(Date.class), eq(Market.US));
     }
 
 

@@ -16,7 +16,25 @@ public interface IBrokerAPIClient {
     Map<String, Execution> getStockTodayExecutions(Market market);
     PlaceOrderResponse placeOrder(SquoteConstants.Side side, String code, int quantity, double price);
     CancelOrderResponse cancelOrder(long orderId, String code);
-    Map<String, Execution> getStockExecutions(Date fromDate, Market market);
+    
+    /**
+     * Get recent executions (implementation-dependent time range)
+     * IB: T-day only
+     * Futu: Same as historical
+     * @param fromDate the starting date/time to retrieve executions from
+     * @param market the market to query executions for
+     * @return map of executions keyed by order ID
+     */
+    Map<String, Execution> getRecentExecutions(Date fromDate, Market market);
+    
+    /**
+     * Get historical executions if supported
+     * @param fromDate the starting date to retrieve executions from
+     * @param market the market to query executions for
+     * @return map of executions keyed by order ID
+     * @throws UnsupportedOperationException if not supported by broker
+     */
+    Map<String, Execution> getHistoricalExecutions(Date fromDate, Market market);
 
     record PlaceOrderResponse(long orderId, long errorCode, String message) {}
     record CancelOrderResponse(long errorCode, String message) {}

@@ -87,7 +87,7 @@ class FutuAPIClientTest {
         when(FTAPIConnTrd.getHistoryOrderFillList(any())).thenReturn(1);
 
         client.onReply_GetHistoryOrderFillList(FTAPIConnTrd, 1, response);
-        var executions = client.getStockExecutions(new Date(), Market.HK);
+        var executions = client.getRecentExecutions(new Date(), Market.HK);
         assertEquals(2, executions.size());
         var exec2828 = executions.get("1");
         var exec2800 = executions.get("2");
@@ -108,7 +108,7 @@ class FutuAPIClientTest {
     }
 
     @Test
-    void getStockExecutions_HK_beginTimeFormatting() {
+    void getRecentExecutions_HK_beginTimeFormatting() {
         var captor = ArgumentCaptor.forClass(TrdGetHistoryOrderFillList.Request.class);
         when(FTAPIConnTrd.getHistoryOrderFillList(any())).thenReturn(1);
         var headerBuilder = TrdCommon.TrdHeader.newBuilder().setTrdEnv(1).setAccID(1).setTrdMarket(1);
@@ -118,15 +118,16 @@ class FutuAPIClientTest {
         );
 
         Date testDate = new Date(1754357702188L); // Aug 05 2025 09:35:02.188 HKT
-        client.getStockExecutions(testDate, Market.HK);
+        client.getRecentExecutions(testDate, Market.HK);
         verify(FTAPIConnTrd).getHistoryOrderFillList(captor.capture());
         TrdGetHistoryOrderFillList.Request request = captor.getValue();
 
-        assertEquals("2025-08-05 09:35:02.188", request.getC2S().getFilterConditions().getBeginTime());
+        // +1 second
+        assertEquals("2025-08-05 09:35:03.188", request.getC2S().getFilterConditions().getBeginTime());
     }
 
     @Test
-    void getStockExecutions_US_beginTimeFormatting() {
+    void getRecentExecutions_US_beginTimeFormatting() {
         var captor = ArgumentCaptor.forClass(TrdGetHistoryOrderFillList.Request.class);
         when(FTAPIConnTrd.getHistoryOrderFillList(any())).thenReturn(1);
         var headerBuilder = TrdCommon.TrdHeader.newBuilder().setTrdEnv(1).setAccID(1).setTrdMarket(1);
@@ -136,11 +137,12 @@ class FutuAPIClientTest {
         );
 
         Date testDate = new Date(1754357702188L); // Aug 04 2025 21:35:02.188 EST
-        client.getStockExecutions(testDate, Market.US);
+        client.getRecentExecutions(testDate, Market.US);
         verify(FTAPIConnTrd).getHistoryOrderFillList(captor.capture());
         TrdGetHistoryOrderFillList.Request request = captor.getValue();
 
-        assertEquals("2025-08-04 21:35:02.188", request.getC2S().getFilterConditions().getBeginTime());
+        // +1 second
+        assertEquals("2025-08-04 21:35:03.188", request.getC2S().getFilterConditions().getBeginTime());
     }
 
     @Test
@@ -175,5 +177,48 @@ class FutuAPIClientTest {
         var c2s = request.getC2S();
         assertEquals(0, c2s.getSession());
         assertEquals(false, c2s.getFillOutsideRTH());
+    }
+
+    @Test
+    void getFlowSummary_SuccessfulResponse_MapsToFlowSummaryInfoList() {
+        var flowInfo1 = TrdFlowSummary.FlowSummaryInfo.newBuilder()
+                .setClearingDate("2025-05-30")
+                .setSettlementDate("2025-05-30")
+                .setCurrency(1)
+                .setCashFlowType("Cash Dividend")
+                .setCashFlowDirection(1)
+                .setCashFlowAmount(7810.0)
+                .setCashFlowRemark("INTERIM DISTRIBUTION - HKD0.22/UNIT")
+                .setCashFlowID(792566)
+                .build();
+        var headerBuilder = TrdCommon.TrdHeader.newBuilder().setTrdEnv(1).setAccID(1).setTrdMarket(1);
+        var s2c = TrdFlowSummary.S2C.newBuilder()
+                .setHeader(headerBuilder)
+                .addFlowSummaryInfoList(flowInfo1).build();
+        var response = TrdFlowSummary.Response.newBuilder().setRetType(0).setS2C(s2c).build();
+
+        when(FTAPIConnTrd.getFlowSummary(any())).thenReturn(1);
+        client.onReply_GetFlowSummary(FTAPIConnTrd, 1, response);
+        var flows = client.getFlowSummary(new Date(), Market.HK);
+        assertEquals(1, flows.size());
+        var firstFlow = flows.getFirst();
+        assertEquals("2025-05-30", firstFlow.clearingDate());
+        assertEquals("2025-05-30", firstFlow.settlementDate());
+        assertEquals("HKD", firstFlow.currency());
+        assertEquals("Cash Dividend", firstFlow.cashFlowType());
+        assertEquals("In", firstFlow.cashFlowDirection());
+        assertEquals(BigDecimal.valueOf(7810.0), firstFlow.cashFlowAmount());
+        assertEquals("INTERIM DISTRIBUTION - HKD0.22/UNIT", firstFlow.cashFlowRemark());
+        assertEquals("792566", firstFlow.cashFlowID());
+    }
+
+    @Test
+    void onReply_GetFlowSummary_ErrorResponse_ReturnsEmptyList() {
+        var response = TrdFlowSummary.Response.newBuilder().setRetType(-1).setRetMsg("Error message").build();
+        when(FTAPIConnTrd.getFlowSummary(any())).thenReturn(1);
+        client.onReply_GetFlowSummary(FTAPIConnTrd, 1, response);
+
+        var result = client.getFlowSummary(new Date(), Market.HK);
+        assertEquals(0, result.size());
     }
 }

@@ -52,7 +52,7 @@ public class StockTradingAlgoService {
             return String.format("%s %s %d@%.2f (isToday=%s) %s", side, code, quantity, price, isToday, date);
         }
     }
-    
+
     public void processSingleSymbol(Fund fund, Market market, AlgoConfig algoConfig, FutuClientConfig clientConfig, IBrokerAPIClient brokerAPIClient, StockQuote providedQuote, Date lastExecutionDate) {
         log.info("start process for {} in {}", algoConfig.code(), fund.name);
         var stdDev = getStdDev(algoConfig.code(), algoConfig.stdDevRange());
@@ -70,7 +70,7 @@ public class StockTradingAlgoService {
         var holdings = holdingStockRepository.findByUserIdOrderByDate(fund.userId)
                 .stream().filter(h -> h.getCode().equals(algoConfig.code()) && h.getFundName().equals(fund.name))
                 .toList();
-        var allTodayExecutions = brokerAPIClient.getStockExecutions(lastExecutionDate, market).values()
+        var allTodayExecutions = brokerAPIClient.getRecentExecutions(lastExecutionDate, market).values()
                 .stream()
                 .filter(e -> e.getCode().equals(algoConfig.code()))
                 .toList();

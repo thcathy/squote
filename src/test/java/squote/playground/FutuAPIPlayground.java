@@ -61,7 +61,7 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
         if (inited >= 2) {
 //            requestSnapshotQuote();
 //                    getAccounts();
-       getTrades();
+//       getTrades();
 //        getTodayFills();
 //        getPendingOrders();
 //        unlockTrade();
@@ -71,6 +71,24 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
 //            requestVOOKlines();
 //          requestVOOSnapshotQuote();
 //            subscribeQuote();
+//            getPositionList();
+//            getFunds();
+            getFlowSummary();
+        }
+    }
+
+    @Override
+    public void onReply_GetFlowSummary(FTAPI_Conn client, int nSerialNo, TrdFlowSummary.Response rsp) {
+        if (rsp.getRetType() != 0) {
+            System.out.printf("TrdFlowSummary failed: %s\n", rsp.getRetMsg());
+        }
+        else {
+            try {
+                String json = JsonFormat.printer().print(rsp);
+                System.out.printf("Receive TrdFlowSummary: %s\n", json);
+            } catch (InvalidProtocolBufferException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -87,6 +105,65 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
         QotSub.Request req = QotSub.Request.newBuilder().setC2S(c2s).build();
         int seqNo = qot.sub(req);
         System.out.printf("Send QotSub: %d\n", seqNo);
+    }
+
+    private void getFunds() {
+        var header = TrdCommon.TrdHeader.newBuilder()
+                .setAccID(accId)
+                .setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
+                .setTrdMarket(TrdCommon.TrdMarket.TrdMarket_US_Fund_VALUE)
+                .build();
+        var c2s = TrdGetFunds.C2S.newBuilder()
+                .setHeader(header)
+                .setCurrency(TrdCommon.Currency.Currency_HKD_VALUE)
+                .build();
+        var req = TrdGetFunds.Request.newBuilder().setC2S(c2s).build();
+        var seqNo = trd.getFunds(req);
+        System.out.printf("Send TrdGetFunds: %d\n", seqNo);
+    }
+
+    private void getFlowSummary() {
+        TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
+                .setAccID(accId)
+                .setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
+                .setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_Fund_VALUE)
+                .build();
+        TrdFlowSummary.C2S c2s = TrdFlowSummary.C2S.newBuilder()
+                .setHeader(header)
+                .setClearingDate("2025-05-30")
+                .build();
+        TrdFlowSummary.Request req = TrdFlowSummary.Request.newBuilder().setC2S(c2s).build();
+        int seqNo = trd.getFlowSummary(req);
+        System.out.printf("Send TrdFlowSummary: %d\n", seqNo);
+    }
+
+    @Override
+    public void onReply_GetFunds(FTAPI_Conn client, int nSerialNo, TrdGetFunds.Response rsp) {
+        if (rsp.getRetType() != 0) {
+            System.out.printf("TrdGetFunds failed: %s\n", rsp.getRetMsg());
+        }
+        else {
+            try {
+                String json = JsonFormat.printer().print(rsp);
+                System.out.printf("Receive TrdGetFunds: %s\n", json);
+            } catch (InvalidProtocolBufferException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void getPositionList() {
+        TrdCommon.TrdHeader header = TrdCommon.TrdHeader.newBuilder()
+                .setAccID(accId)
+                .setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
+                .setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_Fund_VALUE)
+                .build();
+        TrdGetPositionList.C2S c2s = TrdGetPositionList.C2S.newBuilder()
+                .setHeader(header)
+                .build();
+        TrdGetPositionList.Request req = TrdGetPositionList.Request.newBuilder().setC2S(c2s).build();
+        int seqNo = trd.getPositionList(req);
+        System.out.printf("Send getPositionList: %d\n", seqNo);
     }
 
     private void placeOrder() {
@@ -458,6 +535,21 @@ public class FutuAPIPlayground implements FTSPI_Trd, FTSPI_Conn, FTSPI_Qot {
         }
     }
 
+    @Override
+    public void onReply_GetPositionList(FTAPI_Conn client, int nSerialNo, TrdGetPositionList.Response rsp) {
+        if (rsp.getRetType() != 0) {
+            System.out.printf("TrdGetPositionList failed: %s\n", rsp.getRetMsg());
+        }
+        else {
+            try {
+                String json = JsonFormat.printer().print(rsp);
+                System.out.printf("Receive TrdGetPositionList: %s\n", json);
+                System.out.println("Done");
+            } catch (InvalidProtocolBufferException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     public static void main(String[] args) {
         FTAPI.init();

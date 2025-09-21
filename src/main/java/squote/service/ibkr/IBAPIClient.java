@@ -11,10 +11,15 @@ import squote.domain.Order;
 import squote.domain.StockQuote;
 import squote.service.IBrokerAPIClient;
 
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
@@ -25,36 +30,45 @@ import static squote.SquoteConstants.Side.SELL;
 
 public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
-	
-	// Operations that can be tracked for completion
+
 	private enum Operation {GET_PENDING_ORDERS, GET_EXECUTIONS, HISTORICAL_DATA, CONTRACT_DETAILS, STOCK_QUOTE, PLACE_ORDER}
-	
-	private final Map<Integer, Object> resultMap = new ConcurrentHashMap<>();
 	private final EJavaSignal signal;
 	private final EClientSocket client;
 	private final EReader reader;
 	protected int currentOrderId = -1;
 	int timeoutSeconds = 30;
 	int connectionTimeoutSeconds = 5;
-	
-	// Generic operation tracking
-	private Map<Operation, Boolean> operationComplete = new ConcurrentHashMap<>();
-	private Map<String, Object> operationData = new ConcurrentHashMap<>();
+	private final Map<Operation, Boolean> operationComplete = new ConcurrentHashMap<>();
 	private volatile long lastErrorCode = 0;
-
 	private final List<Bar> barList = new ArrayList<>();
 	private final Map<Integer, OrderDetail> orderDetails = new ConcurrentHashMap<>();
 	private final Map<Integer, OrderStatusDetail> orderStatusDetails = new ConcurrentHashMap<>();
 	private final Map<String, ExecDetail> executions = new ConcurrentHashMap<>();
+	private final HttpClient httpClient = HttpClient.newHttpClient();
+	private final String reportQueryToken;
+	private final String executionReportQueryId;
+	private final String flexBaseUrl = "https://ndcdyn.interactivebrokers.com/AccountManagement/FlexWebService";
 
 	// for unit test
-	public IBAPIClient(EJavaSignal signal, EClientSocket client, EReader reader) {
+	public IBAPIClient(EJavaSignal signal, EClientSocket client, EReader reader, String reportQueryToken, String executionReportQueryId) {
 		this.signal = signal;
 		this.client = client;
 		this.reader = reader;
+		this.reportQueryToken = reportQueryToken;
+		this.executionReportQueryId = executionReportQueryId;
 	}
 
-	public IBAPIClient(String host, int port, int clientId) {
+	public IBAPIClient(String reportQueryToken, String executionReportQueryId) {
+		this.signal = null;
+		this.client = null;
+		this.reader = null;
+		this.reportQueryToken = reportQueryToken;
+		this.executionReportQueryId = executionReportQueryId;
+	}
+
+	public IBAPIClient(String host, int port, int clientId, String reportQueryToken, String executionReportQueryId) {
+		this.reportQueryToken = reportQueryToken;
+		this.executionReportQueryId = executionReportQueryId;
 		signal = new EJavaSignal();
 		client = new EClientSocket(this, signal);
 
@@ -183,6 +197,7 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 	@Override
 	public Map<String, Execution> getStockTodayExecutions(Market market) {
 		executions.clear();
+
 		client.reqExecutions(currentOrderId++, new ExecutionFilter());
 
 		waitForCondition(() ->
@@ -271,10 +286,289 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 				: new CancelOrderResponse(1, "Cancel failed");
 	}
 
+	/**
+	 * IB gateway only returns T-day executions
+	 * @see <a href="https://www.interactivebrokers.com/campus/ibkr-api-page/twsapi-doc/#exec-details">IB API Documentation</a>
+	 */
 	@Override
-	public Map<String, Execution> getStockExecutions(Date fromDate, Market market) {
-		return Map.of();
+	public Map<String, Execution> getRecentExecutions(Date fromDate, Market market) {
+		var dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		var filter = new ExecutionFilter();
+		filter.time(dateFormat.format(fromDate));
+
+		executions.clear();
+		client.reqExecutions(currentOrderId++, filter);
+		waitForCondition(() ->
+				operationComplete.getOrDefault(Operation.GET_EXECUTIONS, false));
+
+		var results = new HashMap<String, Execution>();
+		for (var execDetail : executions.values())
+			results.merge(Long.toString(execDetail.execution.orderId()),
+					toExecution(execDetail),
+					Execution::addExecution);
+
+		return Collections.emptyMap();
 	}
+
+	/**
+	 * Get historical executions using IB Flex Web Service
+	 * @param fromDate the starting date to retrieve executions from
+	 * @param market the market to query executions for
+	 * @return map of executions keyed by order ID
+	 */
+	@Override
+	public Map<String, Execution> getHistoricalExecutions(Date fromDate, Market market) {
+		try {
+			log.info("Requesting historical executions from {} for market {}", fromDate, market);
+			var referenceCode = requestFlexReport(fromDate);
+			return downloadAndParseFlexReport(referenceCode, market);
+		} catch (Exception e) {
+			log.error("Error retrieving historical executions", e);
+			return Collections.emptyMap();
+		}
+	}
+
+	private String requestFlexReport(Date fromDate) throws IOException, InterruptedException {
+		var dateFormat = new SimpleDateFormat("yyyyMMdd");
+		var fromDateStr = dateFormat.format(fromDate);
+		var calendar = Calendar.getInstance();
+		calendar.add(Calendar.DAY_OF_MONTH, 1);
+		var tomorrowStr = dateFormat.format(calendar.getTime());
+		var requestUrl = String.format("%s/SendRequest?t=%s&q=%s&fd=%s&td=%s&v=3",
+				flexBaseUrl, reportQueryToken, executionReportQueryId, fromDateStr, tomorrowStr);
+		
+		var request = HttpRequest.newBuilder()
+			.uri(URI.create(requestUrl))
+			.GET().build();
+		var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+		
+		if (response.statusCode() != 200) {
+			throw new RuntimeException("Flex report request failed with status: " + response.statusCode());
+		}
+		return parseFlexResponse(response.body());
+	}
+
+	private String parseFlexResponse(String responseBody) {
+		try {
+			var factory = DocumentBuilderFactory.newInstance();
+			var builder = factory.newDocumentBuilder();
+			var doc = builder.parse(new java.io.ByteArrayInputStream(responseBody.getBytes()));
+			var root = doc.getDocumentElement();
+			var statusNodes = root.getElementsByTagName("Status");
+			if (statusNodes.getLength() > 0) {
+				var status = statusNodes.item(0).getTextContent();
+				if (!"Success".equals(status)) {
+					throw new RuntimeException("Flex report generation failed with status: " + status);
+				}
+			}
+			
+			var referenceNodes = root.getElementsByTagName("ReferenceCode");
+			var referenceCode = referenceNodes.item(0).getTextContent();
+			log.info("Flex report reference code: {}", referenceCode);
+			return referenceCode;
+		} catch (Exception e) {
+			throw new RuntimeException("Error parsing Flex response");
+		}
+	}
+
+	private Map<String, Execution> downloadAndParseFlexReport(String referenceCode, Market market) throws IOException, InterruptedException {
+		log.info("Downloading Flex report with reference code: {}", referenceCode);
+		var requestUrl = String.format("%s/GetStatement?t=%s&q=%s&v=3", flexBaseUrl, reportQueryToken, referenceCode);
+		int maxRetries = 5, retryDelaySeconds = 5;
+		
+		for (int attempt = 1; attempt <= maxRetries; attempt++) {
+			log.info("Attempt {} of {} to download Flex report", attempt, maxRetries);
+			
+			var request = HttpRequest.newBuilder().uri(URI.create(requestUrl)).GET().build();
+			var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+			
+			if (!isReportReady(response.body())) {
+				log.info("Flex report not ready yet, attempt {}/{}", attempt, maxRetries);
+				Thread.sleep(retryDelaySeconds * 1000);
+				continue;
+			}
+
+			log.info("Flex report is ready, parsing executions");
+			return parseFlexReportCsv(response.body(), market);
+		}
+		
+		log.error("Flex report still not ready after {} attempts", maxRetries);
+		return Collections.emptyMap();
+	}
+
+	private boolean isReportReady(String responseBody) {
+		try {
+			if (responseBody.contains("not ready") || 
+				responseBody.contains("still processing") ||
+				responseBody.contains("generating") ||
+				responseBody.contains("pending") ||
+				responseBody.contains("Error")) {
+				log.debug("Flex report not ready: {}", responseBody);
+				return false;
+			}
+
+			var lines = responseBody.split("\n");
+			if (lines.length < 2) {
+				log.debug("Flex report appears empty or incomplete");
+				return false;
+			}
+
+			var headerLine = lines[0];
+			return headerLine.contains("ClientAccountID") &&
+				headerLine.contains("Symbol") && 
+				headerLine.contains("Buy/Sell") &&
+				headerLine.contains("Quantity") &&
+				headerLine.contains("Price");
+		} catch (Exception e) {
+			log.warn("Error checking if report is ready: {}", e.getMessage());
+			return false;
+		}
+	}
+
+
+	private Map<String, Execution> parseFlexReportCsv(String csvContent, Market market) {
+		 var executions = new HashMap<String, Execution>();
+		
+		try {
+			var lines = csvContent.split("\n");
+			var headers = parseCsvLine(lines[0]);
+			var symbolIndex = findColumnIndex(headers, "Symbol");
+			var buySellIndex = findColumnIndex(headers, "Buy/Sell");
+			var quantityIndex = findColumnIndex(headers, "Quantity");
+			var priceIndex = findColumnIndex(headers, "Price");
+			var orderIdIndex = findColumnIndex(headers, "OrderID");
+			var execIdIndex = findColumnIndex(headers, "ExecID");
+			var dateTimeIndex = findColumnIndex(headers, "Date/Time");
+			var commissionIndex = findColumnIndex(headers, "Commission");
+			var assetClassIndex = findColumnIndex(headers, "AssetClass");
+
+			if (symbolIndex == -1 || buySellIndex == -1 || quantityIndex == -1 || priceIndex == -1) {
+				log.error("Required columns not found in Flex report CSV");
+				return Collections.emptyMap();
+			}
+
+			for (var i = 1; i < lines.length; i++) {
+				var line = lines[i].trim();
+				if (line.isEmpty()) continue;
+				
+				var values = parseCsvLine(line);
+				
+				var execution = parseExecutionFromCsv(values, market,
+					symbolIndex, buySellIndex, quantityIndex, priceIndex, orderIdIndex, execIdIndex, dateTimeIndex,
+					commissionIndex, assetClassIndex);
+				
+				if (execution != null) {
+					executions.merge(execution.getOrderId(), execution, Execution::addExecution);
+				}
+			}
+			
+			log.info("Parsed {} executions from Flex report CSV", executions.size());
+			return executions;
+			
+		} catch (Exception e) {
+			log.error("Error parsing Flex report CSV", e);
+			return Collections.emptyMap();
+		}
+	}
+
+	private String[] parseCsvLine(String line) {
+		var result = new ArrayList<String>();
+		var inQuotes = false;
+		var currentField = new StringBuilder();
+		
+		for (var i = 0; i < line.length(); i++) {
+			var c = line.charAt(i);
+			
+			if (c == '"') {
+				if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '"') {
+					currentField.append('"');
+					i++;
+				} else {
+					inQuotes = !inQuotes;
+				}
+			} else if (c == ',' && !inQuotes) {
+				result.add(currentField.toString());
+				currentField = new StringBuilder();
+			} else {
+				currentField.append(c);
+			}
+		}
+		
+		result.add(currentField.toString());
+		return result.toArray(new String[0]);
+	}
+
+	private int findColumnIndex(String[] headers, String columnName) {
+		for (var i = 0; i < headers.length; i++) {
+			if (headers[i].equals(columnName)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	private Execution parseExecutionFromCsv(String[] values, Market market,
+											int symbolIndex, int buySellIndex, int quantityIndex, int priceIndex,
+											int orderIdIndex, int execIdIndex, int dateTimeIndex, 
+											int commissionIndex, int assetClassIndex) {
+		try {
+			var execution = new Execution();
+			
+			var symbol = values[symbolIndex].trim();
+			var buySell = values[buySellIndex].trim();
+			var quantityStr = values[quantityIndex].trim();
+			var priceStr = values[priceIndex].trim();
+			
+			if (symbol.isEmpty() || buySell.isEmpty() || quantityStr.isEmpty() || priceStr.isEmpty()) {
+				return null;
+			}
+			
+			execution.setCode(symbol + "." + market);
+			execution.setSide("BUY".equals(buySell) ? BUY : SELL);
+			execution.setQuantity(new BigDecimal(quantityStr));
+			execution.setPrice(new BigDecimal(priceStr));
+
+			// Set order ID and execution ID
+			execution.setOrderId(orderIdIndex != -1 && orderIdIndex < values.length ? values[orderIdIndex].trim() : "UNKNOWN");
+			execution.setFillIds(execIdIndex != -1 && execIdIndex < values.length ? values[execIdIndex].trim() : "");
+
+			// Set commission
+			if (commissionIndex != -1 && commissionIndex < values.length && !values[commissionIndex].trim().isEmpty()) {
+				try {
+					execution.setCommission(new BigDecimal(values[commissionIndex].trim()));
+				} catch (NumberFormatException e) {
+					log.warn("Failed to parse commission: {}", values[commissionIndex].trim());
+					execution.setCommission(BigDecimal.ZERO);
+				}
+			} else {
+				execution.setCommission(BigDecimal.ZERO);
+			}
+
+			// Set asset class
+			execution.setAssetClass(assetClassIndex != -1 && assetClassIndex < values.length ? values[assetClassIndex].trim() : "");
+
+			execution.setMarket(market);
+
+			// Parse execution time
+			try {
+				if (dateTimeIndex != -1 && dateTimeIndex < values.length) {
+					var flexDateFormat = new SimpleDateFormat("yyyyMMdd HH:mm:ss z");
+					execution.setTime(flexDateFormat.parse(values[dateTimeIndex].trim()).getTime());
+				} else {
+					execution.setTime(System.currentTimeMillis());
+				}
+			} catch (Exception e) {
+				execution.setTime(System.currentTimeMillis());
+			}
+			
+			return execution;
+			
+		} catch (Exception e) {
+			log.error("Error parsing execution from CSV row", e);
+			return null;
+		}
+	}
+	
 
 	@Override
 	public void tickPrice(int tickerId, int field, double price, TickAttrib attrib) {

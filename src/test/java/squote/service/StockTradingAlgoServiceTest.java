@@ -485,7 +485,7 @@ class StockTradingAlgoServiceTest {
                 Map.entry("buy2", buyExecutionAtT2),
                 Map.entry("sell1", sellExecutionAtT1)
         ));
-        when(mockBrokerAPIClient.getStockExecutions(any(), eq(Market.HK))).thenReturn(TdayExecutions);
+        when(mockBrokerAPIClient.getRecentExecutions(any(), eq(Market.HK))).thenReturn(TdayExecutions);
         stockTradingAlgoService.processSingleSymbol(
                 fundA, Market.HK,
                 getDefaultAlgoConfig(),
@@ -596,7 +596,7 @@ class StockTradingAlgoServiceTest {
         var TdayExecutions = new HashMap<>(Map.ofEntries(
                 Map.entry("buy1", buyExecutionAtT1)
         ));
-        when(mockBrokerAPIClient.getStockExecutions(any(), eq(Market.US))).thenReturn(TdayExecutions);
+        when(mockBrokerAPIClient.getRecentExecutions(any(), eq(Market.US))).thenReturn(TdayExecutions);
 
         stockTradingAlgoService.processSingleSymbol(
                 fundUS, Market.US,
@@ -606,7 +606,7 @@ class StockTradingAlgoServiceTest {
         );
 
         verify(mockBrokerAPIClient, never()).getStockQuote(stockCodeUS);
-        verify(mockBrokerAPIClient, times(1)).getStockExecutions(any(), eq(Market.US));
+        verify(mockBrokerAPIClient, times(1)).getRecentExecutions(any(), eq(Market.US));
     }
 
     @Test
@@ -617,7 +617,7 @@ class StockTradingAlgoServiceTest {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
         when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of());
-        when(mockBrokerAPIClient.getStockExecutions(any(), eq(Market.HK))).thenReturn(new HashMap<>());
+        when(mockBrokerAPIClient.getRecentExecutions(any(), eq(Market.HK))).thenReturn(new HashMap<>());
 
         // Act
         stockTradingAlgoService.processSingleSymbol(fundA, Market.HK, grossAmountBasedConfig,

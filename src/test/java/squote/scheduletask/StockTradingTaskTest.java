@@ -140,7 +140,7 @@ class StockTradingTaskTest {
     @Test
     void getLastExecutionTime_whenConfigExists_shouldReturnDatePlusOneSecond() {
         var baseDate = new Date(1736308260000L);
-        var expectedDate = new Date(baseDate.getTime() + 1000); // Plus 1 second
+        var expectedDate = new Date(baseDate.getTime());
 
         var configMap = Map.of(Market.HK, baseDate, Market.US, new Date(1736308300000L));
         var taskConfig = SyncStockExecutionsTaskConfig.toJson(

@@ -5,10 +5,7 @@ import com.futu.openapi.pb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import squote.SquoteConstants;
-import squote.domain.Execution;
-import squote.domain.Market;
-import squote.domain.Order;
-import squote.domain.StockQuote;
+import squote.domain.*;
 import squote.scheduletask.FutuClientConfig;
 
 import java.math.BigDecimal;
@@ -226,7 +223,22 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		};
 	}
 
-	public HashMap<String, Execution> getStockExecutions(Date fromDate, Market market) {
+	/**
+	 * Futu API supports full historical executions, so this returns the same as getHistoricalExecutions
+	 */
+	@Override
+	public Map<String, Execution> getRecentExecutions(Date fromDate, Market market) {
+		// Futu supports historical execution, so delegate to the same implementation
+		return getHistoricalExecutions(fromDate, market);
+	}
+
+	/**
+	 * Get historical executions from the specified date
+	 * Futu API fully supports historical execution queries
+	 */
+	@Override
+	public Map<String, Execution> getHistoricalExecutions(Date fromDate, Market market) {
+		fromDate = new Date(fromDate.getTime() + 1000); // +1 second as Futu filter execution by >= fromDate
 		int seq = sendGetHistoryOrderFillRequest(fromDate, toTrdMarket(market));
 		log.info("Seq[{}] Send getHistoryOrderFillList", seq);
 
@@ -490,6 +502,66 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 
 		log.error("Seq[{}] Cannot get result", seq);
 		return null;
+	}
+
+	public List<FlowSummaryInfo> getFlowSummary(Date date, Market market) {
+		var trdMarket = switch (market) {
+			case HK -> TrdCommon.TrdMarket.TrdMarket_HK;
+			case US -> TrdCommon.TrdMarket.TrdMarket_US;
+        };
+
+		var dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		var dateStr = dateFormat.format(date);
+		var header = TrdCommon.TrdHeader.newBuilder()
+				.setAccID(clientConfig.accountId())
+				.setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE).setTrdMarket(trdMarket.getNumber())
+				.build();
+		var c2s = TrdFlowSummary.C2S.newBuilder().setHeader(header)
+				.setClearingDate(dateStr).build();
+		var req = TrdFlowSummary.Request.newBuilder().setC2S(c2s).build();
+		int seqNo = futuConnTrd.getFlowSummary(req);
+		log.info("Send TrdFlowSummary for market {} on date {}: seqNo={}", market, dateStr, seqNo);
+		return (List<FlowSummaryInfo>) getResult(seqNo);
+	}
+
+	@Override
+	public void onReply_GetFlowSummary(FTAPI_Conn client, int seq, TrdFlowSummary.Response response) {
+		if (response.getRetType() != 0) {
+			log.error("GetFlowSummary failed: {}", response.getRetMsg());
+			resultMap.put(seq, new ArrayList<FlowSummaryInfo>());
+		}
+
+		var flows = response.getS2C().getFlowSummaryInfoListList().stream()
+				.map(this::mapToFlowSummaryInfo)
+				.toList();
+		log.info("{} flow returned", flows.size());
+		resultMap.put(seq, flows);
+	}
+
+	private FlowSummaryInfo mapToFlowSummaryInfo(TrdFlowSummary.FlowSummaryInfo flowSummaryInfo) {
+		var flowDirection = switch (flowSummaryInfo.getCashFlowDirection()){
+			case TrdFlowSummary.TrdCashFlowDirection.TrdCashFlowDirection_In_VALUE -> "In";
+			case TrdFlowSummary.TrdCashFlowDirection.TrdCashFlowDirection_Out_VALUE -> "Out";
+			case TrdFlowSummary.TrdCashFlowDirection.TrdCashFlowDirection_Unknown_VALUE ->  "Unknown";
+            default -> throw new IllegalStateException("Unexpected value: " + flowSummaryInfo.getCashFlowDirection());
+        };
+
+		var currency = switch (flowSummaryInfo.getCurrency()) {
+			case TrdCommon.Currency.Currency_HKD_VALUE -> "HKD";
+			case TrdCommon.Currency.Currency_USD_VALUE -> "USD";
+            default -> throw new IllegalStateException("Unexpected value: " + flowSummaryInfo.getCurrency());
+        };
+
+		return new FlowSummaryInfo(
+			flowSummaryInfo.getClearingDate(),
+			flowSummaryInfo.getSettlementDate(),
+			currency,
+			flowSummaryInfo.getCashFlowType(),
+			flowDirection,
+			BigDecimal.valueOf(flowSummaryInfo.getCashFlowAmount()),
+			flowSummaryInfo.getCashFlowRemark(),
+			String.valueOf(flowSummaryInfo.getCashFlowID())
+		);
 	}
 }
     

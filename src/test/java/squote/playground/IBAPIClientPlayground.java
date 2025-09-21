@@ -4,25 +4,49 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import squote.SquoteConstants;
 import squote.domain.Market;
-import squote.domain.Order;
 import squote.service.ibkr.IBAPIClient;
 
-import java.util.List;
+import java.util.Calendar;
 
 public class IBAPIClientPlayground {
     private static final Logger log = LoggerFactory.getLogger(IBAPIClientPlayground.class);
 
     private static final String HOST = System.getenv("IB_GATEWAY_HOST");
     private static final int PORT = 4001;
+    private static final String REPORT_QUERY_TOKEN = System.getenv("IB_REPORT_QUERY_TOKEN");
+    private static final String EXECUTION_REPORT_QUERY_ID = System.getenv("IB_EXECUTION_REPORT_QUERY_ID");
     private static final int BASE_CLIENT_ID = 1000;
 
     public static void main(String[] args) {
-        new IBAPIClientPlayground().execute();
+//        new IBAPIClientPlayground().execute();
+        new IBAPIClientPlayground().getExecutionReport();
+    }
+
+    public void getExecutionReport() {
+        var client = new IBAPIClient(REPORT_QUERY_TOKEN, EXECUTION_REPORT_QUERY_ID);
+
+        var calendar = Calendar.getInstance();
+        calendar.add(Calendar.MONTH, -3);
+        var threeMonthsAgo = calendar.getTime();
+        
+        var executions = client.getHistoricalExecutions(threeMonthsAgo, Market.US);
+
+        log.info("Retrieved {} executions from the last 3 months", executions.size());
+        log.info("Execution Report - Last 3 Months: Total executions: {}", executions.size());
+        
+        if (!executions.isEmpty()) {
+            log.info("Execution details:");
+            executions.forEach((orderId, execution) -> {
+                log.info("Order ID: {}, Execution: {}", orderId, execution);
+            });
+        } else {
+            log.info("No executions found for the last 3 months.");
+        }
     }
 
     public void execute() {
         log.info("Starting IBAPIClient playground tests...");
-        IBAPIClient client = new IBAPIClient(HOST, PORT, BASE_CLIENT_ID);
+        IBAPIClient client = new IBAPIClient(HOST, PORT, BASE_CLIENT_ID, REPORT_QUERY_TOKEN, EXECUTION_REPORT_QUERY_ID);
         log.info("Successfully connected to IB Gateway");
 
         var response = client.placeOrder(SquoteConstants.Side.BUY, "SPHB.US", 1, 80);
@@ -41,71 +65,5 @@ public class IBAPIClientPlayground {
             }
         }
         log.info("IBAPIClient playground tests completed.");
-    }
-
-    private void getSPHBBars() {
-        try {
-            IBAPIClient client = new IBAPIClient(HOST, PORT, BASE_CLIENT_ID + 3);
-            log.info("Successfully connected to IB Gateway for historical data test");
-            Thread.sleep(1000);
-//            client.reqHistoricalData();
-        } catch (Exception e) {
-            log.error("Error in getSPHBBars test", e);
-            e.printStackTrace();
-        }
-    }
-
-    private void testConnectionTimeout() {
-        log.info("=== Testing connection timeout ===");
-        long startTime = System.currentTimeMillis();
-        try {
-            new IBAPIClient("999.999.999.999", 9999, 1001);
-            throw new RuntimeException("Expected timeout exception but connection succeeded");
-        } catch (RuntimeException e) {
-            long duration = System.currentTimeMillis() - startTime;
-            log.info("✓ Connection timeout test passed: {}", e.getMessage());
-        }
-    }
-
-    private void testIBGatewayConnection() {
-        log.info("=== Testing IB Gateway connection ({}:{}) ===", HOST, PORT);
-        try {
-            IBAPIClient client = new IBAPIClient(HOST, PORT, BASE_CLIENT_ID + 1);
-            log.info("✓ Successfully connected to IB Gateway");
-            log.info("Connection status: {}", client.isConnected());
-            client.close();
-            log.info("Connection closed");
-        } catch (RuntimeException e) {
-            log.warn("✗ IB Gateway connection failed: {}", e.getMessage());
-            log.info("Make sure IB Gateway is running on {}:{}", HOST, PORT);
-        }
-    }
-
-    private void testGetPendingOrders() {
-        log.info("=== Testing getPendingOrders (expecting no orders) ===");
-        try {
-            IBAPIClient client = new IBAPIClient(HOST, PORT, BASE_CLIENT_ID + 2);
-            log.info("✓ Successfully connected to IB Gateway for pending orders test");
-            
-            List<Order> pendingOrders = client.getPendingOrders(Market.US);
-            log.info("Retrieved {} pending orders", pendingOrders.size());
-            
-            if (pendingOrders.isEmpty()) {
-                log.info("✓ Test passed: No pending orders returned as expected");
-            } else {
-                log.info("✓ Test completed: Found {} pending orders:", pendingOrders.size());
-                for (Order order : pendingOrders) {
-                    log.info("  - Order: {} {} {} @ {} (ID: {})", 
-                        order.side(), order.quantity(), order.code(), 
-                        order.price(), order.orderId());
-                }
-            }
-            
-            client.close();
-            log.info("Connection closed");
-        } catch (Exception e) {
-            log.error("✗ getPendingOrders test failed: {}", e.getMessage(), e);
-            log.info("Make sure IB Gateway is running on {}:{}", HOST, PORT);
-        }
     }
 } 

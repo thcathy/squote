@@ -1,6 +1,5 @@
 package squote.scheduletask;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.futu.openapi.FTAPI_Conn_Qot;
 import com.futu.openapi.FTAPI_Conn_Trd;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -21,8 +20,10 @@ import squote.service.StockTradingAlgoService;
 import squote.service.TelegramAPIClient;
 import squote.service.TiingoAPIClient;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class StockTradingTask {
@@ -81,7 +82,7 @@ public class StockTradingTask {
     public void innerExecute(Market market) {
         try {
             log.info("Starting stock trading task for market: {}", market);
-            var futuClientConfigs = parseFutuClientConfigs();
+            var futuClientConfigs = FutuClientConfig.parseFutuClientConfigs(clientConfigJson);
             var lastExecutionTime = getLastExecutionTime(market);
 
             for (var fund : fundRepo.findAll()) {
@@ -122,10 +123,9 @@ public class StockTradingTask {
         var config = taskConfigRepo.findById(SyncStockExecutionsTask.class.toString());
         if (config.isEmpty()) return new Date();
 
-        var date = SyncStockExecutionsTaskConfig.fromJson(config.get().jsonConfig())
+        return SyncStockExecutionsTaskConfig.fromJson(config.get().jsonConfig())
                 .lastExecutionTimeByMarket()
                 .getOrDefault(market, new Date());
-        return new Date(date.getTime() + 1000); // 1 second
     }
 
     @NotNull
@@ -154,17 +154,5 @@ public class StockTradingTask {
         if (!futuAPIClient.unlockTrade(code)) {
             throw new RuntimeException("unlock trade failed");
         }
-    }
-
-    private Map<String, FutuClientConfig> parseFutuClientConfigs() {
-        try
-        {
-            var mapper = new ObjectMapper();
-            var clientConfigs = mapper.readValue(clientConfigJson, FutuClientConfig[].class);
-            return Arrays.stream(clientConfigs).collect(Collectors.toMap(FutuClientConfig::fundName, o -> o));
-        } catch (Exception e) {
-            log.error("Cannot parse config: {}", clientConfigJson ,e);
-        }
-        return new HashMap<>();
     }
 }

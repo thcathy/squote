@@ -91,7 +91,7 @@ public class SyncStockExecutionsTask {
                 futuAPIClient = futuAPIClientFactory.build(config);
 
                 logs.append(String.format("Get executions for accountId=%s since %s\n\n", config.accountId(), fromDate));
-                var executions = futuAPIClient.getStockExecutions(fromDate, market);
+                var executions = futuAPIClient.getRecentExecutions(fromDate, market);
                 for (var exec : executions.values()) {
                     logs.append(String.format("\nProcess execution=%s\n", exec));
                     if (exec.getMarket() != market) {
@@ -162,7 +162,7 @@ fee=%.2f profit=%.2f""",
             emailService.sendEmail(summaryEmailAddress, "SyncStockExecutionsTask Executed", logsString);
     }
 
-    private void saveLastExecutionTime(StringBuilder logs, Market market, Date fromDate, HashMap<String, Execution> executions) {
+    private void saveLastExecutionTime(StringBuilder logs, Market market, Date fromDate, Map<String, Execution> executions) {
         var marketExecutions = executions.values().stream()
                 .filter(exec -> exec.getMarket() == market)
                 .toList();
@@ -190,7 +190,7 @@ fee=%.2f profit=%.2f""",
 
     private Date getFromDate(Market market) {
         var date = getLastExecutionTime(market).orElseGet(this::getLastMonth);
-        return new Date(date.getTime() + 1000); // 1 second
+        return new Date(date.getTime());
     }
 
     private Optional<Date> getLastExecutionTime(Market market) {
