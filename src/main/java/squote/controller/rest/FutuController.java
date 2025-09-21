@@ -45,7 +45,7 @@ public class FutuController {
     public FutuAPIClientFactory futuAPIClientFactory = (futuClientConfig) -> 
         new FutuAPIClient(futuClientConfig, new FTAPI_Conn_Trd(), new FTAPI_Conn_Qot(), rsaKey, true);
 
-    @GetMapping(value = "/{accountId}/{market}/{fromDate}/{toDate}")
+    @GetMapping(value = "/flow-summary/{accountId}/{market}/{fromDate}/{toDate}")
     public List<FlowSummaryInfo> getFlowSummary(@PathVariable long accountId, @PathVariable String market,
                                                 @PathVariable String fromDate, @PathVariable String toDate)
             throws ParseException {
