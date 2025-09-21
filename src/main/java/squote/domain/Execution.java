@@ -16,6 +16,8 @@ public class Execution {
     private Market market;
     private SquoteConstants.Side side;
     private String fillIds;
+    private BigDecimal commission;
+    private String assetClass;
 
     @Override
     public String toString() {
@@ -24,6 +26,8 @@ public class Execution {
                 .add(side + " " + code + ".").add(market == null ? Market.HK.toString() : market.toString())
                 .add(quantity + "@" + price)
                 .add("quoteQuantity=" + quoteQuantity)
+                .add("commission=" + commission)
+                .add("assetClass=" + assetClass)
                 .add("time=" + time)
                 .toString();
     }
@@ -114,5 +118,21 @@ public class Execution {
 
     public void setMarket(Market market) {
         this.market = market;
+    }
+
+    public BigDecimal getCommission() {
+        return commission;
+    }
+
+    public void setCommission(BigDecimal commission) {
+        this.commission = commission;
+    }
+
+    public String getAssetClass() {
+        return assetClass;
+    }
+
+    public void setAssetClass(String assetClass) {
+        this.assetClass = assetClass;
     }
 }
