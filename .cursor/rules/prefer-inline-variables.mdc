@@ -1,0 +1,14 @@
+---
+description: prefer-inline-variables
+alwaysApply: true
+---
+# Prefer Inline Variables
+
+When writing Java code, prefer using inline variables and expressions to reduce unnecessary variable declarations and improve code readability.
+
+## Guidelines:
+- Inline simple expressions instead of creating temporary variables
+- Use method chaining when appropriate to avoid intermediate variables
+- Inline variables that are only used once immediately after declaration
+- Avoid creating variables for simple calculations or transformations
+- Still create variables when they improve readability or are used multiple times

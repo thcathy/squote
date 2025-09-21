@@ -1,0 +1,7 @@
+---
+description: use-latest-java-features
+alwaysApply: true
+---
+# Always Use Latest Java Features
+
+When writing Java code, prefer using the latest Java language features and APIs available in your project's target Java version to write more concise, readable, and maintainable code.

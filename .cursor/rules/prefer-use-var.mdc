@@ -2,4 +2,25 @@
 description: prefer-use-var
 alwaysApply: true
 ---
-Prefer use var in variable if possible
+# Prefer var for Local Variable Declarations
+
+When declaring local variables in Java, prefer using `var` instead of explicit types when the type can be clearly inferred from the context.
+
+## Guidelines:
+- Use `var` for local variable declarations when the type is obvious from the right-hand side
+- Use `var` to reduce verbosity and improve code readability
+- Avoid `var` when it makes the code less clear or when the type is not obvious
+- Do not use `var` for fields, method parameters, or method return types
+
+## Examples:
+```java
+// Prefer this:
+var list = new ArrayList<String>();
+var map = new HashMap<String, Integer>();
+var result = service.processData();
+
+// Instead of:
+ArrayList<String> list = new ArrayList<String>();
+HashMap<String, Integer> map = new HashMap<String, Integer>();
+ProcessResult result = service.processData();
+```
