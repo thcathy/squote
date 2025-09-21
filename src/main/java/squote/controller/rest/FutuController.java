@@ -49,11 +49,11 @@ public class FutuController {
     public List<FlowSummaryInfo> getFlowSummary(@PathVariable long accountId, @PathVariable String market,
                                                 @PathVariable String fromDate, @PathVariable String toDate)
             throws ParseException {
-        authenticationService.getUserId().get();
+        var userId = authenticationService.getUserId().get();
         log.info("get flow summary for market {} on date {} - {} for account {}", market, fromDate, toDate, accountId);
 
         var futuClientConfig = futuClientConfigs.values().stream()
-                .filter(config -> config.accountId() == accountId)
+                .filter(config -> config.accountId() == accountId && config.fundUserId().equals(userId))
                 .findFirst().orElseThrow();
         var futuAPIClient = futuAPIClientFactory.build(futuClientConfig);
         var marketEnum = Market.valueOf(market.toUpperCase());

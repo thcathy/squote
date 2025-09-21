@@ -43,7 +43,7 @@ class FutuControllerTest {
                     {
                         "ip": "127.0.0.1",
                         "port": 11111,
-                        "fundUserId": "test-user",
+                        "fundUserId": "test-user-123",
                         "fundName": "test-fund",
                         "accountId": 12345,
                         "unlockCode": "123456",
