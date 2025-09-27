@@ -1,5 +1,7 @@
 package squote.domain;
 
+import java.util.Currency;
+
 public enum Market {
     US, HK;
 
@@ -11,6 +13,13 @@ public enum Market {
         if (isUSStockCode(stockCode)) return US;
 
         return HK;
+    }
+
+    public Currency currency() {
+        return switch (this) {
+            case US -> Currency.getInstance("USD");
+            case HK -> Currency.getInstance("HKD");
+        };
     }
 
     public static String getBaseCodeFromTicker(String code) {

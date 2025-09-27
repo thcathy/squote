@@ -6,6 +6,7 @@ import squote.domain.Market;
 import squote.domain.Order;
 import squote.domain.StockQuote;
 
+import java.util.Currency;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,5 @@ public interface IBrokerAPIClient {
 
     record PlaceOrderResponse(long orderId, long errorCode, String message) {}
     record CancelOrderResponse(long errorCode, String message) {}
-
-
+    Map<Currency, Double> getAvailableFunds();
 }

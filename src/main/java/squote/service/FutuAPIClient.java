@@ -277,6 +277,55 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 				.map(this::toOrder).toList();
 	}
 
+    public Map<Currency, Double> getAvailableFunds() {
+        int seq = sendTrdGetFunds();
+        log.info("Seq[{}] sendTrdGetFunds", seq);
+
+        var funds = new HashMap<Currency, Double>();
+        var result = (TrdCommon.Funds) getResult(seq);
+        if (result == null) return funds;
+
+        result.getCashInfoListList()
+                .stream().filter(c -> c.getCurrency() == 1 || c.getCurrency() == 2)
+                .forEach(c -> funds.put(toJavaCurrency(c.getCurrency()), c.getNetCashPower()));
+
+        return funds;
+    }
+
+    private Currency toJavaCurrency(int futuCurrencyValue) {
+        return switch (futuCurrencyValue) {
+            case 1 -> Currency.getInstance("HKD");
+            case 2 -> Currency.getInstance("USD");
+            default -> throw new IllegalStateException("Unexpected value: " + futuCurrencyValue);
+        };
+    }
+
+    @Override
+    public void onReply_GetFunds(FTAPI_Conn client, int seq, TrdGetFunds.Response response) {
+        if (response.getRetType() != 0) {
+            log.error("TrdGetFunds failed: {}", response.getRetMsg());
+            resultMap.put(seq, null);
+        }
+
+        var funds = response.getS2C().getFunds();
+        log.info("Funds returned");
+        resultMap.put(seq, funds);
+    }
+
+    private int sendTrdGetFunds() {
+        var header = TrdCommon.TrdHeader.newBuilder()
+                .setAccID(clientConfig.accountId())
+                .setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE)
+                .setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE)
+                .build();
+        var c2s = TrdGetFunds.C2S.newBuilder()
+                .setHeader(header)
+                .setCurrency(TrdCommon.Currency.Currency_HKD_VALUE)
+                .build();
+        var req = TrdGetFunds.Request.newBuilder().setC2S(c2s).build();
+        return futuConnTrd.getFunds(req);
+    }
+
 	public StockQuote getStockQuote(String code) {
 		int seq = requestQuoteSnapshot(code);
 		log.info("Seq[{}] Send requestQuoteSnapshot", seq);

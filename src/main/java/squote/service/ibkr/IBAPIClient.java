@@ -328,7 +328,12 @@ public class IBAPIClient implements IBrokerAPIClient, EWrapper {
 		}
 	}
 
-	private String requestFlexReport(Date fromDate) throws IOException, InterruptedException {
+    @Override
+    public Map<Currency, Double> getAvailableFunds() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    private String requestFlexReport(Date fromDate) throws IOException, InterruptedException {
 		var dateFormat = new SimpleDateFormat("yyyyMMdd");
 		var fromDateStr = dateFormat.format(fromDate);
 		var calendar = Calendar.getInstance();

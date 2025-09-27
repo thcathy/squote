@@ -207,6 +207,8 @@ public class StockTradingAlgoService {
     }
 
     private void placeOrder(IBrokerAPIClient brokerAPIClient, FutuClientConfig config, String stockCode, Side side, double price, int quantity) {
+        if (side == BUY && !hasAvailableFunds(brokerAPIClient, stockCode, side, price, quantity)) return;
+
         var placeOrderResponse = brokerAPIClient.placeOrder(side, stockCode, quantity, price);
 
         if (placeOrderResponse.errorCode() > 0) {
@@ -219,6 +221,21 @@ public class StockTradingAlgoService {
                 side, stockCode, quantity, price);
         log.info(placedMessage);
         telegramAPIClient.sendMessage(placedMessage);
+    }
+
+    private boolean hasAvailableFunds(IBrokerAPIClient brokerAPIClient, String stockCode, Side side, double price, int quantity) {
+        if (side != BUY) return true;
+
+        var requiredCurrency = Market.getMarketByStockCode(stockCode).currency();
+        var orderValue = price * quantity;
+        var availableAmount = brokerAPIClient.getAvailableFunds().getOrDefault(requiredCurrency, 0.0);
+
+        if (availableAmount < orderValue) {
+            log.warn("Not enough cash for {} {}: required {}, available {}",
+                    side, stockCode, orderValue, availableAmount);
+            return false;
+        }
+        return true;
     }
 
     private void cancelOrder(IBrokerAPIClient brokerAPIClient, long pendingOrderId, String code) {

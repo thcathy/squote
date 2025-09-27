@@ -14,6 +14,7 @@ import squote.domain.Market;
 import squote.scheduletask.FutuClientConfig;
 
 import java.math.BigDecimal;
+import java.util.Currency;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -220,5 +221,42 @@ class FutuAPIClientTest {
 
         var result = client.getFlowSummary(new Date(), Market.HK);
         assertEquals(0, result.size());
+    }
+
+    @Test
+    void getAvailableFunds_SuccessfulResponse_ReturnsHKDAndUSDFunds() {
+        // Create cash info for HKD
+        var hkdCashInfo = TrdCommon.AccCashInfo.newBuilder()
+                .setCurrency(TrdCommon.Currency.Currency_HKD_VALUE)
+                .setCash(50000.0).setAvailableBalance(45000.0).setNetCashPower(42000.0).build();
+        // Create cash info for USD
+        var usdCashInfo = TrdCommon.AccCashInfo.newBuilder()
+                .setCurrency(TrdCommon.Currency.Currency_USD_VALUE)
+                .setCash(10000.0).setAvailableBalance(9500.0).setNetCashPower(9000.0).build();
+        // Create cash info for other currency (should be filtered out)
+        var cnyInfo = TrdCommon.AccCashInfo.newBuilder()
+                .setCurrency(TrdCommon.Currency.Currency_CNH_VALUE)
+                .setCash(5000.0).setAvailableBalance(4500.0).setNetCashPower(4000.0).build();
+
+        var funds = TrdCommon.Funds.newBuilder()
+                .setPower(100000.0).setTotalAssets(200000.0).setCash(60000.0)
+                .setMarketVal(140000.0).setFrozenCash(1000.0).setDebtCash(2000.0).setAvlWithdrawalCash(40000.0)
+                .addCashInfoList(hkdCashInfo).addCashInfoList(usdCashInfo).addCashInfoList(cnyInfo).build();
+
+        var s2c = TrdGetFunds.S2C.newBuilder()
+                .setHeader(TrdCommon.TrdHeader.newBuilder()
+                    .setTrdEnv(TrdCommon.TrdEnv.TrdEnv_Real_VALUE).setAccID(123456L).setTrdMarket(TrdCommon.TrdMarket.TrdMarket_HK_VALUE))
+                .setFunds(funds).build();
+
+        var response = TrdGetFunds.Response.newBuilder().setRetType(0).setS2C(s2c).build();
+
+        when(FTAPIConnTrd.getFunds(any())).thenReturn(1);
+        client.onReply_GetFunds(FTAPIConnTrd, 1, response);
+
+        var availableFunds = client.getAvailableFunds();
+
+        assertEquals(2, availableFunds.size());
+        assertEquals(42000.0, availableFunds.get(Currency.getInstance("HKD")));
+        assertEquals(9000.0, availableFunds.get(Currency.getInstance("USD")));
     }
 }

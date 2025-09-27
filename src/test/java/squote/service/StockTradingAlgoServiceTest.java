@@ -62,6 +62,11 @@ class StockTradingAlgoServiceTest {
         when(mockBrokerAPIClient.placeOrder(any(), any(), anyInt(), anyDouble())).thenReturn(new FutuAPIClient.PlaceOrderResponse(1L, 0, null));
         when(mockBrokerAPIClient.cancelOrder(anyLong(), anyString()))
                 .thenReturn(new FutuAPIClient.CancelOrderResponse(0, ""));
+        when(mockBrokerAPIClient.getAvailableFunds())
+                .thenReturn(Map.of(
+                        Currency.getInstance("HKD"), Double.MAX_VALUE,
+                        Currency.getInstance("USD"), Double.MAX_VALUE
+                ));
         when(mockTelegramAPIClient.sendMessage(any())).thenReturn(List.of("Message sent"));
 
         // setup stock quote
@@ -642,5 +647,29 @@ class StockTradingAlgoServiceTest {
         );
 
         verify(mockYahooFinanceService, never()).getLatestTicker(any());
+    }
+
+    @Test
+    void notEnoughFund_dontSendBuyOrder() {
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
+        var marketPrice = 19;
+        var maxBuyPrice = 18.88; // base / (stdDev * 1.5)
+        var quote = new StockQuote(stockCode);
+
+        quote.setPrice(String.valueOf(marketPrice));
+        when(mockBrokerAPIClient.getStockQuote(any())).thenReturn(quote);
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of());
+        when(mockBrokerAPIClient.getAvailableFunds())
+                .thenReturn(Map.of(Currency.getInstance("HKD"), 0.0));
+
+        stockTradingAlgoService.processSingleSymbol(
+                fundA, Market.HK,
+                getDefaultAlgoConfig(),
+                FutuClientConfig.defaultConfig(),
+                mockBrokerAPIClient, null, null
+        );
+
+        verify(mockBrokerAPIClient, never()).placeOrder(eq(BUY), eq(stockCode), eq(3500), eq(maxBuyPrice));
     }
 }
