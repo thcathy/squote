@@ -58,8 +58,8 @@ public class StockTradingTask {
         return !enabledByMarket.getOrDefault(market.toString(), false);
     }
     
-    @Scheduled(cron = "0 30-55/5 9 * * MON-FRI", zone = "Asia/Hong_Kong")
-    @Scheduled(cron = "0 */5 10-15 * * MON-FRI", zone = "Asia/Hong_Kong")
+    @Scheduled(cron = "30 30-55/5 9 * * MON-FRI", zone = "Asia/Hong_Kong")
+    @Scheduled(cron = "30 */5 10-15 * * MON-FRI", zone = "Asia/Hong_Kong")
     @Scheduled(cron = "0 5 18 * * MON-FRI", zone = "Asia/Hong_Kong")    // adjust the price after daily std dev calculated
     public void executeHK() {
         if (isMarketDisabled(Market.HK)) { log.info("HK trading task disabled");
@@ -69,7 +69,7 @@ public class StockTradingTask {
         innerExecute(Market.HK);
     }
 
-    @Scheduled(cron = "0 */5 4-19 * * MON-FRI", zone = "America/New_York")
+    @Scheduled(cron = "30 */5 4-19 * * MON-FRI", zone = "America/New_York")
     public void executeUS() {
         if (isMarketDisabled(Market.US)) {
             log.info("US trading task disabled");
