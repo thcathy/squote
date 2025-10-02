@@ -91,8 +91,10 @@ public class SyncStockExecutionsTask {
                 futuAPIClient = futuAPIClientFactory.build(config);
 
                 logs.append(String.format("Get executions for accountId=%s since %s\n\n", config.accountId(), fromDate));
-                var executions = futuAPIClient.getRecentExecutions(fromDate, market);
-                for (var exec : executions.values()) {
+                var executions = futuAPIClient.getRecentExecutions(fromDate, market).values().stream()
+                        .sorted(Comparator.comparingLong(Execution::getTime))
+                        .toList();
+                for (var exec : executions) {
                     logs.append(String.format("\nProcess execution=%s\n", exec));
                     if (exec.getMarket() != market) {
                         logs.append(String.format("%s!=%s Skip processing\n", exec.getMarket(), market));
@@ -105,9 +107,8 @@ public class SyncStockExecutionsTask {
                     }
 
                     var holding = HoldingStock.from(exec, userId);
-                    holding = holdingRepo.save(holding);
                     var stockMarket = Market.getMarketByStockCode(holding.getCode());
-                    BigDecimal fees = (stockMarket == Market.US) 
+                    var fees = (stockMarket == Market.US)
                         ? usFeeCalculator.totalFee(holding, Broker.FUTU.calculateCommission)
                         : hkFeeCalculator.totalFee(holding, false, Broker.FUTU.calculateCommission);
                     holding.setFee(fees);
@@ -162,8 +163,8 @@ fee=%.2f profit=%.2f""",
             emailService.sendEmail(summaryEmailAddress, "SyncStockExecutionsTask Executed", logsString);
     }
 
-    private void saveLastExecutionTime(StringBuilder logs, Market market, Date fromDate, Map<String, Execution> executions) {
-        var marketExecutions = executions.values().stream()
+    private void saveLastExecutionTime(StringBuilder logs, Market market, Date fromDate, List<Execution> executions) {
+        var marketExecutions = executions.stream()
                 .filter(exec -> exec.getMarket() == market)
                 .toList();
         

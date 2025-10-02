@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import squote.SquoteConstants;
+import squote.domain.Execution;
 import squote.domain.HoldingStock;
 import squote.domain.Market;
 import squote.domain.TaskConfig;
@@ -15,11 +16,10 @@ import squote.service.EmailService;
 import squote.service.FutuAPIClient;
 import squote.service.UpdateFundByHoldingService;
 
+import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -139,5 +139,65 @@ class SyncStockExecutionsTaskTest {
         verify(mockFutuAPIClient).getRecentExecutions(dateCaptor.capture(), marketCaptor.capture());
         var market = marketCaptor.getValue();
         assertEquals(Market.US, market);
+    }
+
+    @Test
+    void executeTask_executionsAreSortedByTime() {
+        var userId = UUID.randomUUID().toString();
+        task.userId = userId;
+        var mockUpdateFundService = Mockito.mock(UpdateFundByHoldingService.class);
+        task.updateFundService = mockUpdateFundService;
+        when(mockUpdateFundService.updateFundByHolding(any(), any(), any(), any())).thenReturn(new squote.domain.Fund(userId, "A"));
+
+        var executions = new HashMap<String, Execution>();
+
+        // Create 3 executions with out-of-order timestamps
+        var baseTime = System.currentTimeMillis();
+        var exec3 = new Execution();
+        exec3.setOrderId("order3");
+        exec3.setFillIds("fill3");
+        exec3.setQuantity(BigDecimal.valueOf(100));
+        exec3.setPrice(BigDecimal.valueOf(25));
+        exec3.setSide(squote.SquoteConstants.Side.BUY);
+        exec3.setCode("2800");
+        exec3.setTime(baseTime + 2000); // Newest
+        exec3.setMarket(Market.HK);
+        executions.put(exec3.getOrderId(), exec3);
+
+        var exec1 = new Execution();
+        exec1.setOrderId("order1");
+        exec1.setFillIds("fill1");
+        exec1.setQuantity(BigDecimal.valueOf(100));
+        exec1.setPrice(BigDecimal.valueOf(23));
+        exec1.setSide(squote.SquoteConstants.Side.BUY);
+        exec1.setCode("2800");
+        exec1.setTime(baseTime); // Oldest
+        exec1.setMarket(Market.HK);
+        executions.put(exec1.getOrderId(), exec1);
+
+        var exec2 = new Execution();
+        exec2.setOrderId("order2");
+        exec2.setFillIds("fill2");
+        exec2.setQuantity(BigDecimal.valueOf(100));
+        exec2.setPrice(BigDecimal.valueOf(24));
+        exec2.setSide(squote.SquoteConstants.Side.BUY);
+        exec2.setCode("2800");
+        exec2.setTime(baseTime + 1000); // Middle
+        exec2.setMarket(Market.HK);
+        executions.put(exec2.getOrderId(), exec2);
+
+        when(mockFutuAPIClient.getRecentExecutions(any(Date.class), eq(Market.HK))).thenReturn(executions);
+
+        task.executeHK();
+
+        // Verify holdings are saved in chronological order
+        ArgumentCaptor<HoldingStock> holdingCaptor = ArgumentCaptor.forClass(HoldingStock.class);
+        verify(mockHoldingStockRepository, times(3)).save(holdingCaptor.capture());
+
+        var savedHoldings = holdingCaptor.getAllValues();
+        assertEquals(3, savedHoldings.size());
+        assertEquals("fill1", savedHoldings.get(0).getFillIds());
+        assertEquals("fill2", savedHoldings.get(1).getFillIds());
+        assertEquals("fill3", savedHoldings.get(2).getFillIds());
     }
 }
