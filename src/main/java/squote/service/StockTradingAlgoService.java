@@ -90,7 +90,10 @@ public class StockTradingAlgoService {
 
             return brokerAPIClient.getStockQuote(code);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            // throw new RuntimeException(e);
+            
+            // fallback to web parser
+            return webParserRestService.getRealTimeQuotes(List.of(code)).resultNow().getBody()[0];
         }
     }
 
