@@ -90,7 +90,8 @@ public class StockTradingAlgoService {
 
             var quote = brokerAPIClient.getStockQuote(code);
             if (quote == null)
-                return webParserRestService.getRealTimeQuotes(List.of(code)).resultNow().getBody()[0];
+                quote = webParserRestService.getRealTimeQuotes(List.of(code)).resultNow().getBody()[0];
+            return quote;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
