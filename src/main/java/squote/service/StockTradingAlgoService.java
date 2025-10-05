@@ -88,7 +88,10 @@ public class StockTradingAlgoService {
                 return yahooFinanceService.getLatestTicker(code).orElse(new StockQuote(code));
             }
 
-            return brokerAPIClient.getStockQuote(code);
+            var quote = brokerAPIClient.getStockQuote(code);
+            if (quote == null)
+                quote = webParserRestService.getRealTimeQuotes(List.of(code)).get().getBody()[0];
+            return quote;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
