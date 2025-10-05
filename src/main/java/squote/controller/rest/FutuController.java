@@ -11,12 +11,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import squote.SquoteConstants;
 import squote.domain.FlowSummaryInfo;
 import squote.domain.Market;
 import squote.scheduletask.FutuClientConfig;
 import squote.security.AuthenticationService;
 import squote.service.FutuAPIClient;
 
+import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -84,6 +86,22 @@ public class FutuController {
         }
 
         return allFlowSummary;
+    }
+
+    @GetMapping(value = "/cash/{accountId}/{market}")
+    public BigDecimal getCash(@PathVariable long accountId, @PathVariable String market) {
+        var userId = authenticationService.getUserId().get();
+        log.info("get cash of {} for account {}", market, accountId);
+
+        var futuClientConfig = futuClientConfigs.values().stream()
+                .filter(config -> config.accountId() == accountId && config.fundUserId().equals(userId))
+                .findFirst().orElseThrow();
+        var futuAPIClient = futuAPIClientFactory.build(futuClientConfig);
+        var marketEnum =  Market.valueOf(market.toUpperCase());
+        var availableFund = futuAPIClient.getAvailableFunds().get(marketEnum.currency());
+        var onholdValue = futuAPIClient.getPendingOrders(marketEnum).stream()
+                .filter(o -> o.side() == SquoteConstants.Side.BUY).mapToDouble(o -> o.price() * o.quantity()).sum();
+        return BigDecimal.valueOf(availableFund + onholdValue);
     }
 
     @FunctionalInterface

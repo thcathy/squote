@@ -8,21 +8,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import squote.domain.FlowSummaryInfo;
 import squote.domain.Market;
+import squote.domain.Order;
 import squote.scheduletask.FutuClientConfig;
 import squote.security.AuthenticationService;
 import squote.service.FutuAPIClient;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static squote.SquoteConstants.Side.BUY;
 
 @ExtendWith(MockitoExtension.class)
 class FutuControllerTest {
@@ -98,6 +97,18 @@ class FutuControllerTest {
         var endTime = System.currentTimeMillis();
 
         assertThat(endTime - startTime).isGreaterThanOrEqualTo(2L * futuController.getFlowSummaryDelayMs);
+    }
+
+    @Test
+    void getCash_ReturnsAvailableFundsPlusOnholdValue() {
+        when(futuAPIClient.getAvailableFunds()).thenReturn(Map.of(Currency.getInstance("HKD"), 10000.0));
+        when(futuAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of(
+                Order.newOrder("2800", BUY, 100, 100.0, 1L)
+        ));
+
+        var result = futuController.getCash(accountId, "HK");
+
+        assertThat(result).isEqualByComparingTo(new BigDecimal("20000.0"));
     }
 
     private List<FlowSummaryInfo> createMockFlowSummaryList() {
