@@ -32,14 +32,15 @@ class CalculateDailySummaryTaskTest {
 
     private boolean enabled = true;
     private List<Integer> stdDevRanges = List.of(20, 30);
-    ;
-    private List<String> codes = List.of("2800", "2828", "QQQ.US");
+    private List<String> hkCodes = List.of("2800", "2828");
+    private List<String> usCodes = List.of("QQQ.US");
 
     @BeforeEach
     void setUp() {
         calculateDailySummaryTask.enabled = enabled;
         calculateDailySummaryTask.stdDevRanges = stdDevRanges;
-        calculateDailySummaryTask.codes = codes;
+        calculateDailySummaryTask.hkCodes = hkCodes;
+        calculateDailySummaryTask.usCodes = usCodes;
     }
 
     public static DailyStockQuote quoteWithClose(double close) {
@@ -61,8 +62,8 @@ class CalculateDailySummaryTaskTest {
         var expectedFromDate = LocalDate.now().minusDays((long) (30 * 1.5)).format(CalculateDailySummaryTask.rangeQuoteDateFormatter);
         var expectedToDate = LocalDate.now().plusDays(1).format(CalculateDailySummaryTask.rangeQuoteDateFormatter);
 
-        verify(webService, times(3)).getQuotesInRange(any(), any(), eq(expectedFromDate), eq(expectedToDate));
-        verify(dailyAssetSummaryRepository, times(3)).save(any());
+        verify(webService, times(2)).getQuotesInRange(any(), any(), eq(expectedFromDate), eq(expectedToDate));
+        verify(dailyAssetSummaryRepository, times(2)).save(any());
         dailySummaries.getAllValues().forEach(s -> {
             assertThat(s.stdDevs).hasSize(stdDevRanges.size());
         });
@@ -73,6 +74,28 @@ class CalculateDailySummaryTaskTest {
         calculateDailySummaryTask.enabled = false;
         calculateDailySummaryTask.executeTask();
         verify(webService, never()).getQuotesInRange(any(), any(), any(), any());
+    }
+
+    @Test
+    void testExecuteTaskForUSEnabled() throws UnirestException {
+        DailyStockQuote[] mockQuotes = {
+            quoteWithClose(100.0), quoteWithClose(110.0), quoteWithClose(120.0), quoteWithClose(130.0), quoteWithClose(140.0)
+        };
+        HttpResponse<DailyStockQuote[]> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.getBody()).thenReturn(mockQuotes);
+        when(webService.getQuotesInRange(any(), any(), any(), any()))
+                .thenReturn(mockResponse);
+        ArgumentCaptor<DailyAssetSummary> dailySummaries = ArgumentCaptor.forClass(DailyAssetSummary.class);
+
+        calculateDailySummaryTask.executeTaskForUS();
+        var expectedFromDate = LocalDate.now().minusDays((long) (30 * 1.5)).format(CalculateDailySummaryTask.rangeQuoteDateFormatter);
+        var expectedToDate = LocalDate.now().plusDays(1).format(CalculateDailySummaryTask.rangeQuoteDateFormatter);
+
+        verify(webService, times(1)).getQuotesInRange(any(), any(), eq(expectedFromDate), eq(expectedToDate));
+        verify(dailyAssetSummaryRepository, times(1)).save(any());
+        dailySummaries.getAllValues().forEach(s -> {
+            assertThat(s.stdDevs).hasSize(stdDevRanges.size());
+        });
     }
 
 }

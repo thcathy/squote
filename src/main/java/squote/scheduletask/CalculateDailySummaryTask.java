@@ -26,7 +26,8 @@ public class CalculateDailySummaryTask {
 
     @Value(value = "${calculatedailysummarytask.enabled}") boolean enabled;
     @Value(value = "${calculatedailysummarytask.stdDevRange}") List<Integer> stdDevRanges;
-    @Value(value = "${calculatedailysummarytask.codes}") List<String> codes;
+    @Value(value = "${calculatedailysummarytask.hkCodes}") List<String> hkCodes;
+    @Value(value = "${calculatedailysummarytask.usCodes}") List<String> usCodes;
 
     public static DateTimeFormatter rangeQuoteDateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -40,23 +41,31 @@ public class CalculateDailySummaryTask {
 
     @Scheduled(cron = "0 0 18 * * MON-FRI", zone = "Asia/Hong_Kong")
     public void executeTask() {
+        innerExecute(hkCodes);
+    }
+
+    @Scheduled(cron = "0 0 1 * * TUE-SAT", zone = "America/New_York")
+    public void executeTaskForUS() {
+        innerExecute(usCodes);
+    }
+
+    public void innerExecute(List<String> codes) {
         if (!enabled) {
             log.info("Task disabled");
             return;
         }
 
         try {
-            innerExecute();
+            processStocks(codes);
         } catch (Exception e) {
-            log.error("Unexpected exception!" ,e);
+            log.error("Unexpected exception!", e);
         }
     }
 
-    public void innerExecute() throws ExecutionException, InterruptedException, UnirestException {
-        log.info("Input: stdDevRange={}, codes={}", stdDevRanges, codes);
+    private void processStocks(List<String> codes) throws ExecutionException, InterruptedException, UnirestException {
+        log.info("processStocks: stdDevRange={}, codes={}", stdDevRanges, codes);
         var maxStdDevRange = stdDevRanges.stream().mapToInt(s -> s).max().orElse(20);
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+        var formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         String fromDate = LocalDate.now().minusDays((long) (maxStdDevRange * 1.5)).format(formatter);   // take care holiday
         String toDate = LocalDate.now().plusDays(1).format(formatter);
         var today = Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
