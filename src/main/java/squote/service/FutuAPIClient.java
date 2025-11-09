@@ -274,7 +274,9 @@ public class FutuAPIClient implements FTSPI_Trd, FTSPI_Qot, FTSPI_Conn, IBrokerA
 		return result.stream()
 				.peek(o -> log.info("order received [{}]", o.toString().replaceAll("\n", " ")))
 				.filter(o -> pendingOrderStatuses.contains(o.getOrderStatus()))
-				.map(this::toOrder).toList();
+				.map(this::toOrder)
+                .filter(o -> Market.getMarketByStockCode(o.code()) == market) // futu return orders regarding market
+                .toList();
 	}
 
     public Map<Currency, Double> getAvailableFunds() {
