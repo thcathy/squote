@@ -611,7 +611,7 @@ class StockTradingAlgoServiceTest {
         );
 
         verify(mockBrokerAPIClient, never()).getStockQuote(stockCodeUS);
-        verify(mockBrokerAPIClient, times(1)).getRecentExecutions(any(), eq(Market.US));
+        verify(mockBrokerAPIClient, atLeastOnce()).getRecentExecutions(any(), eq(Market.US));
     }
 
     @Test

@@ -78,8 +78,9 @@ public class StockTradingAlgoService {
         var buyExecutions = sortExecutions(holdings, allTodayExecutions, BUY);
         var sellExecutions = sortExecutions(holdings, allTodayExecutions, SELL);
 
+        var latestExecutionTime = allTodayExecutions.stream().mapToLong(e -> e.getTime()).max().orElse(0L);
         findBaseExecution(buyExecutions, sellExecutions)
-                .ifPresent(exec -> processBaseExecution(brokerAPIClient, clientConfig, stdDev.get(), algoConfig.stdDevMultiplier(), exec, stockQuote, algoConfig, market));
+                .ifPresent(exec -> processBaseExecution(brokerAPIClient, clientConfig, stdDev.get(), algoConfig.stdDevMultiplier(), exec, stockQuote, algoConfig, market, lastExecutionDate, latestExecutionTime));
     }
 
     private StockQuote getStockQuote(String code, IBrokerAPIClient brokerAPIClient) {
@@ -102,7 +103,7 @@ public class StockTradingAlgoService {
                 .flatMap(summary -> Optional.ofNullable(summary.stdDevs.get(stdDevRange)));
     }
 
-    private void processBaseExecution(IBrokerAPIClient brokerAPIClient, FutuClientConfig config, double stdDev, double stdDevMultiplier, Execution execution, StockQuote stockQuote, AlgoConfig algoConfig, Market market) {
+    private void processBaseExecution(IBrokerAPIClient brokerAPIClient, FutuClientConfig config, double stdDev, double stdDevMultiplier, Execution execution, StockQuote stockQuote, AlgoConfig algoConfig, Market market, Date lastExecutionDate, long latestExecutionTime) {
         log.info("base price: {}", execution.price);    // used in test case
         log.info("process base execution: {}", execution);
 
@@ -121,13 +122,13 @@ public class StockTradingAlgoService {
             return;
         }
 
-        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, stdDevMultiplier, brokerAPIClient, config, stockQuote, algoConfig);
-        handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, stdDevMultiplier, brokerAPIClient, config, stockQuote, algoConfig);
+        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, stdDevMultiplier, brokerAPIClient, config, stockQuote, algoConfig, market, lastExecutionDate, latestExecutionTime);
+        handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, stdDevMultiplier, brokerAPIClient, config, stockQuote, algoConfig, market, lastExecutionDate, latestExecutionTime);
     }
 
-    private void handleOrderForBaseExecution(Side pendingOrderSide, Execution baseExec, List<Order> pendingOrders, 
-        double stdDev, double stdDevMultiplier, IBrokerAPIClient brokerAPIClient, FutuClientConfig clientConfig, 
-        StockQuote stockQuote, AlgoConfig algoConfig) {
+    private void handleOrderForBaseExecution(Side pendingOrderSide, Execution baseExec, List<Order> pendingOrders,
+        double stdDev, double stdDevMultiplier, IBrokerAPIClient brokerAPIClient, FutuClientConfig clientConfig,
+        StockQuote stockQuote, AlgoConfig algoConfig, Market market, Date lastExecutionDate, long latestExecutionTime) {
         log.info("handle {} order", pendingOrders);
         if (pendingOrderSide == SELL && baseExec.side == SELL) return;
 
@@ -136,7 +137,7 @@ public class StockTradingAlgoService {
         var quantity = calculateOrderQuantity(pendingOrderSide, baseExec, algoConfig, targetPrice);
 
         var matchedPendingOrders = pendingOrders.stream()
-                .filter(o -> o.side() == pendingOrderSide &&  o.code().equals(baseExec.code))
+                .filter(o -> o.side() == pendingOrderSide && o.code().equals(baseExec.code))
                 .toList();
         if (matchedPendingOrders.size() > 1) {
             matchedPendingOrders.forEach(o -> {
@@ -160,6 +161,13 @@ public class StockTradingAlgoService {
             cancelOrder(brokerAPIClient, pendingOrderId, stockCode);
             telegramAPIClient.sendMessage(String.format("Cancelled order (%s): %s %s %s@%.2f", clientConfig.fundName(),
                     pendingOrder.side(), stockCode,pendingOrder.quantity(), pendingOrderPrice));
+        }
+
+        if (hasNewExecutions(brokerAPIClient, market, lastExecutionDate, stockCode, latestExecutionTime)) {
+            log.warn("New execution detected for {}. Skipping placement — will recalculate next cycle.", stockCode);
+            telegramAPIClient.sendMessage(String.format("WARN (%s): Skipped %s order placement — new execution detected for %s",
+                    clientConfig.fundName(), pendingOrderSide, stockCode));
+            return;
         }
 
         placeOrder(brokerAPIClient, clientConfig, stockCode, pendingOrderSide, targetPrice, quantity);
@@ -239,6 +247,13 @@ public class StockTradingAlgoService {
             return false;
         }
         return true;
+    }
+
+    private boolean hasNewExecutions(IBrokerAPIClient brokerAPIClient, Market market, Date lastExecutionDate, String stockCode, long latestExecutionTime) {
+        return brokerAPIClient.getRecentExecutions(lastExecutionDate, market)
+                .values().stream()
+                .filter(e -> e.getCode().equals(stockCode))
+                .anyMatch(e -> e.getTime() > latestExecutionTime);
     }
 
     private void cancelOrder(IBrokerAPIClient brokerAPIClient, long pendingOrderId, String code) {
