@@ -34,7 +34,7 @@ syncstockexecutionstask:
 calculatedailysummarytask:
   enabled: true
   stdDevRange: 9,10,11,12,20
-  hkCodes: 2800,3020,2840
+  hkCodes: 2800,3020,2840,3067
   usCodes: QQQ.US,IBIT.US,SPHB.US
 
 stocktradingtask:
