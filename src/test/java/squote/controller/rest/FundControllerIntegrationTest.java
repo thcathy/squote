@@ -221,25 +221,27 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 		assertThat(algoConfigs).hasSize(0);
 
 		// add - using default values for new parameters
-		var expectedConfig = new AlgoConfig("2800", 0, Double.valueOf(0.0), 11, 0.7, null);
-		var config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice(), expectedConfig.stdDevRange(), expectedConfig.stdDevMultiplier(), expectedConfig.grossAmount());
+		var expectedConfig = new AlgoConfig("2800", 0, Double.valueOf(0.0), 11, 0.7, null, false);
+		var config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice(), expectedConfig.stdDevRange(), expectedConfig.stdDevMultiplier(), expectedConfig.grossAmount(), expectedConfig.sellOnly());
 		assertThat(config).isEqualTo(expectedConfig);
+		assertThat(config.sellOnly()).isFalse();
 		algoConfigs = fundController.getAllAlgoConfigs(testFund.name);
 		assertThat(algoConfigs.getFirst()).isEqualTo(expectedConfig);
 
 		// update - using default values for new parameters
-		expectedConfig = new AlgoConfig("2800", 4000, Double.valueOf(25.5), 11, 0.7, null);
-		config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice(), expectedConfig.stdDevRange(), expectedConfig.stdDevMultiplier(), expectedConfig.grossAmount());
+		expectedConfig = new AlgoConfig("2800", 4000, Double.valueOf(25.5), 11, 0.7, null, false);
+		config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice(), expectedConfig.stdDevRange(), expectedConfig.stdDevMultiplier(), expectedConfig.grossAmount(), expectedConfig.sellOnly());
 		assertThat(config).isEqualTo(expectedConfig);
 		algoConfigs = fundController.getAllAlgoConfigs(testFund.name);
 		assertThat(algoConfigs.getFirst()).isEqualTo(expectedConfig);
 
-		// test custom stdDevRange and stdDevMultiplier
-		expectedConfig = new AlgoConfig("2800", 1000, Double.valueOf(30.0), 9, 0.8, null);
-		config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice(), expectedConfig.stdDevRange(), expectedConfig.stdDevMultiplier(), expectedConfig.grossAmount());
+		// test custom stdDevRange/stdDevMultiplier and sellOnly=true
+		expectedConfig = new AlgoConfig("2800", 1000, Double.valueOf(30.0), 9, 0.8, null, true);
+		config = fundController.addOrUpdateAlgoConfig(testFund.name, expectedConfig.code(), expectedConfig.quantity(), expectedConfig.basePrice(), expectedConfig.stdDevRange(), expectedConfig.stdDevMultiplier(), expectedConfig.grossAmount(), expectedConfig.sellOnly());
 		assertThat(config).isEqualTo(expectedConfig);
 		assertThat(config.stdDevRange()).isEqualTo(9);
 		assertThat(config.stdDevMultiplier()).isEqualTo(0.8);
+		assertThat(config.sellOnly()).isTrue();
 		algoConfigs = fundController.getAllAlgoConfigs(testFund.name);
 		assertThat(algoConfigs.getFirst()).isEqualTo(expectedConfig);
 
@@ -252,14 +254,16 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 	@Test
 	public void addOrUpdateAlgoConfig_withDefaultValues() {
 		// Test that default values are used when new parameters are not provided
-		var config = fundController.addOrUpdateAlgoConfig(testFund.name, "2800", 1000, Double.valueOf(25.0), 11, 0.7, null);
+		var config = fundController.addOrUpdateAlgoConfig(testFund.name, "2800", 1000, Double.valueOf(25.0), 11, 0.7, null, false);
 		assertThat(config.stdDevRange()).isEqualTo(11);
 		assertThat(config.stdDevMultiplier()).isEqualTo(0.7);
+		assertThat(config.sellOnly()).isFalse();
 		
 		// Test with custom values
-		config = fundController.addOrUpdateAlgoConfig(testFund.name, "2800", 1000, Double.valueOf(25.0), 15, 0.9, null);
+		config = fundController.addOrUpdateAlgoConfig(testFund.name, "2800", 1000, Double.valueOf(25.0), 15, 0.9, null, true);
 		assertThat(config.stdDevRange()).isEqualTo(15);
 		assertThat(config.stdDevMultiplier()).isEqualTo(0.9);
+		assertThat(config.sellOnly()).isTrue();
 		
 		// Clean up
 		fundController.deleteAlgoConfig(testFund.name, "2800");
@@ -272,8 +276,8 @@ public class FundControllerIntegrationTest extends IntegrationTest {
 
 		fundController.buy(testFund.name, symbolWithDots, "100", "450000");
 		fundController.buy(testFund.name, symbolWithMultipleDots, "50", "150000");
-		fundController.addOrUpdateAlgoConfig(testFund.name, symbolWithDots, 100, 4500.0, 10, 0.8, 45000.0);
-		fundController.addOrUpdateAlgoConfig(testFund.name, symbolWithMultipleDots, 50, 3000.0, 12, 0.9, 15000.0);
+		fundController.addOrUpdateAlgoConfig(testFund.name, symbolWithDots, 100, 4500.0, 10, 0.8, 45000.0, false);
+		fundController.addOrUpdateAlgoConfig(testFund.name, symbolWithMultipleDots, 50, 3000.0, 12, 0.9, 15000.0, false);
 		
 		// Act
 		Fund retrievedFund = fundRepo.findByUserIdAndName(userId, testFund.name).get();

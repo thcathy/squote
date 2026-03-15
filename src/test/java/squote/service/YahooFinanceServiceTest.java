@@ -137,7 +137,7 @@ class YahooFinanceServiceTest {
         Fund fund = new Fund(userId, fundName);
         fund.setType(Fund.FundType.STOCK);
         for (String stockCode : stockCodes) {
-            AlgoConfig algoConfig = new AlgoConfig(stockCode, 100, null, 10, 0.8, null);
+            AlgoConfig algoConfig = new AlgoConfig(stockCode, 100, null, 10, 0.8, null, false);
             fund.putAlgoConfig(stockCode, algoConfig);
         }
         return fund;

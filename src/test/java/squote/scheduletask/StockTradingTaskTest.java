@@ -61,7 +61,7 @@ class StockTradingTaskTest {
                     ]
                 """;
 
-        var algoConfig = new AlgoConfig(stockCode, 3500, null, 10, 0.7, null);
+        var algoConfig = new AlgoConfig(stockCode, 3500, null, 10, 0.7, null, false);
         var fundA = new Fund("dummy", "FundA");
         fundA.putAlgoConfig(stockCode, algoConfig);
         var fundB = new Fund("dummy", "FundB");
@@ -111,7 +111,7 @@ class StockTradingTaskTest {
 
     @Test
     void executeUS_withUSStocks_willCallTiingoAPI() {
-        var algoConfig = new AlgoConfig("QQQ.US", 3500, null, 10, 0.7, null);
+        var algoConfig = new AlgoConfig("QQQ.US", 3500, null, 10, 0.7, null, false);
         var fundA = new Fund("dummy", "FundA");
         fundA.putAlgoConfig("QQQ.US", algoConfig);
         when(mockFundRepo.findAll()).thenReturn(List.of(fundA));

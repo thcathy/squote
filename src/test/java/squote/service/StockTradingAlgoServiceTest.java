@@ -79,10 +79,10 @@ class StockTradingAlgoServiceTest {
         when(mockYahooFinanceService.getLatestTicker(any())).thenReturn(Optional.of(stockQuoteUS));
 
         // setup fund
-        var algoConfig = new AlgoConfig(stockCode, 3500, null, stdDevRange, stdDevMultiplier, null);
+        var algoConfig = new AlgoConfig(stockCode, 3500, null, stdDevRange, stdDevMultiplier, null, false);
         fundA.putAlgoConfig(stockCode, algoConfig);
         fundB.putAlgoConfig(stockCode, algoConfig);
-        var usAlgoConfig = new AlgoConfig(stockCodeUS, 100, null, stdDevRange, stdDevMultiplier, null);
+        var usAlgoConfig = new AlgoConfig(stockCodeUS, 100, null, stdDevRange, stdDevMultiplier, null, false);
         fundUS.putAlgoConfig(stockCodeUS, usAlgoConfig);
         when(mockFundRepo.findAll()).thenReturn(Arrays.asList(fundA, fundB, fundUS));
 
@@ -96,7 +96,11 @@ class StockTradingAlgoServiceTest {
     }
 
     private AlgoConfig getAlgoConfigWithQuantity(int quantity) {
-        return new AlgoConfig(stockCode, quantity, (Double) null, stdDevRange, stdDevMultiplier, null);
+        return new AlgoConfig(stockCode, quantity, (Double) null, stdDevRange, stdDevMultiplier, null, false);
+    }
+
+    private AlgoConfig getSellOnlyAlgoConfig() {
+        return new AlgoConfig(stockCode, 1000, null, stdDevRange, stdDevMultiplier, null, true);
     }
 
     static Stream<TestFindBasePriceData> testFindBasePriceDataProvider() {
@@ -560,6 +564,25 @@ class StockTradingAlgoServiceTest {
     }
 
     @Test
+    void sellOnlyEnabled_skipBuyPlacement() {
+        var executionQuantity = 2000;
+        var holding = HoldingStock.simple(stockCode, BUY, executionQuantity, BigDecimal.valueOf(40000), "FundA");
+
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of());
+
+        stockTradingAlgoService.processSingleSymbol(
+                fundA, Market.HK,
+                getSellOnlyAlgoConfig(),
+                FutuClientConfig.defaultConfig(),
+                mockBrokerAPIClient, null, null
+        );
+
+        verify(mockBrokerAPIClient, never()).placeOrder(eq(BUY), any(), anyInt(), anyDouble());
+        verify(mockBrokerAPIClient, times(1)).placeOrder(eq(SELL), eq(stockCode), eq(executionQuantity), anyDouble());
+    }
+
+    @Test
     void algoConfigQuantityZero_buyOrderUsesExecutionQuantity() {
         var executionQuantity = 2500;
         var algoConfigQuantity = 0;
@@ -616,7 +639,7 @@ class StockTradingAlgoServiceTest {
 
     @Test
     void processSingleSymbol_shouldCalculateQuantityFromGrossAmount() {
-        var grossAmountBasedConfig = new AlgoConfig(stockCode, 0, (Double) null, stdDevRange, stdDevMultiplier, 1000.0);
+        var grossAmountBasedConfig = new AlgoConfig(stockCode, 0, (Double) null, stdDevRange, stdDevMultiplier, 1000.0, false);
         fundA.putAlgoConfig(stockCode, grossAmountBasedConfig);
         
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");

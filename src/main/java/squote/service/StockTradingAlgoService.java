@@ -122,7 +122,11 @@ public class StockTradingAlgoService {
             return;
         }
 
-        handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, stdDevMultiplier, brokerAPIClient, config, stockQuote, algoConfig, market, lastExecutionDate, latestExecutionTime);
+        if (algoConfig.sellOnly()) {
+            log.info("sellOnly enabled for {}. Skip BUY order handling", algoConfig.code());
+        } else {
+            handleOrderForBaseExecution(BUY, execution, pendingOrders, stdDev, stdDevMultiplier, brokerAPIClient, config, stockQuote, algoConfig, market, lastExecutionDate, latestExecutionTime);
+        }
         handleOrderForBaseExecution(SELL, execution, pendingOrders, stdDev, stdDevMultiplier, brokerAPIClient, config, stockQuote, algoConfig, market, lastExecutionDate, latestExecutionTime);
     }
 
