@@ -525,6 +525,49 @@ class StockTradingAlgoServiceTest {
     }
 
     @Test
+    void twoTDaySellsAtSamePrice_earlierSellPairedWithHistoricalBuy_laterSellPairedWithTDayBuy() {
+        // Reproduces bug: two T-day sells at same price where the earlier sell occurred before the T-day buy.
+        // With incorrect descending date sort, the later sell gets paired first, leaving the earlier sell
+        // unable to match the T-day buy (sell before buy) or the historical buy (equal price) → error.
+        // With correct ascending date sort, earlier sell pairs with historical buy, later sell pairs with T-day buy.
+        long histBuyTime1 = 1742693790000L; // Mar 23 ~01:36 UTC
+        long histBuyTime2 = 1742692825000L; // Mar 23 ~01:20 UTC
+        long tdaySellEarly = 1742778025000L; // Mar 24 ~01:20 UTC (before T-day buy)
+        long tdayBuyTime  = 1742779575000L; // Mar 24 ~01:46 UTC
+        long tdaySellLate = 1742785010000L; // Mar 24 ~03:16 UTC (after T-day buy)
+
+        List<HoldingStock> holdings = List.of(
+                HoldingStock.simple(stockCode, BUY, 3500, BigDecimal.valueOf(86870), "FundA", new Date(histBuyTime1)), // 24.82
+                HoldingStock.simple(stockCode, BUY, 3500, BigDecimal.valueOf(87710), "FundA", new Date(histBuyTime2))); // 25.06
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(holdings);
+
+        var tdayBuy = new Execution();
+        tdayBuy.setSide(BUY); tdayBuy.setCode(stockCode); tdayBuy.setOrderId("b1");
+        tdayBuy.setPrice(new BigDecimal("24.86")); tdayBuy.setQuantity(new BigDecimal("3500"));
+        tdayBuy.setTime(tdayBuyTime);
+
+        var tdaySell1 = new Execution();
+        tdaySell1.setSide(SELL); tdaySell1.setCode(stockCode); tdaySell1.setOrderId("s1");
+        tdaySell1.setPrice(new BigDecimal("25.06")); tdaySell1.setQuantity(new BigDecimal("3500"));
+        tdaySell1.setTime(tdaySellEarly);  // before T-day buy
+
+        var tdaySell2 = new Execution();
+        tdaySell2.setSide(SELL); tdaySell2.setCode(stockCode); tdaySell2.setOrderId("s2");
+        tdaySell2.setPrice(new BigDecimal("25.06")); tdaySell2.setQuantity(new BigDecimal("3500"));
+        tdaySell2.setTime(tdaySellLate);   // after T-day buy
+
+        when(mockBrokerAPIClient.getRecentExecutions(any(), eq(Market.HK)))
+                .thenReturn(new HashMap<>(Map.of("b1", tdayBuy, "s1", tdaySell1, "s2", tdaySell2)));
+
+        stockTradingAlgoService.processSingleSymbol(
+                fundA, Market.HK, getDefaultAlgoConfig(), FutuClientConfig.defaultConfig(),
+                mockBrokerAPIClient, null, null);
+
+        assertThat(listAppender.list.stream().anyMatch(l -> l.getFormattedMessage().startsWith("base price: 25.06"))).isTrue();
+        assertThat(listAppender.list.stream().noneMatch(l -> l.getFormattedMessage().startsWith("Unexpected executions"))).isTrue();
+    }
+
+    @Test
     void partialFilledOrder_willSendWarningMessageToTelegram() {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));

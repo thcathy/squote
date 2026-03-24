@@ -322,7 +322,7 @@ public class StockTradingAlgoService {
         executions.addAll(todayExecutions);
         executions.sort(
                 Comparator.comparingDouble(Execution::price)
-                        .thenComparing(Execution::date, Comparator.reverseOrder())
+                        .thenComparing(Execution::date)
         );
         printExecutions(side + " executions:", executions);
         return executions;
