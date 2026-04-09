@@ -10,6 +10,7 @@ import squote.domain.repository.DailyAssetSummaryRepository;
 import squote.domain.repository.FundRepository;
 import squote.domain.repository.HoldingStockRepository;
 import squote.scheduletask.FutuClientConfig;
+import thc.util.TradingUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -210,8 +211,12 @@ public class StockTradingAlgoService {
         // BUY orders
         int quantity;
         if (algoConfig.grossAmount() != null && algoConfig.grossAmount() > 0) {
-            quantity = (int) Math.floor(algoConfig.grossAmount() / targetPrice);
-            log.info("Calculated buy quantity from grossAmount: {} / {} = {}", algoConfig.grossAmount(), targetPrice, quantity);
+            if (algoConfig.lotSize() > 0) {
+                quantity = TradingUtils.roundToLotSize(algoConfig.grossAmount() / targetPrice, algoConfig.lotSize());
+            } else {
+                quantity = (int) Math.floor(algoConfig.grossAmount() / targetPrice);
+            }
+            log.info("Calculated buy quantity from grossAmount: {} / {} = {} (lotSize={})", algoConfig.grossAmount(), targetPrice, quantity, algoConfig.lotSize());
         } else if (algoConfig.quantity() > 0) {
             quantity = algoConfig.quantity();
         } else {
@@ -222,6 +227,10 @@ public class StockTradingAlgoService {
     }
 
     private void placeOrder(IBrokerAPIClient brokerAPIClient, FutuClientConfig config, String stockCode, Side side, double price, int quantity) {
+        if (quantity <= 0) {
+            log.info("Skipping order for {} - quantity is {}", stockCode, quantity);
+            return;
+        }
         if (side == BUY && !hasAvailableFunds(brokerAPIClient, stockCode, side, price, quantity)) return;
 
         var placeOrderResponse = brokerAPIClient.placeOrder(side, stockCode, quantity, price);

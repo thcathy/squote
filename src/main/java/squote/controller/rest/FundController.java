@@ -210,10 +210,11 @@ public class FundController {
 											@RequestParam(name = "stdDevRange", defaultValue = "11") int stdDevRange,
 											@RequestParam(name = "stdDevMultiplier", defaultValue = "0.7") double stdDevMultiplier,
 											@RequestParam(name = "grossAmount", required = false) Double grossAmount,
-											@RequestParam(name = "sellOnly", defaultValue = "false") boolean sellOnly) {
+											@RequestParam(name = "sellOnly", defaultValue = "false") boolean sellOnly,
+											@RequestParam(name = "lotSize", defaultValue = "0") int lotSize) {
 		var userId = authenticationService.getUserId().get();
-		
-		var newConfig = new AlgoConfig(code, quantity, basePrice, stdDevRange, stdDevMultiplier, grossAmount, sellOnly);
+
+		var newConfig = new AlgoConfig(code, quantity, basePrice, stdDevRange, stdDevMultiplier, grossAmount, sellOnly, lotSize);
 		log.info("add or update algo config {} to fund {}", newConfig, fundName);
 
 		var fund = fundRepo.findByUserIdAndName(userId, fundName).get();

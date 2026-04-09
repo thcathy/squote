@@ -698,6 +698,42 @@ class StockTradingAlgoServiceTest {
     }
 
     @Test
+    void processSingleSymbol_shouldRoundQuantityToLotSizeWhenGrossAmountUsed() {
+        var grossAmountWithLotSizeConfig = new AlgoConfig(stockCode, 0, (Double) null, stdDevRange, stdDevMultiplier, 1000.0, false, 100);
+        fundA.putAlgoConfig(stockCode, grossAmountWithLotSizeConfig);
+
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of());
+        when(mockBrokerAPIClient.getRecentExecutions(any(), eq(Market.HK))).thenReturn(new HashMap<>());
+
+        // Act - grossAmount=1000, price~20, raw qty=50, rounded to lotSize 100 -> 0
+        // But with higher grossAmount, let's test with a case where rounding matters
+        stockTradingAlgoService.processSingleSymbol(fundA, Market.HK, grossAmountWithLotSizeConfig,
+                FutuClientConfig.defaultConfig(), mockBrokerAPIClient, null, null);
+
+        // 1000 / ~20 = 50, rounded down to nearest 100 = 0, so no order placed
+        verify(mockBrokerAPIClient, never()).placeOrder(eq(BUY), eq(stockCode), anyInt(), anyDouble());
+    }
+
+    @Test
+    void processSingleSymbol_shouldRoundQuantityToLotSizeWithSufficientAmount() {
+        var grossAmountWithLotSizeConfig = new AlgoConfig(stockCode, 0, (Double) null, stdDevRange, stdDevMultiplier, 5000.0, false, 100);
+        fundA.putAlgoConfig(stockCode, grossAmountWithLotSizeConfig);
+
+        var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
+        when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
+        when(mockBrokerAPIClient.getPendingOrders(Market.HK)).thenReturn(List.of());
+        when(mockBrokerAPIClient.getRecentExecutions(any(), eq(Market.HK))).thenReturn(new HashMap<>());
+
+        // Act - grossAmount=5000, price~20, raw qty=250, rounded to lotSize 100 -> 200
+        stockTradingAlgoService.processSingleSymbol(fundA, Market.HK, grossAmountWithLotSizeConfig,
+                FutuClientConfig.defaultConfig(), mockBrokerAPIClient, null, null);
+
+        verify(mockBrokerAPIClient, times(1)).placeOrder(eq(BUY), eq(stockCode), eq(200), anyDouble());
+    }
+
+    @Test
     void processSingleSymbol_withProvidedQuote_shouldUseProvidedQuote() {
         var holding = HoldingStock.simple(stockCode, BUY, 4000, BigDecimal.valueOf(80000), "FundA");
         when(holdingStockRepository.findByUserIdOrderByDate("UserA")).thenReturn(List.of(holding));
